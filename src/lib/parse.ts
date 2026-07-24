@@ -19,21 +19,21 @@ import type { StatusLowongan } from "./types";
 
 /** Result of parsing a detail page (no lastChecked — the caller stamps that). */
 export interface ParsedDetail {
-  status: StatusLowongan;
-  kuota?: number;
-  pelamar?: number;
-  batch?: string;
-  tunjangan?: string;
+	status: StatusLowongan;
+	kuota?: number;
+	pelamar?: number;
+	batch?: string;
+	tunjangan?: string;
 }
 
 /** Thrown when the HTML doesn't look like a Lowongan detail page at all —
  *  e.g. a Cloudflare challenge or an empty 200. The caller treats this as a
  *  failed refresh (`status: "unknown"`), distinct from a real "closed" page. */
 export class NotALowonganError extends Error {
-  constructor(message = "not a Lowongan detail page") {
-    super(message);
-    this.name = "NotALowonganError";
-  }
+	constructor(message = "not a Lowongan detail page") {
+		super(message);
+		this.name = "NotALowonganError";
+	}
 }
 
 /** Selector matching every label/value info row on the detail page. */
@@ -55,54 +55,66 @@ const FILLING_THRESHOLD = 0.8;
  *  strip every non-digit character and parse the rest as an integer — never a
  *  float. Returns undefined when there are no digits. */
 function parseCount(value: string): number | undefined {
-  const digits = value.replace(/[^0-9]/g, "");
-  if (!digits) return undefined;
-  const n = Number.parseInt(digits, 10);
-  return Number.isFinite(n) ? n : undefined;
+	const digits = value.replace(/[^0-9]/g, "");
+	if (!digits) return undefined;
+	const n = Number.parseInt(digits, 10);
+	return Number.isFinite(n) ? n : undefined;
 }
 
+/** Read an element's text with *interior* whitespace collapsed to single
+ *  spaces, not merely trimmed at the ends.
+ *
+ *  The detail page is server-rendered with hydration comments (`<!-- -->`) and
+ *  wraps lines at arbitrary points, so a single logical value routinely arrives
+ *  as `"Batch 1\n        ·\n        2026"`. Comparing or map-keying that raw
+ *  text fails for reasons that have nothing to do with the page's meaning, so
+ *  every label and value goes through here first. */
 function textOf(el: Element | null | undefined): string {
-  return el?.textContent?.trim() ?? "";
+	return normalizeWhitespace(el?.textContent ?? "");
+}
+
+/** Collapse all whitespace runs (newlines, tabs, non-breaking spaces) to a
+ *  single space and trim. `\s` covers U+00A0 in JS regex, which matters because
+ *  the page uses `&nbsp;` in places. */
+function normalizeWhitespace(text: string): string {
+	return text.replace(/\s+/g, " ").trim();
 }
 
 /** True if any button or link's trimmed text contains "Lamar Sekarang". */
 function hasLamarSekarang(doc: Document): boolean {
-  return [...doc.querySelectorAll("button, a")].some((el) =>
-    (el.textContent ?? "").trim().includes(LAMAR_SEKARANG),
-  );
+	// Normalized so a button rendered as "Lamar\n  Sekarang" still matches.
+	return [...doc.querySelectorAll("button, a")].some((el) =>
+		textOf(el).includes(LAMAR_SEKARANG),
+	);
 }
 
 /** Build a label → value map from the detail page's info rows. */
 function readInfoRows(doc: Document): Map<string, string> {
-  const map = new Map<string, string>();
-  for (const row of doc.querySelectorAll<HTMLElement>(INFO_ROW_SELECTOR)) {
-    const label = textOf(row.querySelector(LABEL_SELECTOR));
-    const value = textOf(row.querySelector(VALUE_SELECTOR));
-    if (label) map.set(label.toLowerCase(), value);
-  }
-  return map;
+	const map = new Map<string, string>();
+	for (const row of doc.querySelectorAll<HTMLElement>(INFO_ROW_SELECTOR)) {
+		const label = textOf(row.querySelector(LABEL_SELECTOR));
+		const value = textOf(row.querySelector(VALUE_SELECTOR));
+		if (label) map.set(label.toLowerCase(), value);
+	}
+	return map;
 }
 
 function readBatch(doc: Document): string | undefined {
-  for (const badge of doc.querySelectorAll(BATCH_BADGE_SELECTOR)) {
-    const text = textOf(badge);
-    if (/batch/i.test(text)) return text;
-  }
-  return undefined;
+	for (const badge of doc.querySelectorAll(BATCH_BADGE_SELECTOR)) {
+		const text = textOf(badge);
+		if (/batch/i.test(text)) return text;
+	}
+	return undefined;
 }
 
 /** A page is recognisably a Lowongan detail page if it has a title, info rows,
  *  or a Batch badge — otherwise it's a challenge/empty page, not "closed". */
 function looksLikeLowonganPage(
-  doc: Document,
-  info: Map<string, string>,
-  batch: string | undefined,
+	doc: Document,
+	info: Map<string, string>,
+	batch: string | undefined,
 ): boolean {
-  return (
-    !!doc.querySelector("h1") ||
-    info.size > 0 ||
-    batch !== undefined
-  );
+	return !!doc.querySelector("h1") || info.size > 0 || batch !== undefined;
 }
 
 /**
@@ -121,42 +133,42 @@ function looksLikeLowonganPage(
  *    liveStatus.
  */
 export function parseDetailHtml(html: string): ParsedDetail {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const info = readInfoRows(doc);
-  const batch = readBatch(doc);
+	const doc = new DOMParser().parseFromString(html, "text/html");
+	const info = readInfoRows(doc);
+	const batch = readBatch(doc);
 
-  if (!looksLikeLowonganPage(doc, info, batch)) {
-    throw new NotALowonganError();
-  }
+	if (!looksLikeLowonganPage(doc, info, batch)) {
+		throw new NotALowonganError();
+	}
 
-  const kuota = parseCount(info.get("kuota") ?? "");
-  const pelamar = parseCount(info.get("pelamar") ?? "");
-  const tunjangan = info.get("tunjangan") || undefined;
+	const kuota = parseCount(info.get("kuota") ?? "");
+	const pelamar = parseCount(info.get("pelamar") ?? "");
+	const tunjangan = info.get("tunjangan") || undefined;
 
-  const lamarPresent = hasLamarSekarang(doc);
+	const lamarPresent = hasLamarSekarang(doc);
 
-  let status: StatusLowongan;
-  if (lamarPresent) {
-    if (
-      kuota !== undefined &&
-      pelamar !== undefined &&
-      kuota > 0 &&
-      pelamar >= kuota * FILLING_THRESHOLD
-    ) {
-      status = "filling";
-    } else {
-      status = "open";
-    }
-  } else {
-    // Recognisable Lowongan page with no apply button → closed (kuota full /
-    // batch closed / listing removed-but-rendered). A hard 404 is closed too.
-    status = "closed";
-  }
+	let status: StatusLowongan;
+	if (lamarPresent) {
+		if (
+			kuota !== undefined &&
+			pelamar !== undefined &&
+			kuota > 0 &&
+			pelamar >= kuota * FILLING_THRESHOLD
+		) {
+			status = "filling";
+		} else {
+			status = "open";
+		}
+	} else {
+		// Recognisable Lowongan page with no apply button → closed (kuota full /
+		// batch closed / listing removed-but-rendered). A hard 404 is closed too.
+		status = "closed";
+	}
 
-  const result: ParsedDetail = { status };
-  if (kuota !== undefined) result.kuota = kuota;
-  if (pelamar !== undefined) result.pelamar = pelamar;
-  if (batch) result.batch = batch;
-  if (tunjangan) result.tunjangan = tunjangan;
-  return result;
+	const result: ParsedDetail = { status };
+	if (kuota !== undefined) result.kuota = kuota;
+	if (pelamar !== undefined) result.pelamar = pelamar;
+	if (batch) result.batch = batch;
+	if (tunjangan) result.tunjangan = tunjangan;
+	return result;
 }
