@@ -182,3 +182,35 @@ test('favoriting from the detail page persists a snapshot the popup can render',
   await expect(popup.getByText('Magang Data Analyst')).toBeVisible();
   await expect(popup.getByText('PT Maju Bersama')).toBeVisible();
 });
+
+test('editing Catatan and toggling Status Lamar persists across popup reopen', async ({
+  page,
+  context,
+  extensionId,
+}) => {
+  await serveFixture(page);
+  await page.goto(LIST_URL);
+  await page.locator('.mh-lowongan-card .mh-favorite-host').first().click();
+
+  let popup = await openPopup(context, extensionId);
+  const uuid = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d';
+  const card = popup.locator(`[data-favorite-uuid="${uuid}"]`);
+
+  await card.getByPlaceholder('Tambahkan catatan...').fill('alasan aku simpan ini');
+  await card.getByPlaceholder('Tambahkan catatan...').blur();
+  await expect(card.getByText('Tersimpan')).toBeVisible();
+
+  const statusLamarCheckbox = card.getByLabel('Sudah dilamar');
+  await expect(statusLamarCheckbox).not.toBeChecked();
+  await statusLamarCheckbox.check();
+  await expect(statusLamarCheckbox).toBeChecked();
+  await popup.close();
+
+  // Reopen: both must have persisted to storage.
+  popup = await openPopup(context, extensionId);
+  const reopenedCard = popup.locator(`[data-favorite-uuid="${uuid}"]`);
+  await expect(reopenedCard.getByPlaceholder('Tambahkan catatan...')).toHaveValue(
+    'alasan aku simpan ini',
+  );
+  await expect(reopenedCard.getByLabel('Sudah dilamar')).toBeChecked();
+});

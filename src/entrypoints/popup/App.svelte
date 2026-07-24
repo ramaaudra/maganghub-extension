@@ -1,7 +1,8 @@
 <script lang="ts">
   import { listFavorites } from '@/lib/storage';
   import type { Favorite } from '@/lib/types';
-  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/lib/components/ui/card';
+  import { Card, CardHeader, CardTitle, CardDescription } from '@/lib/components/ui/card';
+  import FavoriteCard from './FavoriteCard.svelte';
 
   let favorites = $state<Favorite[]>([]);
   let loading = $state(true);
@@ -46,15 +47,7 @@
     </Card>
   {:else}
     {#each favorites as fav (fav.uuid)}
-      <Card class="py-4 gap-2">
-        <CardContent>
-          <p class="font-medium leading-snug">{fav.savedSnapshot.title || fav.uuid}</p>
-          <p class="mt-0.5 text-sm text-muted-foreground">{fav.savedSnapshot.organizer}</p>
-          {#if fav.savedSnapshot.location}
-            <p class="mt-0.5 text-sm text-muted-foreground">{fav.savedSnapshot.location}</p>
-          {/if}
-        </CardContent>
-      </Card>
+      <FavoriteCard favorite={fav} />
     {/each}
   {/if}
 </main>
