@@ -1,77 +1,77 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
-  import { setCatatan, setStatusLamar } from '@/lib/storage';
-  import type { Favorite, StatusLowongan } from '@/lib/types';
-  import { Card, CardContent } from '@/lib/components/ui/card';
-  import { cn } from '@/lib/utils';
-  import { terakhirDicek } from '@/lib/time';
+import { onDestroy } from "svelte";
+import { setCatatan, setStatusLamar } from "@/lib/storage";
+import type { Favorite, StatusLowongan } from "@/lib/types";
+import { Card, CardContent } from "@/lib/components/ui/card";
+import { cn } from "@/lib/utils";
+import { terakhirDicek } from "@/lib/time";
 
-  let {
-    favorite,
-    refreshing = false,
-    onrefresh = () => {},
-  }: {
-    favorite: Favorite;
-    refreshing?: boolean;
-    onrefresh?: () => void;
-  } = $props();
+let {
+	favorite,
+	refreshing = false,
+	onrefresh = () => {},
+}: {
+	favorite: Favorite;
+	refreshing?: boolean;
+	onrefresh?: () => void;
+} = $props();
 
-  // Local editable Catatan draft, seeded from the persisted value and reset
-  // whenever the underlying record changes (e.g. from a cross-tab sync).
-  // $effect.pre (not $state's initializer) so it re-syncs on every change to
-  // `favorite`, not just the first render.
-  let catatanDraft = $state('');
-  let savedFlash = $state(false);
-  let saveFlashTimer: ReturnType<typeof setTimeout> | undefined;
+// Local editable Catatan draft, seeded from the persisted value and reset
+// whenever the underlying record changes (e.g. from a cross-tab sync).
+// $effect.pre (not $state's initializer) so it re-syncs on every change to
+// `favorite`, not just the first render.
+let catatanDraft = $state("");
+let savedFlash = $state(false);
+let saveFlashTimer: ReturnType<typeof setTimeout> | undefined;
 
-  $effect.pre(() => {
-    catatanDraft = favorite.catatan;
-  });
+$effect.pre(() => {
+	catatanDraft = favorite.catatan;
+});
 
-  async function saveCatatan(): Promise<void> {
-    if (catatanDraft === favorite.catatan) return;
-    await setCatatan(favorite.uuid, catatanDraft);
-    savedFlash = true;
-    clearTimeout(saveFlashTimer);
-    saveFlashTimer = setTimeout(() => {
-      savedFlash = false;
-    }, 1500);
-  }
+async function saveCatatan(): Promise<void> {
+	if (catatanDraft === favorite.catatan) return;
+	await setCatatan(favorite.uuid, catatanDraft);
+	savedFlash = true;
+	clearTimeout(saveFlashTimer);
+	saveFlashTimer = setTimeout(() => {
+		savedFlash = false;
+	}, 1500);
+}
 
-  async function onStatusLamarChange(event: Event): Promise<void> {
-    const checked = (event.currentTarget as HTMLInputElement).checked;
-    await setStatusLamar(favorite.uuid, checked ? 'applied' : 'not_applied');
-  }
+async function onStatusLamarChange(event: Event): Promise<void> {
+	const checked = (event.currentTarget as HTMLInputElement).checked;
+	await setStatusLamar(favorite.uuid, checked ? "applied" : "not_applied");
+}
 
-  const applied = $derived(favorite.statusLamar === 'applied');
-  const live = $derived(favorite.liveStatus);
-  const lastCheckedLabel = $derived(terakhirDicek(live.lastChecked));
-  // A failed refresh: status unknown AND we have a lastError recorded.
-  const refreshFailed = $derived(live.status === 'unknown' && !!live.lastError);
+const applied = $derived(favorite.statusLamar === "applied");
+const live = $derived(favorite.liveStatus);
+const lastCheckedLabel = $derived(terakhirDicek(live.lastChecked));
+// A failed refresh: status unknown AND we have a lastError recorded.
+const refreshFailed = $derived(live.status === "unknown" && !!live.lastError);
 
-  const STATUS_LABEL: Record<StatusLowongan, string> = {
-    open: 'Buka',
-    filling: 'Mengisi',
-    closed: 'Tutup',
-    unknown: 'Tidak diketahui',
-  };
+const STATUS_LABEL: Record<StatusLowongan, string> = {
+	open: "Buka",
+	filling: "Mengisi",
+	closed: "Tutup",
+	unknown: "Tidak diketahui",
+};
 
-  const STATUS_CLASS: Record<StatusLowongan, string> = {
-    open: 'bg-emerald-100 text-emerald-700',
-    filling: 'bg-amber-100 text-amber-700',
-    closed: 'bg-rose-100 text-rose-700',
-    unknown: 'bg-muted text-muted-foreground',
-  };
+const STATUS_CLASS: Record<StatusLowongan, string> = {
+	open: "bg-emerald-100 text-emerald-700",
+	filling: "bg-amber-100 text-amber-700",
+	closed: "bg-rose-100 text-rose-700",
+	unknown: "bg-muted text-muted-foreground",
+};
 
-  // Safety net: if the popup closes while the textarea still has unsaved
-  // edits (blur didn't fire — e.g. user clicked the extension icon away),
-  // flush the draft on unmount. chrome.storage.local.set is browser-process
-  // backed, so the write completes even after the popup page unloads.
-  onDestroy(() => {
-    if (catatanDraft !== favorite.catatan) {
-      void setCatatan(favorite.uuid, catatanDraft);
-    }
-  });
+// Safety net: if the popup closes while the textarea still has unsaved
+// edits (blur didn't fire — e.g. user clicked the extension icon away),
+// flush the draft on unmount. chrome.storage.local.set is browser-process
+// backed, so the write completes even after the popup page unloads.
+onDestroy(() => {
+	if (catatanDraft !== favorite.catatan) {
+		void setCatatan(favorite.uuid, catatanDraft);
+	}
+});
 </script>
 
 <Card

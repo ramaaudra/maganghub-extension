@@ -9,7 +9,8 @@ describe("migrateFavorite", () => {
 		const v1: FavoriteV1 = {
 			schemaVersion: 1,
 			uuid: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
-			detailUrl: "/magang-nasional/lowongan/x-a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+			detailUrl:
+				"/magang-nasional/lowongan/x-a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
 			savedSnapshot: {
 				title: "Magang Data Analyst",
 				organizer: "PT Maju Bersama",
@@ -35,7 +36,8 @@ describe("migrateFavorite", () => {
 		const v2: FavoriteV2 = {
 			schemaVersion: 2,
 			uuid: "c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
-			detailUrl: "/magang-nasional/lowongan/z-c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
+			detailUrl:
+				"/magang-nasional/lowongan/z-c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
 			savedSnapshot: {
 				title: "Magang Frontend",
 				organizer: "PT Contoh",
@@ -62,7 +64,8 @@ describe("migrateFavorite", () => {
 		const current: Favorite = {
 			schemaVersion: SCHEMA_VERSION,
 			uuid: "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
-			detailUrl: "/magang-nasional/lowongan/y-b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+			detailUrl:
+				"/magang-nasional/lowongan/y-b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
 			savedSnapshot: {
 				title: "Magang Backend",
 				organizer: "PT Contoh",

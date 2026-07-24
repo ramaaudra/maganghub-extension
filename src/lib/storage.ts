@@ -21,7 +21,11 @@ const keyFor = (uuid: string) => `${KEY_PREFIX}${uuid}`;
 
 export async function getFavorite(uuid: string): Promise<Favorite | undefined> {
 	const result = await browser.storage.local.get(keyFor(uuid));
-	const stored = result[keyFor(uuid)] as Favorite | FavoriteV1 | FavoriteV2 | undefined;
+	const stored = result[keyFor(uuid)] as
+		| Favorite
+		| FavoriteV1
+		| FavoriteV2
+		| undefined;
 	return stored ? migrateFavorite(stored) : undefined;
 }
 

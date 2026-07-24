@@ -5,7 +5,7 @@
 
 /** A Lowongan's stable identity is the UUID embedded in its detail URL. */
 export const UUID_REGEX =
-  /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+	/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 
 /** Favorite record schema version. Bumped on breaking shape changes. */
 export const SCHEMA_VERSION = 3;
@@ -35,20 +35,20 @@ export type StatusLowongan = "open" | "filling" | "closed" | "unknown";
  * optional only when the page fails to expose it (it does on the live page).
  */
 export interface LiveStatus {
-  status: StatusLowongan;
-  kuota?: number;
-  pelamar?: number;
-  batch?: string;
-  tunjangan?: string;
-  /** ISO timestamp of the last refresh attempt (success or failure), or null before any refresh. */
-  lastChecked: string | null;
-  /** Populated when `status === "unknown"` (the last refresh failed). */
-  lastError?: string;
+	status: StatusLowongan;
+	kuota?: number;
+	pelamar?: number;
+	batch?: string;
+	tunjangan?: string;
+	/** ISO timestamp of the last refresh attempt (success or failure), or null before any refresh. */
+	lastChecked: string | null;
+	/** Populated when `status === "unknown"` (the last refresh failed). */
+	lastError?: string;
 }
 
 /** A fresh liveStatus, before any refresh has run. */
 export function initialLiveStatus(): LiveStatus {
-  return { status: "unknown", lastChecked: null };
+	return { status: "unknown", lastChecked: null };
 }
 
 /**
@@ -61,16 +61,16 @@ export function initialLiveStatus(): LiveStatus {
  * added once the live card markup is confirmed via camofox.
  */
 export interface LowonganSnapshot {
-  title: string;
-  /** Penyelenggara — the org offering the Lowongan. */
-  organizer: string;
-  organizerUuid?: string;
-  logoUrl?: string;
-  location: string;
-  kuota?: string;
-  pelamar?: string;
-  /** ISO timestamp of when the snapshot was captured. */
-  capturedAt: string;
+	title: string;
+	/** Penyelenggara — the org offering the Lowongan. */
+	organizer: string;
+	organizerUuid?: string;
+	logoUrl?: string;
+	location: string;
+	kuota?: string;
+	pelamar?: string;
+	/** ISO timestamp of when the snapshot was captured. */
+	capturedAt: string;
 }
 
 /**
@@ -79,17 +79,17 @@ export interface LowonganSnapshot {
  * (refresh updates it; the snapshot stays immutable — ADR-0002).
  */
 export interface Favorite {
-  schemaVersion: number;
-  uuid: string;
-  /** Detail-page path: /magang-nasional/lowongan/<slug>-<uuid> */
-  detailUrl: string;
-  savedSnapshot: LowonganSnapshot;
-  /** Free-text note the user attaches to the Favorite. User-authored only. */
-  catatan: string;
-  /** Manual, self-reported "sudah dilamar" flag. Never auto-detected. */
-  statusLamar: StatusLamar;
-  /** Mutable live status, updated by refresh only. Added in v3. */
-  liveStatus: LiveStatus;
-  /** ISO timestamp of when the user starred the Lowongan. */
-  savedAt: string;
+	schemaVersion: number;
+	uuid: string;
+	/** Detail-page path: /magang-nasional/lowongan/<slug>-<uuid> */
+	detailUrl: string;
+	savedSnapshot: LowonganSnapshot;
+	/** Free-text note the user attaches to the Favorite. User-authored only. */
+	catatan: string;
+	/** Manual, self-reported "sudah dilamar" flag. Never auto-detected. */
+	statusLamar: StatusLamar;
+	/** Mutable live status, updated by refresh only. Added in v3. */
+	liveStatus: LiveStatus;
+	/** ISO timestamp of when the user starred the Lowongan. */
+	savedAt: string;
 }

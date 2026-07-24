@@ -1,63 +1,72 @@
 <script lang="ts">
-  import { listFavorites } from '@/lib/storage';
-  import type { Favorite } from '@/lib/types';
-  import type { RefreshRequest, RefreshResponse } from '@/lib/refresh';
-  import { Card, CardHeader, CardTitle, CardDescription } from '@/lib/components/ui/card';
-  import FavoriteCard from './FavoriteCard.svelte';
+import { listFavorites } from "@/lib/storage";
+import type { Favorite } from "@/lib/types";
+import type { RefreshRequest, RefreshResponse } from "@/lib/refresh";
+import {
+	Card,
+	CardHeader,
+	CardTitle,
+	CardDescription,
+} from "@/lib/components/ui/card";
+import FavoriteCard from "./FavoriteCard.svelte";
 
-  let favorites = $state<Favorite[]>([]);
-  let loading = $state(true);
-  /** UUIDs with a single-favorite refresh in flight. */
-  let refreshing = $state<Set<string>>(new Set());
-  let refreshingAll = $state(false);
+let favorites = $state<Favorite[]>([]);
+let loading = $state(true);
+/** UUIDs with a single-favorite refresh in flight. */
+let refreshing = $state<Set<string>>(new Set());
+let refreshingAll = $state(false);
 
-  async function refresh(): Promise<void> {
-    favorites = await listFavorites();
-    loading = false;
-  }
+async function refresh(): Promise<void> {
+	favorites = await listFavorites();
+	loading = false;
+}
 
-  // Live-update when a favorite is starred/refreshed from anywhere — the
-  // background writes each liveStatus to storage as it lands, so a "refresh
-  // all" re-renders the list progressively here.
-  function onChanged(_changes: Record<string, unknown>, areaName: string): void {
-    if (areaName === 'local') void refresh();
-  }
+// Live-update when a favorite is starred/refreshed from anywhere — the
+// background writes each liveStatus to storage as it lands, so a "refresh
+// all" re-renders the list progressively here.
+function onChanged(_changes: Record<string, unknown>, areaName: string): void {
+	if (areaName === "local") void refresh();
+}
 
-  $effect(() => {
-    void refresh();
-    browser.storage.onChanged.addListener(onChanged);
-    return () => browser.storage.onChanged.removeListener(onChanged);
-  });
+$effect(() => {
+	void refresh();
+	browser.storage.onChanged.addListener(onChanged);
+	return () => browser.storage.onChanged.removeListener(onChanged);
+});
 
-  async function refreshOne(fav: Favorite): Promise<void> {
-    if (refreshing.has(fav.uuid) || refreshingAll) return;
-    const next = new Set(refreshing);
-    next.add(fav.uuid);
-    refreshing = next;
-    try {
-      const request: RefreshRequest = { type: 'refresh', uuid: fav.uuid, detailUrl: fav.detailUrl };
-      await browser.runtime.sendMessage(request) as RefreshResponse;
-      await refresh();
-    } finally {
-      const done = new Set(refreshing);
-      done.delete(fav.uuid);
-      refreshing = done;
-    }
-  }
+async function refreshOne(fav: Favorite): Promise<void> {
+	if (refreshing.has(fav.uuid) || refreshingAll) return;
+	const next = new Set(refreshing);
+	next.add(fav.uuid);
+	refreshing = next;
+	try {
+		const request: RefreshRequest = {
+			type: "refresh",
+			uuid: fav.uuid,
+			detailUrl: fav.detailUrl,
+		};
+		(await browser.runtime.sendMessage(request)) as RefreshResponse;
+		await refresh();
+	} finally {
+		const done = new Set(refreshing);
+		done.delete(fav.uuid);
+		refreshing = done;
+	}
+}
 
-  async function refreshAll(): Promise<void> {
-    if (refreshingAll || favorites.length === 0) return;
-    refreshingAll = true;
-    try {
-      const request: RefreshRequest = { type: 'refreshAll' };
-      await browser.runtime.sendMessage(request) as RefreshResponse;
-      await refresh();
-    } finally {
-      refreshingAll = false;
-    }
-  }
+async function refreshAll(): Promise<void> {
+	if (refreshingAll || favorites.length === 0) return;
+	refreshingAll = true;
+	try {
+		const request: RefreshRequest = { type: "refreshAll" };
+		(await browser.runtime.sendMessage(request)) as RefreshResponse;
+		await refresh();
+	} finally {
+		refreshingAll = false;
+	}
+}
 
-  const refreshDisabled = $derived(refreshingAll || favorites.length === 0);
+const refreshDisabled = $derived(refreshingAll || favorites.length === 0);
 </script>
 
 <header class="border-b px-4 py-3">

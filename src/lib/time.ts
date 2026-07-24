@@ -11,14 +11,14 @@
  *   else   → "X hari lalu"
  */
 export function relativeTimeAgo(elapsedMs: number): string {
-  const seconds = Math.floor(elapsedMs / 1000);
-  if (seconds < 60) return "baru saja";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} menit lalu`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} jam lalu`;
-  const days = Math.floor(hours / 24);
-  return `${days} hari lalu`;
+	const seconds = Math.floor(elapsedMs / 1000);
+	if (seconds < 60) return "baru saja";
+	const minutes = Math.floor(seconds / 60);
+	if (minutes < 60) return `${minutes} menit lalu`;
+	const hours = Math.floor(minutes / 60);
+	if (hours < 24) return `${hours} jam lalu`;
+	const days = Math.floor(hours / 24);
+	return `${days} hari lalu`;
 }
 
 /**
@@ -27,11 +27,11 @@ export function relativeTimeAgo(elapsedMs: number): string {
  * (i.e. the Favorite has never been refreshed).
  */
 export function terakhirDicek(
-  iso: string | null | undefined,
-  now: number = Date.now(),
+	iso: string | null | undefined,
+	now: number = Date.now(),
 ): string | null {
-  if (!iso) return null;
-  const then = Date.parse(iso);
-  if (Number.isNaN(then)) return null;
-  return `terakhir dicek ${relativeTimeAgo(now - then)}`;
+	if (!iso) return null;
+	const then = Date.parse(iso);
+	if (Number.isNaN(then)) return null;
+	return `terakhir dicek ${relativeTimeAgo(now - then)}`;
 }
