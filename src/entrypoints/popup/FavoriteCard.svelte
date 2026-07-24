@@ -5,6 +5,7 @@ import type { Favorite, StatusLowongan } from "@/lib/types";
 import { Card, CardContent } from "@/lib/components/ui/card";
 import { cn } from "@/lib/utils";
 import { terakhirDicek } from "@/lib/time";
+import { resolveDetailUrl } from "@/lib/refresh";
 
 let {
 	favorite,
@@ -140,6 +141,17 @@ onDestroy(() => {
         />
         Sudah dilamar
       </label>
+      {#if favorite.detailUrl}
+        <a
+          href={resolveDetailUrl(favorite.detailUrl)}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="ml-auto rounded-md px-2 py-1 text-xs font-medium text-primary underline-offset-2 hover:underline"
+          aria-label="Buka di MagangHub"
+        >
+          Buka di MagangHub
+        </a>
+      {/if}
     </div>
 
     <div>

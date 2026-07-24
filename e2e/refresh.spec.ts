@@ -101,8 +101,10 @@ test("refresh all computes Status Lowongan from fixture detail HTML (open / clos
 	});
 
 	// Before refresh: no status badges yet (never refreshed → lastChecked null).
-	await expect(popup.getByText("Buka")).toHaveCount(0);
-	await expect(popup.getByText("Tutup")).toHaveCount(0);
+	// `{ exact: true }` so we don't match the per-Favorite "Buka di MagangHub"
+	// link (issue #7), which legitimately contains the word "Buka".
+	await expect(popup.getByText("Buka", { exact: true })).toHaveCount(0);
+	await expect(popup.getByText("Tutup", { exact: true })).toHaveCount(0);
 
 	await popup.getByRole("button", { name: "Segarkan semua" }).click();
 

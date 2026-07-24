@@ -84,6 +84,24 @@ const refreshDisabled = $derived(refreshingAll || favorites.length === 0);
       {refreshingAll ? 'Memperbarui…' : 'Segarkan semua'}
     </button>
   </div>
+
+  <!-- Issue #7 trust layer (ADR-0001): make the credential-free promise
+       visible, not just asserted in the manifest. -->
+  <p class="mt-2 text-xs text-muted-foreground">
+    Favorit tersimpan hanya di browser kamu; extension ini tidak pernah minta password SiapKerja.
+  </p>
+  <details class="mt-1">
+    <summary
+      class="cursor-pointer select-none text-xs font-medium text-primary underline-offset-2 hover:underline"
+    >Mengapa aman?</summary>
+    <p class="mt-1 text-xs leading-relaxed text-muted-foreground">
+      Situs bantuan pihak ketiga yang minta login SiapKerja bisa mencatat
+      password kamu. Extension ini hanya menyimpan Lowongan yang kamu bintangi
+      di browser ini — tanpa akun, tanpa server, tanpa telemetri. Kalau mau
+      melamar, klik "Buka di MagangHub" di setiap favorit dan lamar sendiri di
+      situs resmi.
+    </p>
+  </details>
 </header>
 
 <main class="space-y-2 p-3">
