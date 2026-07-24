@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Magang Data Analyst — MagangHub</title>
+    <!--
+      PROVISIONAL fixture. The title (`h1`), the "Lamar Sekarang" button, and the
+      presence of Penyelenggara / Kuota / Batch fields are CONFIRMED via camofox
+      (docs/agents/camofox-browser.md). The inner field classes follow the
+      `.mh-lowongan-*` convention used by the list fixture but are NOT
+      live-confirmed — re-record this fixture from the real detail page via
+      camofox once Cloudflare cooperates, then retune DETAIL_FIELD_SELECTORS in
+      src/lib/constants.ts. UUID matches the first card in lowongan-list.html so
+      e2e can assert state sync between the list star and the detail toggle.
+    -->
+  </head>
+  <body>
+    <div id="__next">
+      <main class="container mx-auto px-4 py-6">
+        <article class="mh-lowongan-detail mx-auto max-w-3xl space-y-6">
+          <div class="flex items-center gap-4">
+            <img
+              class="mh-lowongan-logo h-14 w-14 rounded-full"
+              src="https://maganghub.kemnaker.go.id/logos/pt-maju.png"
+              alt="Logo PT Maju Bersama"
+            />
+            <div class="space-y-1">
+              <h1 class="text-2xl font-bold">Magang Data Analyst</h1>
+              <p class="mh-penyelenggara text-sm text-muted-foreground">
+                PT Maju Bersama
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2 text-sm">
+            <span class="mh-lowongan-location rounded bg-muted px-2 py-0.5"
+              >Jakarta, DKI Jakarta</span
+            >
+            <span class="mh-lowongan-kuota rounded bg-muted px-2 py-0.5"
+              >Kuota: 50</span
+            >
+            <span class="mh-lowongan-pelamar rounded bg-muted px-2 py-0.5"
+              >Pelamar: 120</span
+            >
+            <span class="rounded bg-muted px-2 py-0.5">Batch 1 · 2026</span>
+          </div>
+
+          <section class="prose max-w-none">
+            <p>
+              Magang Data Analyst di PT Maju Bersama. Bekerja dengan data
+              internal perusahaan.
+            </p>
+          </section>
+
+          <button
+            type="button"
+            class="rounded bg-primary px-4 py-2 text-primary-foreground"
+          >
+            Lamar Sekarang
+          </button>
+        </article>
+      </main>
+    </div>
+  </body>
+</html>
