@@ -82,7 +82,7 @@ onDestroy(() => {
   <CardContent class="space-y-2">
     <div class="flex items-start justify-between gap-2">
       <div class="min-w-0">
-        <p class="font-medium leading-snug">{favorite.savedSnapshot.title || favorite.uuid}</p>
+        <p class="font-medium leading-snug" data-favorite-title>{favorite.savedSnapshot.title || favorite.uuid}</p>
         <p class="mt-0.5 text-sm text-muted-foreground">{favorite.savedSnapshot.organizer}</p>
         {#if favorite.savedSnapshot.location}
           <p class="mt-0.5 text-sm text-muted-foreground">{favorite.savedSnapshot.location}</p>

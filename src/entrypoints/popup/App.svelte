@@ -4,6 +4,7 @@ import { onDestroy } from "svelte";
 import type { Favorite } from "@/lib/types";
 import type { RefreshRequest, RefreshResponse } from "@/lib/refresh";
 import { exportFavorites, importFavorites, type ExportFile } from "@/lib/io";
+import { searchFavorites, sortFavorites, type SortKey } from "@/lib/filter";
 import { cn } from "@/lib/utils";
 import {
 	Card,
@@ -73,6 +74,21 @@ async function refreshAll(): Promise<void> {
 }
 
 const refreshDisabled = $derived(refreshingAll || favorites.length === 0);
+
+// ─── Search / sort (issue #6) ──────────────────────────────────────────────
+// Both are view-only: `favorites` stays the canonical storage-backed list and
+// the rendered list is derived from it, so a re-read (storage.onChanged) never
+// clobbers the query. Search runs before sort — the user filters, then orders
+// what's left.
+
+let query = $state("");
+let sortKey = $state<SortKey>("savedAt");
+
+const visible = $derived(
+	sortFavorites(searchFavorites(favorites, query), sortKey),
+);
+/** The user has favorites, but the current query matches none of them. */
+const noMatches = $derived(favorites.length > 0 && visible.length === 0);
 
 // ─── Export / Import (issue #9) ────────────────────────────────────────────
 // Export serializes all favorites to a JSON Blob and downloads it. Import
@@ -171,6 +187,30 @@ onDestroy(() => {
     </label>
   </div>
 
+  <!-- Issue #6: find and organize Favorites as the list grows. Both controls
+       are view-only — they never touch storage. -->
+  <div class="mt-2 flex items-center gap-2">
+    <input
+      type="search"
+      class="min-w-0 flex-1 rounded-md border px-2.5 py-1 text-xs"
+      placeholder="Cari favorit..."
+      aria-label="Cari favorit"
+      bind:value={query}
+    />
+    <label class="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+      <span>Urutkan</span>
+      <select
+        class="rounded-md border px-1.5 py-1 text-xs"
+        aria-label="Urutkan"
+        bind:value={sortKey}
+      >
+        <option value="savedAt">Terbaru disimpan</option>
+        <option value="organizer">Penyelenggara</option>
+        <option value="location">Lokasi</option>
+      </select>
+    </label>
+  </div>
+
   {#if importMsg}
     <p
       class={cn(
@@ -219,8 +259,19 @@ onDestroy(() => {
         </CardDescription>
       </CardHeader>
     </Card>
+  {:else if noMatches}
+    <!-- Distinct from the empty state above: the user HAS favorites, this
+         query just matches none of them. -->
+    <Card>
+      <CardHeader>
+        <CardTitle class="text-center">Tidak ada favorit yang cocok</CardTitle>
+        <CardDescription class="text-center">
+          Coba kata kunci lain atau kosongkan pencarian.
+        </CardDescription>
+      </CardHeader>
+    </Card>
   {:else}
-    {#each favorites as fav (fav.uuid)}
+    {#each visible as fav (fav.uuid)}
       <FavoriteCard
         favorite={fav}
         refreshing={refreshing.has(fav.uuid) || refreshingAll}
