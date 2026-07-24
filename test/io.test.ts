@@ -252,4 +252,25 @@ describe("importFavorites", () => {
 		expect(after?.savedSnapshot).toEqual(fresh.savedSnapshot);
 		expect(after?.catatan).toBe(fresh.catatan);
 	});
+
+	it("warns (without blocking import) when the envelope count does not match favorites.length", async () => {
+		const fresh = baseFavorite(
+			"28b8c9d0-e1f2-4a3b-4c5d-6e7f8091a2c4",
+			"Mismatch",
+		);
+		const file: ExportFile = {
+			schemaVersion: SCHEMA_VERSION,
+			exportedAt: "2025-01-01T00:00:00Z",
+			count: 99, // lies
+			favorites: [fresh],
+		};
+
+		const result = await importFavorites(file);
+
+		// The favorite is still imported despite the bad count.
+		expect(result.imported).toBe(1);
+		expect(await getFavorite(fresh.uuid)).toBeDefined();
+		// A warning surfaces the mismatch.
+		expect(result.warnings.some((w) => /99.*1|1.*99|tidak cocok/i.test(w))).toBe(true);
+	});
 });

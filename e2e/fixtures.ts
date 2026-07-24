@@ -52,3 +52,42 @@ export const test = base.extend<{
 });
 
 export const expect = test.expect;
+
+// ─── Shared fixture helpers (issue #7/#9 deduplication) ─────────────────────
+// The lowongan, trust, and import-export specs all serve the recorded
+// MagangHub HTML for the real MagangHub URLs, so the content script's real
+// `matches` still auto-injects (no extra permissions, no live
+// network/Cloudflare). The detail path routes to the detail fixture;
+// everything else (the list URL) gets the list fixture.
+
+import { readFileSync } from "node:fs";
+import type { Page } from "@playwright/test";
+
+export const LIST_URL = "https://maganghub.kemnaker.go.id/magang-nasional/lowongan";
+
+/** UUID of the first card in lowongan-list.html (and its detail fixture). */
+export const FIRST_UUID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
+/** The first card's detail-page URL (matches lowongan-detail.html). */
+export const FIRST_DETAIL_URL =
+	`https://maganghub.kemnaker.go.id/magang-nasional/lowongan/magang-data-analyst-${FIRST_UUID}`;
+
+const readFixture = (name: string) =>
+	readFileSync(path.join(process.cwd(), "test/fixtures", name), "utf8");
+
+const listFixtureHtml = () => readFixture("lowongan-list.html");
+const detailFixtureHtml = () => readFixture("lowongan-detail.html");
+
+/** Serve the recorded list/detail fixtures for the real MagangHub URLs. */
+export async function serveFixture(page: Page): Promise<void> {
+	await page.route("https://maganghub.kemnaker.go.id/**", (route) => {
+		const isDetail = route
+			.request()
+			.url()
+			.includes("/magang-nasional/lowongan/");
+		return route.fulfill({
+			status: 200,
+			contentType: "text/html; charset=utf-8",
+			body: isDetail ? detailFixtureHtml() : listFixtureHtml(),
+		});
+	});
+}

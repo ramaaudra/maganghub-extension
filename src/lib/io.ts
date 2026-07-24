@@ -34,8 +34,8 @@ export interface ExportFile {
 	schemaVersion: number;
 	/** ISO timestamp of when the export was produced. */
 	exportedAt: string;
-	/** Number of favorites in the file (redundant with `favorites.length` for
-	 *  a quick sanity check). */
+	/** Number of favorites in the file. Cross-checked against `favorites.length`
+	 *  on import — a mismatch surfaces as a warning but does not block import. */
 	count: number;
 	/** The favorites. Each is migrated individually on import. */
 	favorites: Array<Favorite | FavoriteV1 | FavoriteV2>;
@@ -70,6 +70,19 @@ export async function exportFavorites(): Promise<ExportFile> {
  */
 export async function importFavorites(file: ExportFile): Promise<ImportResult> {
 	const warnings: string[] = [];
+
+	// Sanity check: the envelope's `count` should match `favorites.length`. A
+	// mismatch (hand-edited file, truncated download) is non-fatal — we still
+	// import what's there — but surface it as a warning so the user knows the
+	// file is not as-described.
+	if (
+		typeof file.count === "number" &&
+		file.count !== file.favorites.length
+	) {
+		warnings.push(
+			`Jumlah favorit di file (${file.count}) tidak cocok dengan isinya (${file.favorites.length}). Mengimpor yang ada.`,
+		);
+	}
 
 	// Future-schema guard: do not silently drop fields we don't understand.
 	if (file.schemaVersion > SCHEMA_VERSION) {

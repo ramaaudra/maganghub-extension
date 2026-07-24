@@ -1,40 +1,11 @@
-import { test, expect } from "./fixtures";
+import { test, expect, serveFixture, LIST_URL } from "./fixtures";
 import { openPopup } from "./pages/popup";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 
 // Issue #7 e2e: the trust layer — make the credential-free safety story
 // visible in the popup, and give each Favorite an "open official detail"
 // link so the user applies themselves on the real MagangHub site (never via
 // the extension, never via a third-party helper that would ask for the
 // SiapKerja password).
-
-const LIST_URL = "https://maganghub.kemnaker.go.id/magang-nasional/lowongan";
-const FIRST_UUID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
-const FIRST_DETAIL_URL =
-	"https://maganghub.kemnaker.go.id/magang-nasional/lowongan/magang-data-analyst-a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
-
-const readFixture = (name: string) =>
-	readFileSync(path.join(process.cwd(), "test/fixtures", name), "utf8");
-
-const listFixtureHtml = () => readFixture("lowongan-list.html");
-const detailFixtureHtml = () => readFixture("lowongan-detail.html");
-
-async function serveFixture(
-	page: import("@playwright/test").Page,
-): Promise<void> {
-	await page.route("https://maganghub.kemnaker.go.id/**", (route) => {
-		const isDetail = route
-			.request()
-			.url()
-			.includes("/magang-nasional/lowongan/");
-		return route.fulfill({
-			status: 200,
-			contentType: "text/html; charset=utf-8",
-			body: isDetail ? detailFixtureHtml() : listFixtureHtml(),
-		});
-	});
-}
 
 test("the popup shows the one-line trust statement", async ({
 	context,
@@ -68,21 +39,42 @@ test('each Favorite has an "open official detail" link to its MagangHub detail p
 }) => {
 	await serveFixture(page);
 	await page.goto(LIST_URL);
-	await page.locator(".mh-lowongan-card .mh-favorite-host").first().click();
+	// Star all three favorites on the list so we can assert the link is
+	// present per-Favorite (not just on one).
+	const hosts = page.locator(".mh-lowongan-card .mh-favorite-host");
+	await hosts.nth(0).click();
+	await hosts.nth(1).click();
+	await hosts.nth(2).click();
 
 	const popup = await openPopup(context, extensionId);
-	const card = popup.locator(`[data-favorite-uuid="${FIRST_UUID}"]`);
 
-	// The link is an anchor that opens the real MagangHub detail URL in a new
-	// tab (so the user applies themselves on the official site, not via the
-	// extension). It carries the Favorite's detailUrl verbatim.
-	const link = card.getByRole("link", { name: /Buka di MagangHub/i });
-	await expect(link).toBeVisible();
-	await expect(link).toHaveAttribute("href", FIRST_DETAIL_URL);
-	await expect(link).toHaveAttribute("target", "_blank");
-	// `rel` must include noopener (MV3 popups opening new tabs — defense in
-	// depth against reverse tabnabbing, and avoids leaking window.opener).
-	await expect(link).toHaveAttribute("rel", /noopener/);
+	// Each favorited card must carry its own "Buka di MagangHub" link, with the
+	// correct detail URL, target=_blank, and rel~=noopener. The three UUIDs
+	// match the first three cards in lowongan-list.html.
+	const cards = [
+		{
+			uuid: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+			href: "https://maganghub.kemnaker.go.id/magang-nasional/lowongan/magang-data-analyst-a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+		},
+		{
+			uuid: "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+			href: "https://maganghub.kemnaker.go.id/magang-nasional/lowongan/magang-software-engineer-b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+		},
+		{
+			uuid: "c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
+			href: "https://maganghub.kemnaker.go.id/magang-nasional/lowongan/magang-ui-ux-designer-c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
+		},
+	];
+	for (const c of cards) {
+		const card = popup.locator(`[data-favorite-uuid="${c.uuid}"]`);
+		const link = card.getByRole("link", { name: /Buka di MagangHub/i });
+		await expect(link).toBeVisible();
+		await expect(link).toHaveAttribute("href", c.href);
+		await expect(link).toHaveAttribute("target", "_blank");
+		// `rel` must include noopener (MV3 popups opening new tabs — defense in
+		// depth against reverse tabnabbing, and avoids leaking window.opener).
+		await expect(link).toHaveAttribute("rel", /noopener/);
+	}
 });
 
 test("the trust statement is present even with no favorites (empty state)", async ({

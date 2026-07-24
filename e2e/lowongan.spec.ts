@@ -1,40 +1,13 @@
-import { test, expect } from "./fixtures";
+import { test, expect, serveFixture, LIST_URL, FIRST_DETAIL_URL as DETAIL_URL } from "./fixtures";
 import { openPopup } from "./pages/popup";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 
-const LIST_URL = "https://maganghub.kemnaker.go.id/magang-nasional/lowongan";
-// Same UUID as the first card in lowongan-list.html, so favoriting on the list
+// DETAIL_URL (imported as FIRST_DETAIL_URL from the shared fixtures) uses the
+// same UUID as the first card in lowongan-list.html, so favoriting on the list
 // and visiting this detail page exercise the same Favorite record (issue #3).
-const DETAIL_URL =
-	"https://maganghub.kemnaker.go.id/magang-nasional/lowongan/magang-data-analyst-a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
 
-const readFixture = (name: string) =>
-	readFileSync(path.join(process.cwd(), "test/fixtures", name), "utf8");
 
-const listFixtureHtml = () => readFixture("lowongan-list.html");
-const detailFixtureHtml = () => readFixture("lowongan-detail.html");
 
-// Serve the recorded MagangHub fixtures for the real MagangHub URLs, so the
-// content script's real `matches` still auto-injects (no extra permissions, no
-// live network/Cloudflare). Deterministic — this is the e2e seam from issue #1.
-// The detail path is routed to the detail fixture; everything else (the list
-// URL) gets the list fixture.
-async function serveFixture(
-	page: import("@playwright/test").Page,
-): Promise<void> {
-	await page.route("https://maganghub.kemnaker.go.id/**", (route) => {
-		const isDetail = route
-			.request()
-			.url()
-			.includes("/magang-nasional/lowongan/");
-		return route.fulfill({
-			status: 200,
-			contentType: "text/html; charset=utf-8",
-			body: isDetail ? detailFixtureHtml() : listFixtureHtml(),
-		});
-	});
-}
+
 
 test("stars inject into every Lowongan card", async ({ page }) => {
 	await serveFixture(page);

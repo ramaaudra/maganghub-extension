@@ -1,35 +1,8 @@
-import { test, expect } from "./fixtures";
+import { test, expect, serveFixture, LIST_URL, FIRST_UUID } from "./fixtures";
 import { openPopup } from "./pages/popup";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 
 // Issue #9 e2e: export → import round-trip, including an old-schema (v1) file
 // that must migrate up to the current schema on import.
-
-const LIST_URL = "https://maganghub.kemnaker.go.id/magang-nasional/lowongan";
-const FIRST_UUID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
-
-const readFixture = (name: string) =>
-	readFileSync(path.join(process.cwd(), "test/fixtures", name), "utf8");
-
-const listFixtureHtml = () => readFixture("lowongan-list.html");
-const detailFixtureHtml = () => readFixture("lowongan-detail.html");
-
-async function serveFixture(
-	page: import("@playwright/test").Page,
-): Promise<void> {
-	await page.route("https://maganghub.kemnaker.go.id/**", (route) => {
-		const isDetail = route
-			.request()
-			.url()
-			.includes("/magang-nasional/lowongan/");
-		return route.fulfill({
-			status: 200,
-			contentType: "text/html; charset=utf-8",
-			body: isDetail ? detailFixtureHtml() : listFixtureHtml(),
-		});
-	});
-}
 
 test("export produces a downloadable JSON file with schemaVersion, exportedAt, and count", async ({
 	page,

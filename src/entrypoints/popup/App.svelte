@@ -1,5 +1,6 @@
 <script lang="ts">
 import { listFavorites } from "@/lib/storage";
+import { onDestroy } from "svelte";
 import type { Favorite } from "@/lib/types";
 import type { RefreshRequest, RefreshResponse } from "@/lib/refresh";
 import { exportFavorites, importFavorites, type ExportFile } from "@/lib/io";
@@ -94,34 +95,40 @@ async function onExport(): Promise<void> {
 	URL.revokeObjectURL(url);
 }
 
-function onImportFile(event: Event): void {
+async function onImportFile(event: Event): Promise<void> {
 	const input = event.currentTarget as HTMLInputElement;
 	const file = input.files?.[0];
 	// Reset so selecting the same file twice re-fires `change`.
 	input.value = "";
 	if (!file) return;
-	file
-		.text()
-		.then((text) => {
-			const parsed = JSON.parse(text) as ExportFile;
-			return importFavorites(parsed);
-		})
-		.then((result) => {
-			void refresh();
-			const warn = result.warnings.length > 0;
-			const text = warn
+	try {
+		const text = await file.text();
+		const parsed = JSON.parse(text) as ExportFile;
+		const result = await importFavorites(parsed);
+		void refresh();
+		const warn = result.warnings.length > 0;
+		importMsg = {
+			kind: warn ? "warn" : "ok",
+			text: warn
 				? result.warnings.join(" ")
-				: `Berhasil mengimpor ${result.imported} favorit.`;
-			importMsg = { kind: warn ? "warn" : "ok", text };
-		})
-		.catch((err) => {
-			importMsg = { kind: "warn", text: `Impor gagal: ${String(err instanceof Error ? err.message : err)}` };
-		})
-		.finally(() => {
-			clearTimeout(importTimer);
-			importTimer = setTimeout(() => (importMsg = null), 6000);
-		});
+				: `Berhasil mengimpor ${result.imported} favorit.`,
+		};
+	} catch (err) {
+		importMsg = {
+			kind: "warn",
+			text: `Impor gagal: ${String(err instanceof Error ? err.message : err)}`,
+		};
+	} finally {
+		clearTimeout(importTimer);
+		importTimer = setTimeout(() => (importMsg = null), 6000);
+	}
 }
+
+// Flush the import-status banner timer on popup close (mirrors FavoriteCard's
+// onDestroy flush) so no dangling timer survives the page unload.
+onDestroy(() => {
+	clearTimeout(importTimer);
+});
 </script>
 
 <header class="border-b px-4 py-3">
