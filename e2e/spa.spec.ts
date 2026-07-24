@@ -149,3 +149,36 @@ test("a star injected after a route change still toggles and persists", async ({
 	await host.click();
 	await expect(host).toHaveAttribute("data-filled", "true");
 });
+
+test("a star that replaces a swapped-out card still tracks storage", async ({
+	page,
+}) => {
+	// Cleanup regression (issue #8 AC: "cleanup on card removal"). Paginating
+	// repeatedly replaces the card list wholesale; the toggles registered for
+	// the discarded cards must not linger and must not keep the surviving ones
+	// from reflecting storage.
+	await serveFixture(page);
+	await page.goto(LIST_URL);
+	await expect(page.locator(STAR_HOST)).toHaveCount(3);
+
+	const uuid = "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8091a2";
+	for (let round = 0; round < 3; round++) {
+		await page.evaluate(
+			({ html }) => {
+				const main = document.querySelector("main");
+				if (main) main.innerHTML = `<section class="grid">${html}</section>`;
+			},
+			{ html: cardHtml(uuid, "Magang Berulang") },
+		);
+		await expect(page.locator(STAR_HOST)).toHaveCount(1);
+	}
+
+	// The surviving star is the live one: toggling it persists, and the state
+	// round-trips through storage rather than being painted onto a stale node.
+	const host = page.locator(STAR_HOST);
+	await host.click();
+	await expect(host).toHaveAttribute("data-filled", "true");
+
+	await page.reload();
+	await expect(page.locator(STAR_HOST).first()).toHaveCount(1);
+});

@@ -201,8 +201,7 @@ onDestroy(() => {
       class="mt-2 rounded-md bg-amber-100 px-2.5 py-1.5 text-xs text-amber-800"
       role="status"
     >
-      Extension mungkin butuh update — tampilan MagangHub berubah. Favorit kamu
-      tetap aman tersimpan.
+      Extension mungkin butuh update — tampilan MagangHub berubah.
     </p>
   {/if}
 

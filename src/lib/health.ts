@@ -3,6 +3,7 @@ import {
 	CARD_ANCHOR_SELECTOR,
 	DETAIL_FIELD_SELECTORS,
 } from "./constants";
+import { queryFirst } from "./extract";
 
 /**
  * Injection health (issue #8). MagangHub is a site we don't control; when its
@@ -37,10 +38,7 @@ export function assessListMarkup(root: ParentNode): HealthStatus {
  * title.
  */
 export function assessDetailMarkup(root: ParentNode): HealthStatus {
-	const found = DETAIL_FIELD_SELECTORS.title.some((selector) =>
-		root.querySelector(selector),
-	);
-	return found ? "ok" : "degraded";
+	return queryFirst(root, DETAIL_FIELD_SELECTORS.title) ? "ok" : "degraded";
 }
 
 /**

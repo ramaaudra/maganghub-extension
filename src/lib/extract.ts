@@ -28,12 +28,20 @@ export function extractDetailUrl(anchor: HTMLAnchorElement): string {
 	return anchor.getAttribute("href") ?? anchor.href;
 }
 
-function queryFirst(
-	root: HTMLElement,
+/**
+ * First element matching any of `selectors`, in priority order, or null.
+ *
+ * Shared because the priority-ordered selector lists in constants.ts are the
+ * project's one story for "MagangHub may have renamed this": extraction, the
+ * content script's injection points, and the health check must all walk them
+ * the same way, or a selector that works for one silently fails another.
+ */
+export function queryFirst<T extends Element = Element>(
+	root: ParentNode,
 	selectors: readonly string[],
-): Element | null {
+): T | null {
 	for (const selector of selectors) {
-		const el = root.querySelector(selector);
+		const el = root.querySelector<T>(selector);
 		if (el) return el;
 	}
 	return null;

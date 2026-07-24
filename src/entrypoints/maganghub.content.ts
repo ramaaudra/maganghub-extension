@@ -11,6 +11,7 @@ import {
 	extractDetailUrl,
 	extractSnapshot,
 	extractDetailSnapshot,
+	queryFirst,
 } from "@/lib/extract";
 import {
 	createFavorite,
@@ -42,11 +43,22 @@ import {
 export default defineContentScript({
 	matches: ["https://maganghub.kemnaker.go.id/magang-nasional/lowongan*"],
 	main() {
-		scan();
+		// Guarded like every later scan: a MagangHub redesign must never surface
+		// as a console error in the user's page (issue #8).
+		safeScan();
 		watchForChanges();
 		setupStorageSync();
 	},
 });
+
+/** `scan()` that can never throw into the page. */
+function safeScan(): void {
+	try {
+		scan();
+	} catch {
+		// Injection is best-effort against a site we don't control.
+	}
+}
 
 /**
  * Inject whatever the current URL calls for, then report what we found.
@@ -56,12 +68,24 @@ export default defineContentScript({
  * makes it safe to call on every mutation and every navigation.
  */
 function scan(): void {
+	pruneDetachedUpdaters();
 	const pathUuid = extractUuidFromHref(location.pathname);
 	const health = pathUuid ? scanDetail(pathUuid) : scanList();
+
+	// Write only on a CHANGE. A scan runs on every re-render burst, and each
+	// storage write wakes every storage.onChanged listener — including the
+	// popup's, which re-reads the whole favorites list. Re-reporting "ok" onto
+	// "ok" would turn ordinary scrolling into a write storm.
+	if (health === lastReportedHealth) return;
+	lastReportedHealth = health;
 	void reportHealth(health).catch(() => {
 		// Health reporting is best-effort; never let it break injection.
+		lastReportedHealth = undefined;
 	});
 }
+
+/** Last health written this page-load; skips redundant storage writes. */
+let lastReportedHealth: HealthStatus | undefined;
 
 function scanList(): HealthStatus {
 	injectStars();
@@ -99,12 +123,7 @@ function watchForChanges(): void {
 		scheduled = true;
 		setTimeout(() => {
 			scheduled = false;
-			try {
-				scan();
-			} catch {
-				// A scan must never throw into the page (AC: no console errors when
-				// MagangHub's markup changes).
-			}
+			safeScan();
 		}, SCAN_DEBOUNCE_MS);
 	};
 
@@ -140,18 +159,34 @@ interface StarState {
 
 type FilledUpdater = (filled: boolean) => void;
 
-/** Per-UUID updaters, fired by the storage.onChanged listener for live sync. */
-const updaters = new Map<string, Set<FilledUpdater>>();
+/**
+ * A registered toggle: the updater to call on a storage change, plus the host
+ * node it draws into. The host is what makes cleanup possible — once MagangHub
+ * swaps a card out, its host is detached from the document and the updater is
+ * dead weight (issue #8: "cleanup on card removal").
+ */
+interface Registration {
+	update: FilledUpdater;
+	host: HTMLElement;
+}
 
-function registerUpdater(uuid: string, update: FilledUpdater): () => void {
+/** Per-UUID updaters, fired by the storage.onChanged listener for live sync. */
+const updaters = new Map<string, Set<Registration>>();
+
+function registerUpdater(
+	uuid: string,
+	update: FilledUpdater,
+	host: HTMLElement,
+): () => void {
 	let set = updaters.get(uuid);
 	if (!set) {
 		set = new Set();
 		updaters.set(uuid, set);
 	}
-	set.add(update);
+	const registration: Registration = { update, host };
+	set.add(registration);
 	return () => {
-		set?.delete(update);
+		set?.delete(registration);
 		if (set && set.size === 0) updaters.delete(uuid);
 	};
 }
@@ -159,7 +194,24 @@ function registerUpdater(uuid: string, update: FilledUpdater): () => void {
 function notifyUpdaters(uuid: string, filled: boolean): void {
 	const set = updaters.get(uuid);
 	if (!set) return;
-	for (const update of set) update(filled);
+	for (const { update } of set) update(filled);
+}
+
+/**
+ * Drop registrations whose host has left the document.
+ *
+ * A filter change or pagination replaces the whole card list; without this the
+ * map grows forever, each entry pinning a detached host + its shadow tree, and
+ * every storage change repaints toggles nobody can see. Runs on each scan, so
+ * cleanup rides the re-render that caused it.
+ */
+function pruneDetachedUpdaters(): void {
+	for (const [uuid, set] of updaters) {
+		for (const registration of set) {
+			if (!registration.host.isConnected) set.delete(registration);
+		}
+		if (set.size === 0) updaters.delete(uuid);
+	}
 }
 
 /**
@@ -215,7 +267,7 @@ function injectStarIntoCard(card: HTMLElement): void {
 	const state: StarState = { interacted: false };
 	const apply = (filled: boolean) => setFilled(host, button, filled);
 	void reflectState(uuid, apply, state);
-	registerUpdater(uuid, apply);
+	registerUpdater(uuid, apply, host);
 	attachStarToggle(card, uuid, anchor, host, button, state);
 }
 
@@ -232,18 +284,6 @@ function buildStarButton(shadow: ShadowRoot): HTMLButtonElement {
 	return button;
 }
 
-/** First element matching any of `selectors`, in priority order, or null. */
-function queryFirstElement(
-	root: HTMLElement,
-	selectors: readonly string[],
-): HTMLElement | null {
-	for (const selector of selectors) {
-		const el = root.querySelector<HTMLElement>(selector);
-		if (el) return el;
-	}
-	return null;
-}
-
 // ─────────────────────── Detail page: toggle near title ─────────────────────
 
 /**
@@ -252,7 +292,7 @@ function queryFirstElement(
  * UUID), so state stays consistent across surfaces (issue #3).
  */
 function injectDetailToggle(uuid: string): void {
-	const titleEl = queryFirstElement(
+	const titleEl = queryFirst<HTMLElement>(
 		document.body,
 		DETAIL_FIELD_SELECTORS.title,
 	);
@@ -272,7 +312,7 @@ function injectDetailToggle(uuid: string): void {
 	const apply = (filled: boolean) =>
 		setFilled(host, button, filled, DETAIL_LABELS);
 	void reflectState(uuid, apply, state);
-	registerUpdater(uuid, apply);
+	registerUpdater(uuid, apply, host);
 	attachDetailToggle(uuid, titleEl, host, button, state);
 }
 
