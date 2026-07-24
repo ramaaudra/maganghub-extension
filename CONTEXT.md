@@ -37,4 +37,4 @@ A manual, self-reported flag on a Favorite indicating whether the user has appli
 _Avoid_: "applied status" (when implying auto-detection)
 
 **Status Lowongan**:
-The live state of a Lowongan, computed by refreshing from the public detail page: **Open**, **Filling** (Pelamar approaching Kuota), or **Closed** (listing removed, Kuota full, or Batch closed). Exists in place of a deadline status, since a Lowongan has no calendar deadline.
+The live state of a Lowongan, computed by refreshing from the public detail page: **Open**, **Filling** (Pelamar ≥ ~80% of Kuota), or **Closed** (listing removed, Kuota full, or Batch closed), plus **unknown** when a refresh fails. Pelamar is exposed on the detail page, so Filling is reliable whenever both numbers parse (ADR-0006) — not merely best-effort. Exists in place of a deadline status, since a Lowongan has no calendar deadline.

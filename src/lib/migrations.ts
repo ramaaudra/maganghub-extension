@@ -1,5 +1,5 @@
 import type { Favorite, LowonganSnapshot } from "./types";
-import { SCHEMA_VERSION } from "./types";
+import { SCHEMA_VERSION, initialLiveStatus } from "./types";
 
 /**
  * Schema migration registry for stored Favorites (issue #4). Lazily migrates
@@ -19,8 +19,19 @@ export interface FavoriteV1 {
 	savedAt: string;
 }
 
+/** v2 shape (issue #4): adds `catatan` + `statusLamar`, pre-liveStatus. */
+export interface FavoriteV2 {
+	schemaVersion: 2;
+	uuid: string;
+	detailUrl: string;
+	savedSnapshot: LowonganSnapshot;
+	catatan: string;
+	statusLamar: "not_applied" | "applied";
+	savedAt: string;
+}
+
 /** v1 → v2: adds `catatan` (empty) and `statusLamar` (`not_applied`) defaults. */
-function migrateV1ToV2(record: FavoriteV1): Favorite {
+function migrateV1ToV2(record: FavoriteV1): FavoriteV2 {
 	return {
 		...record,
 		schemaVersion: 2,
@@ -29,16 +40,28 @@ function migrateV1ToV2(record: FavoriteV1): Favorite {
 	};
 }
 
+/** v2 → v3: adds a mutable `liveStatus` initialised to "never refreshed". */
+function migrateV2ToV3(record: FavoriteV2): Favorite {
+	return {
+		...record,
+		schemaVersion: 3,
+		liveStatus: initialLiveStatus(),
+	};
+}
+
 const MIGRATIONS: Record<number, (record: never) => Favorite> = {
-	1: migrateV1ToV2 as (record: never) => Favorite,
+	1: migrateV1ToV2 as unknown as (record: never) => Favorite,
+	2: migrateV2ToV3 as unknown as (record: never) => Favorite,
 };
 
 /**
  * Migrate a stored record (any past schema version) to the current schema.
  * No-op for a record already at `SCHEMA_VERSION`.
  */
-export function migrateFavorite(record: FavoriteV1 | Favorite): Favorite {
-	let current: Favorite | FavoriteV1 = record;
+export function migrateFavorite(
+	record: FavoriteV1 | FavoriteV2 | Favorite,
+): Favorite {
+	let current: Favorite | FavoriteV1 | FavoriteV2 = record;
 	while (current.schemaVersion < SCHEMA_VERSION) {
 		const step = MIGRATIONS[current.schemaVersion];
 		if (!step) {

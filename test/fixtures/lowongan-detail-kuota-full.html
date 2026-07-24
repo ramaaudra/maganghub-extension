@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Magang UI Designer — MagangHub</title>
+    <!--
+      Kuota-full fixture. Same confirmed structure as the open detail page, but
+      the "Lamar Sekarang" button is GONE and replaced with a "Kuota Penuh"
+      badge — this is how a full/closed Lowongan surfaces on the detail page
+      (ADR-0006). Pelamar (150) exceeds Kuota (50), but with no apply button the
+      parser must report `closed`, not `filling`.
+    -->
+  </head>
+  <body>
+    <div id="__next">
+      <main class="mh-container py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div class="lg:col-span-2 space-y-8 order-2 lg:order-1">
+            <h1 class="text-xl sm:text-2xl font-bold mb-1">Magang UI Designer</h1>
+            <p class="mh-penyelenggara text-sm text-muted-foreground">PT Maju Bersama</p>
+            <span class="mh-badge" style="background:hsl(142,72%,35%,0.1);color:hsl(142,72%,35%)">Batch 1<!-- --> · <!-- -->2026</span>
+            <section>
+              <h2>Deskripsi Lowongan</h2>
+              <p>Magang UI Designer di PT Maju Bersama.</p>
+            </section>
+          </div>
+          <div class="space-y-5 order-1 lg:order-2">
+            <div class="bg-white border border-border rounded-2xl p-6">
+              <div class="space-y-4 mb-6">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-muted-foreground">Kuota</span>
+                  <span class="font-semibold">50<!-- --> orang</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-muted-foreground">Pelamar</span>
+                  <span class="font-semibold">150<!-- --> orang</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-muted-foreground">Tunjangan</span>
+                  <span class="font-semibold text-primary">Dari Pemerintah</span>
+                </div>
+              </div>
+              <div class="rounded-md bg-muted p-2 text-center text-sm font-medium">Kuota Penuh</div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

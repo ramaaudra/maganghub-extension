@@ -10,7 +10,8 @@ export default defineConfig({
     description: 'Tandai Lowongan MagangHub sebagai favorit — tersimpan lokal, tanpa menyentuh akun SiapKerja Anda.',
     version: '0.0.0',
     // ADR-0001: minimal permissions. No cookies, identity, or <all_urls>.
-    permissions: ['storage'],
+    // `offscreen` (ADR-0005) hosts the fetch + DOMParser that refresh uses.
+    permissions: ['storage', 'offscreen'],
     host_permissions: ['https://maganghub.kemnaker.go.id/*'],
   },
   vite: () => ({

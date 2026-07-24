@@ -1,11 +1,20 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import { setCatatan, setStatusLamar } from '@/lib/storage';
-  import type { Favorite } from '@/lib/types';
+  import type { Favorite, StatusLowongan } from '@/lib/types';
   import { Card, CardContent } from '@/lib/components/ui/card';
   import { cn } from '@/lib/utils';
+  import { terakhirDicek } from '@/lib/time';
 
-  let { favorite }: { favorite: Favorite } = $props();
+  let {
+    favorite,
+    refreshing = false,
+    onrefresh = () => {},
+  }: {
+    favorite: Favorite;
+    refreshing?: boolean;
+    onrefresh?: () => void;
+  } = $props();
 
   // Local editable Catatan draft, seeded from the persisted value and reset
   // whenever the underlying record changes (e.g. from a cross-tab sync).
@@ -35,6 +44,24 @@
   }
 
   const applied = $derived(favorite.statusLamar === 'applied');
+  const live = $derived(favorite.liveStatus);
+  const lastCheckedLabel = $derived(terakhirDicek(live.lastChecked));
+  // A failed refresh: status unknown AND we have a lastError recorded.
+  const refreshFailed = $derived(live.status === 'unknown' && !!live.lastError);
+
+  const STATUS_LABEL: Record<StatusLowongan, string> = {
+    open: 'Buka',
+    filling: 'Mengisi',
+    closed: 'Tutup',
+    unknown: 'Tidak diketahui',
+  };
+
+  const STATUS_CLASS: Record<StatusLowongan, string> = {
+    open: 'bg-emerald-100 text-emerald-700',
+    filling: 'bg-amber-100 text-amber-700',
+    closed: 'bg-rose-100 text-rose-700',
+    unknown: 'bg-muted text-muted-foreground',
+  };
 
   // Safety net: if the popup closes while the textarea still has unsaved
   // edits (blur didn't fire — e.g. user clicked the extension icon away),
@@ -53,29 +80,67 @@
 >
   <CardContent class="space-y-2">
     <div class="flex items-start justify-between gap-2">
-      <div>
+      <div class="min-w-0">
         <p class="font-medium leading-snug">{favorite.savedSnapshot.title || favorite.uuid}</p>
         <p class="mt-0.5 text-sm text-muted-foreground">{favorite.savedSnapshot.organizer}</p>
         {#if favorite.savedSnapshot.location}
           <p class="mt-0.5 text-sm text-muted-foreground">{favorite.savedSnapshot.location}</p>
         {/if}
       </div>
-      {#if applied}
-        <span class="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-          Sudah dilamar
-        </span>
-      {/if}
+      <div class="flex shrink-0 flex-col items-end gap-1">
+        {#if applied}
+          <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            Sudah dilamar
+          </span>
+        {/if}
+        {#if live.lastChecked}
+          <span
+            class={cn(
+              'rounded-full px-2 py-0.5 text-xs font-medium',
+              refreshFailed ? 'bg-rose-100 text-rose-700' : STATUS_CLASS[live.status],
+            )}
+          >
+            {refreshFailed ? 'Refresh gagal' : STATUS_LABEL[live.status]}
+          </span>
+        {/if}
+      </div>
     </div>
 
-    <label class="flex items-center gap-2 text-sm">
-      <input
-        type="checkbox"
-        checked={applied}
-        onchange={onStatusLamarChange}
-        aria-label="Sudah dilamar"
-      />
-      Sudah dilamar
-    </label>
+    {#if live.lastChecked}
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        <span>{lastCheckedLabel}</span>
+        {#if live.batch}
+          <span>{live.batch}</span>
+        {/if}
+        {#if live.kuota !== undefined}
+          <span>Kuota {live.kuota}</span>
+        {/if}
+        {#if live.pelamar !== undefined}
+          <span>Pelamar {live.pelamar}</span>
+        {/if}
+      </div>
+    {/if}
+
+    <div class="flex items-center gap-2">
+      <button
+        type="button"
+        class="rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+        onclick={onrefresh}
+        disabled={refreshing}
+        aria-label="Segarkan Status Lowongan"
+      >
+        {refreshing ? 'Memperbarui…' : 'Segarkan'}
+      </button>
+      <label class="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={applied}
+          onchange={onStatusLamarChange}
+          aria-label="Sudah dilamar"
+        />
+        Sudah dilamar
+      </label>
+    </div>
 
     <div>
       <textarea

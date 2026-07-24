@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Magang Software Engineer — MagangHub</title>
+    <!--
+      Closed fixture: a recognisable Lowongan detail page (has <h1>, info rows,
+      and a Batch badge) but the "Lamar Sekarang" button is GONE, replaced with
+      a "Batch Ditutup" notice. This is how a closed Lowongan (Batch closed /
+      listing removed-but-rendered) surfaces on the detail page (ADR-0006). The
+      parser must report `closed` because the apply button is absent. Contrast
+      with lowongan-detail-kuota-full.html (Kuota Penuh) — both are closed, the
+      e2e distinguishes them only to cover two real closed sub-cases.
+    -->
+  </head>
+  <body>
+    <div id="__next">
+      <main class="mh-container py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div class="lg:col-span-2 space-y-8 order-2 lg:order-1">
+            <h1 class="text-xl sm:text-2xl font-bold mb-1">Magang Software Engineer</h1>
+            <p class="mh-penyelenggara text-sm text-muted-foreground">PT Maju Bersama</p>
+            <span class="mh-badge" style="background:hsl(142,72%,35%,0.1);color:hsl(142,72%,35%)">Batch 1<!-- --> · <!-- -->2026</span>
+            <section>
+              <h2>Deskripsi Lowongan</h2>
+              <p>Magang Software Engineer di PT Maju Bersama.</p>
+            </section>
+          </div>
+          <div class="space-y-5 order-1 lg:order-2">
+            <div class="bg-white border border-border rounded-2xl p-6">
+              <div class="space-y-4 mb-6">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-muted-foreground">Kuota</span>
+                  <span class="font-semibold">50<!-- --> orang</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-muted-foreground">Pelamar</span>
+                  <span class="font-semibold">30<!-- --> orang</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-muted-foreground">Tunjangan</span>
+                  <span class="font-semibold text-primary">Dari Pemerintah</span>
+                </div>
+              </div>
+              <div class="rounded-md bg-muted p-2 text-center text-sm font-medium">Batch Ditutup</div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

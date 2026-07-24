@@ -1,7 +1,7 @@
-import type { Favorite, StatusLamar } from "./types";
-import { SCHEMA_VERSION } from "./types";
+import type { Favorite, StatusLamar, LiveStatus } from "./types";
+import { SCHEMA_VERSION, initialLiveStatus } from "./types";
 import { migrateFavorite } from "./migrations";
-import type { FavoriteV1 } from "./migrations";
+import type { FavoriteV1, FavoriteV2 } from "./migrations";
 
 /**
  * Local-first storage for Favorites (ADR-0001). Each Favorite is persisted to
@@ -21,7 +21,7 @@ const keyFor = (uuid: string) => `${KEY_PREFIX}${uuid}`;
 
 export async function getFavorite(uuid: string): Promise<Favorite | undefined> {
 	const result = await browser.storage.local.get(keyFor(uuid));
-	const stored = result[keyFor(uuid)] as Favorite | FavoriteV1 | undefined;
+	const stored = result[keyFor(uuid)] as Favorite | FavoriteV1 | FavoriteV2 | undefined;
 	return stored ? migrateFavorite(stored) : undefined;
 }
 
@@ -57,10 +57,29 @@ export async function setCatatan(uuid: string, catatan: string): Promise<void> {
 }
 
 /** Set Status Lamar (manual, self-reported "sudah dilamar" flag) on a stored Favorite. */
-export async function setStatusLamar(uuid: string, statusLamar: StatusLamar): Promise<void> {
+export async function setStatusLamar(
+	uuid: string,
+	statusLamar: StatusLamar,
+): Promise<void> {
 	const favorite = await getFavorite(uuid);
 	if (!favorite) return;
 	await setFavorite({ ...favorite, statusLamar });
+}
+
+/**
+ * Write a refreshed `liveStatus` onto a stored Favorite. Only `liveStatus` is
+ * touched — the saved snapshot stays immutable (ADR-0002). On failure the
+ * caller passes `status: "unknown"` + `lastError`; previous liveStatus fields
+ * are preserved by merging, so a failed refresh shows the last-known numbers
+ * with a "refresh gagal" badge (no data loss).
+ */
+export async function setLiveStatus(
+	uuid: string,
+	liveStatus: LiveStatus,
+): Promise<void> {
+	const favorite = await getFavorite(uuid);
+	if (!favorite) return;
+	await setFavorite({ ...favorite, liveStatus });
 }
 
 /** Build a Favorite from a bookmark action. */
@@ -76,6 +95,7 @@ export function createFavorite(args: {
 		savedSnapshot: args.savedSnapshot,
 		catatan: "",
 		statusLamar: "not_applied",
+		liveStatus: initialLiveStatus(),
 		savedAt: new Date().toISOString(),
 	};
 }
