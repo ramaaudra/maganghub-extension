@@ -2,6 +2,8 @@
 import { listFavorites } from "@/lib/storage";
 import type { Favorite } from "@/lib/types";
 import type { RefreshRequest, RefreshResponse } from "@/lib/refresh";
+import { exportFavorites, importFavorites, type ExportFile } from "@/lib/io";
+import { cn } from "@/lib/utils";
 import {
 	Card,
 	CardHeader,
@@ -15,6 +17,9 @@ let loading = $state(true);
 /** UUIDs with a single-favorite refresh in flight. */
 let refreshing = $state<Set<string>>(new Set());
 let refreshingAll = $state(false);
+/** Import result banner: null = hidden, otherwise shown until cleared. */
+let importMsg = $state<{ kind: "ok" | "warn"; text: string } | null>(null);
+let importTimer: ReturnType<typeof setTimeout> | undefined;
 
 async function refresh(): Promise<void> {
 	favorites = await listFavorites();
@@ -67,6 +72,56 @@ async function refreshAll(): Promise<void> {
 }
 
 const refreshDisabled = $derived(refreshingAll || favorites.length === 0);
+
+// ─── Export / Import (issue #9) ────────────────────────────────────────────
+// Export serializes all favorites to a JSON Blob and downloads it. Import
+// reads a chosen file, validates+migrates via the registry, and merges with
+// local-authoritative semantics (see src/lib/io.ts).
+
+async function onExport(): Promise<void> {
+	const file = await exportFavorites();
+	const blob = new Blob([JSON.stringify(file, null, 2)], {
+		type: "application/json",
+	});
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+	a.download = `maganghub-favorit-${stamp}.json`;
+	document.body.appendChild(a);
+	a.click();
+	a.remove();
+	URL.revokeObjectURL(url);
+}
+
+function onImportFile(event: Event): void {
+	const input = event.currentTarget as HTMLInputElement;
+	const file = input.files?.[0];
+	// Reset so selecting the same file twice re-fires `change`.
+	input.value = "";
+	if (!file) return;
+	file
+		.text()
+		.then((text) => {
+			const parsed = JSON.parse(text) as ExportFile;
+			return importFavorites(parsed);
+		})
+		.then((result) => {
+			void refresh();
+			const warn = result.warnings.length > 0;
+			const text = warn
+				? result.warnings.join(" ")
+				: `Berhasil mengimpor ${result.imported} favorit.`;
+			importMsg = { kind: warn ? "warn" : "ok", text };
+		})
+		.catch((err) => {
+			importMsg = { kind: "warn", text: `Impor gagal: ${String(err instanceof Error ? err.message : err)}` };
+		})
+		.finally(() => {
+			clearTimeout(importTimer);
+			importTimer = setTimeout(() => (importMsg = null), 6000);
+		});
+}
 </script>
 
 <header class="border-b px-4 py-3">
@@ -84,6 +139,43 @@ const refreshDisabled = $derived(refreshingAll || favorites.length === 0);
       {refreshingAll ? 'Memperbarui…' : 'Segarkan semua'}
     </button>
   </div>
+
+  <!-- Issue #9: backup/restore (no-sync story). Export downloads a JSON
+       envelope; import reads a file and merges via the migration registry. -->
+  <div class="mt-2 flex flex-wrap items-center gap-2">
+    <button
+      type="button"
+      class="rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+      onclick={onExport}
+      disabled={favorites.length === 0}
+    >
+      Ekspor
+    </button>
+    <label
+      class="cursor-pointer rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted"
+    >
+      Impor
+      <input
+        type="file"
+        accept="application/json,.json"
+        class="sr-only"
+        onchange={onImportFile}
+      />
+    </label>
+  </div>
+
+  {#if importMsg}
+    <p
+      class={cn(
+        'mt-2 rounded-md px-2.5 py-1.5 text-xs',
+        importMsg.kind === 'warn'
+          ? 'bg-amber-100 text-amber-800'
+          : 'bg-emerald-100 text-emerald-800',
+      )}
+    >
+      {importMsg.text}
+    </p>
+  {/if}
 
   <!-- Issue #7 trust layer (ADR-0001): make the credential-free promise
        visible, not just asserted in the manifest. -->
