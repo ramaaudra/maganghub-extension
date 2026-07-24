@@ -63,13 +63,13 @@ export const expect = test.expect;
 import { readFileSync } from "node:fs";
 import type { Page } from "@playwright/test";
 
-export const LIST_URL = "https://maganghub.kemnaker.go.id/magang-nasional/lowongan";
+export const LIST_URL =
+	"https://maganghub.kemnaker.go.id/magang-nasional/lowongan";
 
 /** UUID of the first card in lowongan-list.html (and its detail fixture). */
 export const FIRST_UUID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
 /** The first card's detail-page URL (matches lowongan-detail.html). */
-export const FIRST_DETAIL_URL =
-	`https://maganghub.kemnaker.go.id/magang-nasional/lowongan/magang-data-analyst-${FIRST_UUID}`;
+export const FIRST_DETAIL_URL = `https://maganghub.kemnaker.go.id/magang-nasional/lowongan/magang-data-analyst-${FIRST_UUID}`;
 
 const readFixture = (name: string) =>
 	readFileSync(path.join(process.cwd(), "test/fixtures", name), "utf8");

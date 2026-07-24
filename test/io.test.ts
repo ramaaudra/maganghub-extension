@@ -140,10 +140,7 @@ describe("importFavorites", () => {
 
 	it("merge: local is authoritative on conflict — imported record does NOT overwrite a local Favorite's snapshot/savedAt", async () => {
 		// Local has the favorite with a newer savedAt + edited catatan.
-		const local = baseFavorite(
-			"e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8091",
-			"Local",
-		);
+		const local = baseFavorite("e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8091", "Local");
 		local.catatan = "catatan lokal";
 		local.savedAt = "2026-06-01T00:00:00Z";
 		await setFavorite(local);
@@ -234,10 +231,7 @@ describe("importFavorites", () => {
 	});
 
 	it("import into an empty store with a brand-new UUID adds the favorite as-is", async () => {
-		const fresh = baseFavorite(
-			"18b8c9d0-e1f2-4a3b-4c5d-6e7f8091a2b4",
-			"Fresh",
-		);
+		const fresh = baseFavorite("18b8c9d0-e1f2-4a3b-4c5d-6e7f8091a2b4", "Fresh");
 		const file: ExportFile = {
 			schemaVersion: SCHEMA_VERSION,
 			exportedAt: "2025-01-01T00:00:00Z",
@@ -271,6 +265,8 @@ describe("importFavorites", () => {
 		expect(result.imported).toBe(1);
 		expect(await getFavorite(fresh.uuid)).toBeDefined();
 		// A warning surfaces the mismatch.
-		expect(result.warnings.some((w) => /99.*1|1.*99|tidak cocok/i.test(w))).toBe(true);
+		expect(
+			result.warnings.some((w) => /99.*1|1.*99|tidak cocok/i.test(w)),
+		).toBe(true);
 	});
 });

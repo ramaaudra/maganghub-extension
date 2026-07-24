@@ -21,11 +21,7 @@ import type { Favorite } from "./types";
 import { SCHEMA_VERSION } from "./types";
 import { migrateFavorite } from "./migrations";
 import type { FavoriteV1, FavoriteV2 } from "./migrations";
-import {
-	listFavorites,
-	getFavorite,
-	setFavorite,
-} from "./storage";
+import { listFavorites, getFavorite, setFavorite } from "./storage";
 
 /** The on-disk export envelope. `favorites` may carry older-schema records. */
 export interface ExportFile {
@@ -75,10 +71,7 @@ export async function importFavorites(file: ExportFile): Promise<ImportResult> {
 	// mismatch (hand-edited file, truncated download) is non-fatal — we still
 	// import what's there — but surface it as a warning so the user knows the
 	// file is not as-described.
-	if (
-		typeof file.count === "number" &&
-		file.count !== file.favorites.length
-	) {
+	if (typeof file.count === "number" && file.count !== file.favorites.length) {
 		warnings.push(
 			`Jumlah favorit di file (${file.count}) tidak cocok dengan isinya (${file.favorites.length}). Mengimpor yang ada.`,
 		);

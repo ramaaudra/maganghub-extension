@@ -1,13 +1,15 @@
-import { test, expect, serveFixture, LIST_URL, FIRST_DETAIL_URL as DETAIL_URL } from "./fixtures";
+import {
+	test,
+	expect,
+	serveFixture,
+	LIST_URL,
+	FIRST_DETAIL_URL as DETAIL_URL,
+} from "./fixtures";
 import { openPopup } from "./pages/popup";
 
 // DETAIL_URL (imported as FIRST_DETAIL_URL from the shared fixtures) uses the
 // same UUID as the first card in lowongan-list.html, so favoriting on the list
 // and visiting this detail page exercise the same Favorite record (issue #3).
-
-
-
-
 
 test("stars inject into every Lowongan card", async ({ page }) => {
 	await serveFixture(page);
