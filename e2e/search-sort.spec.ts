@@ -162,7 +162,6 @@ test("search and sort compose: filtering then ordering the remainder", async ({
 });
 
 test("the list stays responsive with many Favorites", async ({
-	page,
 	context,
 	extensionId,
 }) => {
@@ -193,7 +192,14 @@ test("the list stays responsive with many Favorites", async ({
 				savedAt: `2026-01-01T00:00:${String(i % 60).padStart(2, "0")}Z`,
 			};
 		}
-		await chrome.storage.local.set(records);
+		// `chrome` is ambient inside the extension page, not in the Node-side
+		// types this spec compiles under.
+		const api = (
+			globalThis as unknown as {
+				chrome: { storage: { local: { set(r: unknown): Promise<void> } } };
+			}
+		).chrome;
+		await api.storage.local.set(records);
 	});
 
 	await expect(renderedTitles(popup)).toHaveCount(300, { timeout: 15_000 });

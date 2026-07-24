@@ -5,6 +5,7 @@ import type { Favorite } from "@/lib/types";
 import type { RefreshRequest, RefreshResponse } from "@/lib/refresh";
 import { exportFavorites, importFavorites, type ExportFile } from "@/lib/io";
 import { searchFavorites, sortFavorites, type SortKey } from "@/lib/filter";
+import { readHealth, type HealthStatus } from "@/lib/health";
 import { cn } from "@/lib/utils";
 import {
 	Card,
@@ -23,8 +24,12 @@ let refreshingAll = $state(false);
 let importMsg = $state<{ kind: "ok" | "warn"; text: string } | null>(null);
 let importTimer: ReturnType<typeof setTimeout> | undefined;
 
+/** Injection health, reported by the content script (issue #8). */
+let health = $state<HealthStatus>("ok");
+
 async function refresh(): Promise<void> {
 	favorites = await listFavorites();
+	health = await readHealth();
 	loading = false;
 }
 
@@ -186,6 +191,20 @@ onDestroy(() => {
       />
     </label>
   </div>
+
+  <!-- Issue #8: MagangHub changed its markup and we could not inject. Say so
+       plainly — a known breakage the user can act on (update the extension),
+       not a silent failure they'd read as lost favorites. Their data is
+       untouched, so this stays subtle rather than alarming. -->
+  {#if health === 'degraded'}
+    <p
+      class="mt-2 rounded-md bg-amber-100 px-2.5 py-1.5 text-xs text-amber-800"
+      role="status"
+    >
+      Extension mungkin butuh update — tampilan MagangHub berubah. Favorit kamu
+      tetap aman tersimpan.
+    </p>
+  {/if}
 
   <!-- Issue #6: find and organize Favorites as the list grows. Both controls
        are view-only — they never touch storage. -->

@@ -77,8 +77,20 @@ const readFixture = (name: string) =>
 const listFixtureHtml = () => readFixture("lowongan-list.html");
 const detailFixtureHtml = () => readFixture("lowongan-detail.html");
 
-/** Serve the recorded list/detail fixtures for the real MagangHub URLs. */
-export async function serveFixture(page: Page): Promise<void> {
+/**
+ * Serve the recorded list/detail fixtures for the real MagangHub URLs.
+ *
+ * `listFixture` overrides which recorded list page is served — pass
+ * "lowongan-list-altered.html" to simulate MagangHub renaming the markup out
+ * from under the extension (issue #8's graceful-degradation case).
+ */
+export async function serveFixture(
+	page: Page,
+	options: { listFixture?: string } = {},
+): Promise<void> {
+	const listHtml = options.listFixture
+		? () => readFixture(options.listFixture as string)
+		: listFixtureHtml;
 	await page.route("https://maganghub.kemnaker.go.id/**", (route) => {
 		const isDetail = route
 			.request()
@@ -87,7 +99,7 @@ export async function serveFixture(page: Page): Promise<void> {
 		return route.fulfill({
 			status: 200,
 			contentType: "text/html; charset=utf-8",
-			body: isDetail ? detailFixtureHtml() : listFixtureHtml(),
+			body: isDetail ? detailFixtureHtml() : listHtml(),
 		});
 	});
 }

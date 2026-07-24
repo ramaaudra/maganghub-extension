@@ -20,6 +20,12 @@ import {
 	setFavorite,
 	FAVORITE_KEY_PREFIX,
 } from "@/lib/storage";
+import {
+	assessListMarkup,
+	assessDetailMarkup,
+	reportHealth,
+	type HealthStatus,
+} from "@/lib/health";
 
 /**
  * Content script for MagangHub Lowongan pages.
@@ -36,15 +42,96 @@ import {
 export default defineContentScript({
 	matches: ["https://maganghub.kemnaker.go.id/magang-nasional/lowongan*"],
 	main() {
-		const pathUuid = extractUuidFromHref(location.pathname);
-		if (pathUuid) {
-			injectDetailToggle(pathUuid);
-		} else {
-			injectStars();
-		}
+		scan();
+		watchForChanges();
 		setupStorageSync();
 	},
 });
+
+/**
+ * Inject whatever the current URL calls for, then report what we found.
+ *
+ * Re-entrant and idempotent: every injection point marks its target with
+ * `STAR_INJECTED_ATTR`, so re-scanning the same DOM is a no-op. This is what
+ * makes it safe to call on every mutation and every navigation.
+ */
+function scan(): void {
+	const pathUuid = extractUuidFromHref(location.pathname);
+	const health = pathUuid ? scanDetail(pathUuid) : scanList();
+	void reportHealth(health).catch(() => {
+		// Health reporting is best-effort; never let it break injection.
+	});
+}
+
+function scanList(): HealthStatus {
+	injectStars();
+	return assessListMarkup(document.body);
+}
+
+function scanDetail(uuid: string): HealthStatus {
+	injectDetailToggle(uuid);
+	return assessDetailMarkup(document.body);
+}
+
+/**
+ * Keep injecting as MagangHub's SPA reshapes the page (issue #8).
+ *
+ * MagangHub is Next.js: filters and pagination swap cards in place, and moving
+ * list ↔ detail is a client-side route change. `main()` runs once per document
+ * load, so without this every such interaction would silently drop the stars.
+ *
+ * The MutationObserver is the workhorse rather than a `history` patch: a
+ * content script runs in an isolated world, so patching `history.pushState`
+ * there cannot see the page's own router calling it. The DOM, by contrast, is
+ * shared — every route change MagangHub makes has to touch it to render. We
+ * still listen to `popstate` (a real event that does cross worlds, fired by
+ * back/forward) and patch our own world's `history` for completeness, but
+ * correctness rests on the observer.
+ *
+ * Scans are debounced to one per animation frame's worth of mutations: a
+ * re-render fires hundreds of records, and injecting is DOM work we don't want
+ * to repeat per record (AC: "must not slow down MagangHub page loads").
+ */
+function watchForChanges(): void {
+	let scheduled = false;
+	const scheduleScan = (): void => {
+		if (scheduled) return;
+		scheduled = true;
+		setTimeout(() => {
+			scheduled = false;
+			try {
+				scan();
+			} catch {
+				// A scan must never throw into the page (AC: no console errors when
+				// MagangHub's markup changes).
+			}
+		}, SCAN_DEBOUNCE_MS);
+	};
+
+	new MutationObserver(scheduleScan).observe(document.body, {
+		childList: true,
+		subtree: true,
+	});
+
+	// Back/forward. A real event, so it crosses into the isolated world.
+	window.addEventListener("popstate", scheduleScan);
+
+	// Same-world pushState/replaceState (e.g. a link we handle ourselves).
+	for (const method of ["pushState", "replaceState"] as const) {
+		const original = history[method];
+		history[method] = function patched(
+			this: History,
+			...args: Parameters<History["pushState"]>
+		) {
+			const result = original.apply(this, args);
+			scheduleScan();
+			return result;
+		};
+	}
+}
+
+/** Coalesce a burst of mutations from one re-render into a single scan. */
+const SCAN_DEBOUNCE_MS = 50;
 
 interface StarState {
 	/** True once the user has clicked this toggle; gates the initial reflect. */
