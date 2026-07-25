@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
+import type { FavoriteV1 } from "@/lib/migrations";
 import {
 	createFavorite,
+	FAVORITE_KEY_PREFIX,
 	getFavorite,
 	isFavorited,
 	listFavorites,
@@ -10,11 +12,9 @@ import {
 	setFavorite,
 	setLiveStatus,
 	setStatusLamar,
-	FAVORITE_KEY_PREFIX,
 } from "@/lib/storage";
-import { SCHEMA_VERSION, initialLiveStatus } from "@/lib/types";
 import type { Favorite, LiveStatus } from "@/lib/types";
-import type { FavoriteV1 } from "@/lib/migrations";
+import { initialLiveStatus, SCHEMA_VERSION } from "@/lib/types";
 
 function makeFavorite(uuid: string, savedAt: string, title: string): Favorite {
 	return {

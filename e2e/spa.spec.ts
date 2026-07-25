@@ -1,9 +1,9 @@
 import {
-	test,
-	expect,
-	serveFixture,
-	LIST_URL,
 	FIRST_DETAIL_URL as DETAIL_URL,
+	expect,
+	LIST_URL,
+	serveFixture,
+	test,
 } from "./fixtures";
 
 /**
@@ -43,11 +43,20 @@ test("stars re-inject after a client-side route change back to the list", async 
 	await expect(page.locator(STAR_HOST)).toHaveCount(3);
 
 	// Navigate to a detail page the way the SPA does: push the URL and swap the
-	// DOM, with no document load (so the content script does not re-run).
+	// DOM, with no document load (so the content script does not re-run). The
+	// swapped-in markup carries the header block AND the share cluster, because
+	// that cluster is where the toggle mounts (issue #10) — an `<h1>` alone is
+	// not a detail page the extension can inject into.
 	await page.evaluate((detailUrl) => {
 		history.pushState({}, "", detailUrl);
 		const main = document.querySelector("main");
-		if (main) main.innerHTML = "<h1>Magang Data Analyst</h1>";
+		if (main)
+			main.innerHTML = `
+				<div class="flex flex-col sm:flex-row items-start gap-5">
+					<div class="w-16 h-16"></div>
+					<div class="flex-1"><h1>Magang Data Analyst</h1><p class="text-muted-foreground">PT Maju Bersama</p></div>
+					<div class="flex gap-2 self-start"><button aria-label="Bagikan"></button></div>
+				</div>`;
 	}, DETAIL_URL);
 
 	await expect(page.locator(".mh-favorite-detail-host")).toHaveCount(1);

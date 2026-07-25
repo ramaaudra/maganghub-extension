@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { searchFavorites, sortFavorites } from "@/lib/filter";
-import { SCHEMA_VERSION, type Favorite } from "@/lib/types";
+import { type Favorite, SCHEMA_VERSION } from "@/lib/types";
 
 /**
  * Contract tests for the popup's search + sort helpers (issue #6). These are

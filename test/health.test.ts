@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
-import { listFavorites } from "@/lib/storage";
-import { exportFavorites } from "@/lib/io";
 import {
-	assessListMarkup,
 	assessDetailMarkup,
-	reportHealth,
+	assessListMarkup,
 	readHealth,
+	reportHealth,
 } from "@/lib/health";
+import { exportFavorites } from "@/lib/io";
+import { listFavorites } from "@/lib/storage";
 
 /**
  * Contract tests for the injection-health signal (issue #8). The content script
@@ -62,18 +62,49 @@ describe("assessListMarkup", () => {
 });
 
 describe("assessDetailMarkup", () => {
-	it("reports ok when the detail page exposes a title to anchor the toggle to", () => {
-		const detail = markup(`<main><h1>Magang Data Analyst</h1></main>`);
+	const detailPage = (inner: string) =>
+		markup(
+			`<div class="flex flex-col sm:flex-row items-start gap-5">${inner}</div>`,
+		);
+
+	it("reports ok when both the title and the injection point are present", () => {
+		const detail = detailPage(
+			`<div class="flex-1"><h1>Magang Data Analyst</h1></div>
+       <div class="flex gap-2 self-start"><button aria-label="Bagikan"></button></div>`,
+		);
 
 		expect(assessDetailMarkup(detail)).toBe("ok");
 	});
 
 	it("reports degraded when no title anchor is found", () => {
-		const detail = markup(
-			`<main><div class="headline-v2">Magang Data Analyst</div></main>`,
+		const detail = detailPage(
+			`<div class="flex-1"><div class="headline-v2">Magang Data Analyst</div></div>
+       <div class="flex gap-2 self-start"><button aria-label="Bagikan"></button></div>`,
 		);
 
 		expect(assessDetailMarkup(detail)).toBe("degraded");
+	});
+
+	it("reports degraded when the share cluster the toggle mounts into is gone", () => {
+		// Issue #10 removed the fallback injection point, so a missing cluster
+		// means no toggle renders at all. Reporting "ok" here would leave the user
+		// with no button and no explanation.
+		const detail = detailPage(
+			`<div class="flex-1"><h1>Magang Data Analyst</h1></div>`,
+		);
+
+		expect(assessDetailMarkup(detail)).toBe("degraded");
+	});
+
+	it("stays ok when the Lowongan Serupa section is empty", () => {
+		// Those cards are injected into, but their absence is not a broken page —
+		// folding assessListMarkup in here would cry wolf.
+		const detail = detailPage(
+			`<div class="flex-1"><h1>Magang Data Analyst</h1></div>
+       <div class="flex gap-2 self-start"><button aria-label="Bagikan"></button></div>`,
+		);
+
+		expect(assessDetailMarkup(detail)).toBe("ok");
 	});
 });
 

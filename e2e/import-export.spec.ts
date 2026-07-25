@@ -1,4 +1,4 @@
-import { test, expect, serveFixture, LIST_URL, FIRST_UUID } from "./fixtures";
+import { expect, FIRST_UUID, LIST_URL, serveFixture, test } from "./fixtures";
 import { openPopup } from "./pages/popup";
 
 // Issue #9 e2e: export → import round-trip, including an old-schema (v1) file

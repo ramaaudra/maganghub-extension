@@ -1,11 +1,11 @@
 <script lang="ts">
 import { onDestroy } from "svelte";
-import { setCatatan, setStatusLamar } from "@/lib/storage";
-import type { Favorite, StatusLowongan } from "@/lib/types";
 import { Card, CardContent } from "@/lib/components/ui/card";
-import { cn } from "@/lib/utils";
-import { terakhirDicek } from "@/lib/time";
 import { resolveDetailUrl } from "@/lib/refresh";
+import { setCatatan, setStatusLamar } from "@/lib/storage";
+import { terakhirDicek } from "@/lib/time";
+import type { Favorite, StatusLowongan } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 let {
 	favorite,

@@ -1,5 +1,5 @@
 import type { Favorite, LowonganSnapshot } from "./types";
-import { SCHEMA_VERSION, initialLiveStatus } from "./types";
+import { initialLiveStatus, SCHEMA_VERSION } from "./types";
 
 /**
  * Schema migration registry for stored Favorites (issue #4). Lazily migrates

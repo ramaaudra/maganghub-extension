@@ -1,7 +1,7 @@
-import { test as base, chromium, type BrowserContext } from "@playwright/test";
-import path from "node:path";
-import os from "node:os";
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { type BrowserContext, test as base, chromium } from "@playwright/test";
 
 const pathToExtension = path.resolve(".output/chrome-mv3");
 
@@ -80,17 +80,21 @@ const detailFixtureHtml = () => readFixture("lowongan-detail.html");
 /**
  * Serve the recorded list/detail fixtures for the real MagangHub URLs.
  *
- * `listFixture` overrides which recorded list page is served — pass
- * "lowongan-list-altered.html" to simulate MagangHub renaming the markup out
- * from under the extension (issue #8's graceful-degradation case).
+ * `listFixture` / `detailFixture` override which recorded page is served — pass
+ * "lowongan-list-altered.html" or "lowongan-detail-altered.html" to simulate
+ * MagangHub renaming the markup out from under the extension (issue #8's
+ * graceful-degradation case, and issue #10's missing share cluster).
  */
 export async function serveFixture(
 	page: Page,
-	options: { listFixture?: string } = {},
+	options: { listFixture?: string; detailFixture?: string } = {},
 ): Promise<void> {
 	const listHtml = options.listFixture
 		? () => readFixture(options.listFixture as string)
 		: listFixtureHtml;
+	const detailHtml = options.detailFixture
+		? () => readFixture(options.detailFixture as string)
+		: detailFixtureHtml;
 	await page.route("https://maganghub.kemnaker.go.id/**", (route) => {
 		const isDetail = route
 			.request()
@@ -99,7 +103,7 @@ export async function serveFixture(
 		return route.fulfill({
 			status: 200,
 			contentType: "text/html; charset=utf-8",
-			body: isDetail ? detailFixtureHtml() : listHtml(),
+			body: isDetail ? detailHtml() : listHtml(),
 		});
 	});
 }

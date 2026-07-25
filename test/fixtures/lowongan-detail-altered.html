@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Magang Data Analyst — MagangHub</title>
     <!--
-      CONFIRMED structure (recorded via camofox — issue #10), verified across
+      ALTERED copy of lowongan-detail.html with the share cluster REMOVED, to
+      exercise issue #10's no-fallback rule: the title still parses, but there
+      is no injection point, so no toggle is injected and health reports
+      "degraded". Keep this file in sync with lowongan-detail.html.
+
+      Derived from the CONFIRMED structure (recorded via camofox — issue #10), verified across
       three live Lowongan. Hand-written rather than dumped: the live page is
       ~141 KB of Next.js hydration payload, which asserts nothing about what
       matters and would commit a real organizer's listing to the repo.
@@ -80,31 +85,7 @@
                   <p class="text-muted-foreground">PT Maju Bersama</p>
                 </div>
 
-                <div class="flex gap-2 self-start">
-                  <button
-                    class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium border border-input bg-white hover:bg-muted hover:text-foreground h-10 w-10 shrink-0"
-                    aria-label="Bagikan"
-                    type="button"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      class="lucide lucide-share2 w-4 h-4"
-                    >
-                      <circle cx="18" cy="5" r="3" />
-                      <circle cx="6" cy="12" r="3" />
-                      <circle cx="18" cy="19" r="3" />
-                      <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" />
-                      <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+                <!-- share cluster removed: MagangHub reshaped the header -->
             </div>
           </div>
 

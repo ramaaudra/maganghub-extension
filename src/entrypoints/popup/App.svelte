@@ -1,18 +1,18 @@
 <script lang="ts">
-import { listFavorites } from "@/lib/storage";
 import { onDestroy } from "svelte";
-import type { Favorite } from "@/lib/types";
-import type { RefreshRequest, RefreshResponse } from "@/lib/refresh";
-import { exportFavorites, importFavorites, type ExportFile } from "@/lib/io";
-import { searchFavorites, sortFavorites, type SortKey } from "@/lib/filter";
-import { readHealth, type HealthStatus } from "@/lib/health";
-import { cn } from "@/lib/utils";
 import {
 	Card,
+	CardDescription,
 	CardHeader,
 	CardTitle,
-	CardDescription,
 } from "@/lib/components/ui/card";
+import { type SortKey, searchFavorites, sortFavorites } from "@/lib/filter";
+import { type HealthStatus, readHealth } from "@/lib/health";
+import { type ExportFile, exportFavorites, importFavorites } from "@/lib/io";
+import type { RefreshRequest, RefreshResponse } from "@/lib/refresh";
+import { listFavorites } from "@/lib/storage";
+import type { Favorite } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import FavoriteCard from "./FavoriteCard.svelte";
 
 let favorites = $state<Favorite[]>([]);

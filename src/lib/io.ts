@@ -17,11 +17,11 @@
  * and re-imports.
  */
 
+import type { FavoriteV1, FavoriteV2 } from "./migrations";
+import { migrateFavorite } from "./migrations";
+import { getFavorite, listFavorites, setFavorite } from "./storage";
 import type { Favorite } from "./types";
 import { SCHEMA_VERSION } from "./types";
-import { migrateFavorite } from "./migrations";
-import type { FavoriteV1, FavoriteV2 } from "./migrations";
-import { listFavorites, getFavorite, setFavorite } from "./storage";
 
 /** The on-disk export envelope. `favorites` may carry older-schema records. */
 export interface ExportFile {

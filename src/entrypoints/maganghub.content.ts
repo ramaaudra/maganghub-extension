@@ -1,32 +1,33 @@
 import {
-	CARD_SELECTOR,
 	CARD_ANCHOR_SELECTOR,
-	STAR_INJECTED_ATTR,
-	STAR_HOST_CLASS,
+	CARD_SELECTOR,
 	DETAIL_HOST_CLASS,
-	DETAIL_FIELD_SELECTORS,
+	DETAIL_INJECTED_ATTR,
+	STAR_HOST_CLASS,
+	STAR_INJECTED_ATTR,
 } from "@/lib/constants";
 import {
-	extractUuidFromHref,
+	extractDetailSnapshot,
 	extractDetailUrl,
 	extractSnapshot,
-	extractDetailSnapshot,
-	queryFirst,
+	extractUuidFromHref,
+	findDetailHeader,
+	findShareCluster,
 } from "@/lib/extract";
 import {
+	assessDetailMarkup,
+	assessListMarkup,
+	type HealthStatus,
+	reportHealth,
+} from "@/lib/health";
+import {
 	createFavorite,
+	FAVORITE_KEY_PREFIX,
 	getFavorite,
 	isFavorited,
 	removeFavorite,
 	setFavorite,
-	FAVORITE_KEY_PREFIX,
 } from "@/lib/storage";
-import {
-	assessListMarkup,
-	assessDetailMarkup,
-	reportHealth,
-	type HealthStatus,
-} from "@/lib/health";
 
 /**
  * Content script for MagangHub Lowongan pages.
@@ -94,6 +95,13 @@ function scanList(): HealthStatus {
 
 function scanDetail(uuid: string): HealthStatus {
 	injectDetailToggle(uuid);
+	// A detail page also renders a "Lowongan Serupa" grid of the same
+	// `.mh-lowongan-card` elements the list page uses (issue #10). They carry
+	// UUID-bearing anchors, so they star exactly like list cards — a card that
+	// looks identical but behaves differently would teach the user the star
+	// can't be relied on. Health stays detail-only: an empty "Lowongan Serupa"
+	// is not a broken page.
+	injectStars();
 	return assessDetailMarkup(document.body);
 }
 
@@ -259,7 +267,14 @@ function injectStarIntoCard(card: HTMLElement): void {
 	host.style.setProperty("top", "8px");
 	host.style.setProperty("right", "8px");
 	host.style.setProperty("z-index", "5");
-	card.style.setProperty("position", card.style.position || "relative");
+	// The star is absolutely positioned, so the card has to be a containing
+	// block. Check the COMPUTED position, not the inline one: reading
+	// `card.style.position` only sees inline styles, so a card positioned by
+	// MagangHub's stylesheet would be silently overwritten and their layout
+	// broken. Promoting `static` → `relative` changes nothing visually.
+	if (getComputedStyle(card).position === "static") {
+		card.style.setProperty("position", "relative");
+	}
 	const shadow = host.attachShadow({ mode: "closed" });
 	const button = buildStarButton(shadow);
 	card.append(host);
@@ -287,33 +302,37 @@ function buildStarButton(shadow: ShadowRoot): HTMLButtonElement {
 // ─────────────────────── Detail page: toggle near title ─────────────────────
 
 /**
- * Inject a favorite toggle on a Lowongan detail page, near the `<h1>` title.
- * The detail toggle drives the SAME Favorite record as the list star (same
- * UUID), so state stays consistent across surfaces (issue #3).
+ * Inject a favorite toggle on a Lowongan detail page, into MagangHub's own
+ * share cluster beside the "Bagikan" button (issue #10). The detail toggle
+ * drives the SAME Favorite record as the list star (same UUID), so state stays
+ * consistent across surfaces (issue #3).
+ *
+ * If the cluster can't be found, nothing is injected — there is deliberately no
+ * fallback placement. `assessDetailMarkup` reports `degraded` for the same
+ * condition, so the popup tells the user the extension needs an update instead
+ * of the button silently vanishing.
  */
 function injectDetailToggle(uuid: string): void {
-	const titleEl = queryFirst<HTMLElement>(
-		document.body,
-		DETAIL_FIELD_SELECTORS.title,
-	);
-	if (!titleEl) return;
-	if (titleEl.hasAttribute(STAR_INJECTED_ATTR)) return;
-	titleEl.setAttribute(STAR_INJECTED_ATTR, uuid);
+	const cluster = findShareCluster(document.body);
+	if (!cluster) return;
+	if (cluster.hasAttribute(DETAIL_INJECTED_ATTR)) return;
+	cluster.setAttribute(DETAIL_INJECTED_ATTR, uuid);
 
 	const host = document.createElement("div");
 	host.className = DETAIL_HOST_CLASS;
 	host.setAttribute("data-filled", "false");
 	const shadow = host.attachShadow({ mode: "closed" });
 	const button = buildDetailButton(shadow);
-	// Place the toggle adjacent to the title (AC: "near the title").
-	titleEl.after(host);
+	// Second child of the cluster: the toggle sits beside "Bagikan", in the slot
+	// MagangHub already established for secondary actions on this page.
+	cluster.append(host);
 
 	const state: StarState = { interacted: false };
 	const apply = (filled: boolean) =>
 		setFilled(host, button, filled, DETAIL_LABELS);
 	void reflectState(uuid, apply, state);
 	registerUpdater(uuid, apply, host);
-	attachDetailToggle(uuid, titleEl, host, button, state);
+	attachDetailToggle(uuid, host, button, state);
 }
 
 function buildDetailButton(shadow: ShadowRoot): HTMLButtonElement {
@@ -324,14 +343,24 @@ function buildDetailButton(shadow: ShadowRoot): HTMLButtonElement {
 	button.className = "mh-favorite-detail";
 	button.setAttribute("aria-label", DETAIL_LABELS.labelOff);
 	button.setAttribute("aria-pressed", "false");
-	button.textContent = DETAIL_LABELS.textOff ?? "☆ Tandai Favorit";
+	// The label is icon-only, so `title` carries it for mouse users while
+	// `aria-label` carries it for assistive tech.
+	button.title = DETAIL_LABELS.labelOff;
+	button.innerHTML = STAR_ICON_SVG;
 	shadow.append(style, button);
 	return button;
 }
 
+/**
+ * Lucide `star`, inline. The neighbouring "Bagikan" button renders a lucide SVG
+ * at stroke-width 2, so a `★` text glyph beside it would sit at a visibly
+ * different weight and baseline. `fill` is driven by CSS: `none` when unsaved,
+ * `currentColor` when saved.
+ */
+const STAR_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+
 function attachDetailToggle(
 	uuid: string,
-	titleEl: HTMLElement,
 	host: HTMLElement,
 	button: HTMLButtonElement,
 	state: StarState,
@@ -349,7 +378,12 @@ function attachDetailToggle(
 				uuid,
 				// The detail page itself is the canonical reference URL.
 				detailUrl: location.pathname,
-				savedSnapshot: extractDetailSnapshot(detailContainer(titleEl)),
+				// Two scopes: identity comes from the header block, the numbers from
+				// the sidebar's info rows. See `extractDetailSnapshot`.
+				savedSnapshot: extractDetailSnapshot(
+					findDetailHeader(document.body),
+					document,
+				),
 			});
 			// re-read in case of a race, then persist only if still not favorited
 			if (!(await isFavorited(uuid))) {
@@ -358,18 +392,6 @@ function attachDetailToggle(
 			}
 		}
 	});
-}
-
-/** The DOM scope to extract the detail snapshot from: the title's `<main>`, or
- * its nearest section, falling back to the body. Keeps `img`/`h1` lookups from
- * matching unrelated page chrome. */
-function detailContainer(titleEl: HTMLElement): HTMLElement {
-	return (
-		titleEl.closest<HTMLElement>("main") ??
-		titleEl.closest<HTMLElement>("article") ??
-		titleEl.parentElement ??
-		document.body
-	);
 }
 
 // ───────────────────────────── Shared helpers ───────────────────────────────
@@ -386,11 +408,11 @@ const STAR_LABELS: FilledLabels = {
 	labelOff: "Tandai sebagai favorit",
 };
 
+// Icon-only, mirroring the "Bagikan" button beside it — no textOn/textOff, so
+// `setFilled` leaves the inline SVG alone and only swaps colour + aria/title.
 const DETAIL_LABELS: FilledLabels = {
 	labelOn: "Hapus dari favorit",
 	labelOff: "Tandai sebagai favorit",
-	textOn: "★ Tersimpan",
-	textOff: "☆ Tandai Favorit",
 };
 
 async function reflectState(
@@ -419,7 +441,9 @@ function setFilled(
 	host.setAttribute("data-filled", String(filled));
 	button.classList.toggle("is-filled", filled);
 	button.setAttribute("aria-pressed", String(filled));
-	button.setAttribute("aria-label", filled ? labels.labelOn : labels.labelOff);
+	const label = filled ? labels.labelOn : labels.labelOff;
+	button.setAttribute("aria-label", label);
+	if (button.title) button.title = label;
 	if (labels.textOn && labels.textOff) {
 		button.textContent = filled ? labels.textOn : labels.textOff;
 	}
@@ -483,32 +507,31 @@ const STAR_CSS = `
   .mh-star.is-filled:hover { color: #d97706; }
 `;
 
+/**
+ * Mirrors the "Bagikan" button it sits beside (measured on the live page,
+ * issue #10): 40×40, 14px radius, 1px #e1e7ef border, white background.
+ * Matching those numbers is the whole point of the placement — a differently
+ * shaped button in a two-button cluster reads as something bolted on.
+ */
 const DETAIL_CSS = `
   :host { all: initial; display: inline-block; }
   .mh-favorite-detail {
     all: initial;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    margin-top: 8px;
-    padding: 6px 12px;
-    border-radius: 9999px;
-    border: 1px solid rgba(0,0,0,0.12);
-    background: rgba(255,255,255,1);
-    color: #475569;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+    border: 1px solid rgb(225,231,239);
+    background: rgb(255,255,255);
+    color: rgb(15,23,41);
     cursor: pointer;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
     transition: color 80ms ease, background 80ms ease, border-color 80ms ease;
   }
+  .mh-favorite-detail svg { width: 16px; height: 16px; fill: none; }
   .mh-favorite-detail:hover { color: #f59e0b; border-color: rgba(245,158,11,0.5); }
-  .mh-favorite-detail.is-filled {
-    color: #b45309;
-    background: rgba(254,243,199,1);
-    border-color: rgba(245,158,11,0.6);
-  }
-  .mh-favorite-detail.is-filled:hover { color: #92400e; }
+  .mh-favorite-detail.is-filled { color: #f59e0b; border-color: rgba(245,158,11,0.6); }
+  .mh-favorite-detail.is-filled svg { fill: currentColor; }
+  .mh-favorite-detail.is-filled:hover { color: #d97706; }
 `;

@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
-import { exportFavorites, importFavorites, type ExportFile } from "@/lib/io";
-import { SCHEMA_VERSION, type Favorite } from "@/lib/types";
+import { type ExportFile, exportFavorites, importFavorites } from "@/lib/io";
 import type { FavoriteV1 } from "@/lib/migrations";
-import { setFavorite, listFavorites, getFavorite } from "@/lib/storage";
+import { getFavorite, listFavorites, setFavorite } from "@/lib/storage";
+import { type Favorite, SCHEMA_VERSION } from "@/lib/types";
 
 // The io module is pure-ish: export is a pure serializer, import writes through
 // storage.ts. We exercise both against the in-memory fake browser that the

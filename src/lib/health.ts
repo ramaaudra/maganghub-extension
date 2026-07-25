@@ -1,9 +1,9 @@
 import {
-	CARD_SELECTOR,
 	CARD_ANCHOR_SELECTOR,
-	DETAIL_FIELD_SELECTORS,
+	CARD_SELECTOR,
+	DETAIL_HEADER_SELECTORS,
 } from "./constants";
-import { queryFirst } from "./extract";
+import { findShareCluster, queryFirst } from "./extract";
 
 /**
  * Injection health (issue #8). MagangHub is a site we don't control; when its
@@ -32,13 +32,25 @@ export function assessListMarkup(root: ParentNode): HealthStatus {
 }
 
 /**
- * Assess a detail page's markup. The toggle anchors to the page title, so a
- * page with no recognizable title is one we can't inject into. Unlike the list,
- * there is no benign "zero results" case here — a detail page always has a
- * title.
+ * Assess a detail page's markup.
+ *
+ * Checks BOTH the title (can we read the page?) and the share cluster (can we
+ * inject into it?). Title alone is not enough: since issue #10 removed the
+ * fallback injection point, a missing share cluster means no toggle is
+ * rendered at all — and reporting `ok` there would leave the user staring at a
+ * page with no button and no explanation, which is the worst outcome
+ * available. Unlike the list, there is no benign "zero results" case: a detail
+ * page always has both.
+ *
+ * The "Lowongan Serupa" cards further down the page are deliberately NOT part
+ * of this signal. That section may legitimately be empty, and folding
+ * `assessListMarkup` in would fire a false `degraded` on a perfectly healthy
+ * page.
  */
 export function assessDetailMarkup(root: ParentNode): HealthStatus {
-	return queryFirst(root, DETAIL_FIELD_SELECTORS.title) ? "ok" : "degraded";
+	const hasTitle = queryFirst(root, DETAIL_HEADER_SELECTORS.title) !== null;
+	const hasInjectionPoint = findShareCluster(root) !== null;
+	return hasTitle && hasInjectionPoint ? "ok" : "degraded";
 }
 
 /**

@@ -1,7 +1,7 @@
-import type { Favorite, StatusLamar, LiveStatus } from "./types";
-import { SCHEMA_VERSION, initialLiveStatus } from "./types";
-import { migrateFavorite } from "./migrations";
 import type { FavoriteV1, FavoriteV2 } from "./migrations";
+import { migrateFavorite } from "./migrations";
+import type { Favorite, LiveStatus, StatusLamar } from "./types";
+import { initialLiveStatus, SCHEMA_VERSION } from "./types";
 
 /**
  * Local-first storage for Favorites (ADR-0001). Each Favorite is persisted to

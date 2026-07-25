@@ -1,4 +1,4 @@
-import { parseDetailHtml, NotALowonganError } from "@/lib/parse";
+import { NotALowonganError, parseDetailHtml } from "@/lib/parse";
 import type { OffscreenRequest, OffscreenResponse } from "@/lib/refresh";
 
 /**

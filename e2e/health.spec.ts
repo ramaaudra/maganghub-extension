@@ -1,4 +1,4 @@
-import { test, expect, serveFixture, LIST_URL } from "./fixtures";
+import { expect, LIST_URL, serveFixture, test } from "./fixtures";
 import { openPopup } from "./pages/popup";
 
 /**

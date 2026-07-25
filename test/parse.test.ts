@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { parseDetailHtml, NotALowonganError } from "@/lib/parse";
+import { describe, expect, it } from "vitest";
+import { NotALowonganError, parseDetailHtml } from "@/lib/parse";
 
 const readFixture = (name: string) =>
 	readFileSync(path.join(process.cwd(), "test/fixtures", name), "utf8");

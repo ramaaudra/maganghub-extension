@@ -1,4 +1,4 @@
-import { clsx, type ClassValue } from "clsx";
+import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 /** shadcn-svelte's class-merge helper: clsx for conditionals, twMerge to dedupe. */

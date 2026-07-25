@@ -1,7 +1,7 @@
-import { test, expect } from "./fixtures";
-import { openPopup } from "./pages/popup";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { expect, test } from "./fixtures";
+import { openPopup } from "./pages/popup";
 
 // Issue #5 e2e: refresh Status Lowongan from fixture detail HTML.
 //

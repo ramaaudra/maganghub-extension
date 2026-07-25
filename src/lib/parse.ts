@@ -88,10 +88,20 @@ function hasLamarSekarang(doc: Document): boolean {
 	);
 }
 
-/** Build a label → value map from the detail page's info rows. */
-function readInfoRows(doc: Document): Map<string, string> {
+/**
+ * Build a label → value map from the detail page's info rows.
+ *
+ * Exported and typed on `ParentNode` so the live-DOM snapshot extractor can
+ * read the same rows this parser does (issue #10). Refresh runs against a
+ * `DOMParser` document, snapshotting runs against the live page — but both are
+ * reading the same rows off the same page, and two independent readers would
+ * eventually disagree with only one of them getting fixed.
+ *
+ * Keys are lowercased so callers can match labels case-insensitively.
+ */
+export function readInfoRows(root: ParentNode): Map<string, string> {
 	const map = new Map<string, string>();
-	for (const row of doc.querySelectorAll<HTMLElement>(INFO_ROW_SELECTOR)) {
+	for (const row of root.querySelectorAll<HTMLElement>(INFO_ROW_SELECTOR)) {
 		const label = textOf(row.querySelector(LABEL_SELECTOR));
 		const value = textOf(row.querySelector(VALUE_SELECTOR));
 		if (label) map.set(label.toLowerCase(), value);

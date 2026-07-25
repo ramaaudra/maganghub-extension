@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
-import { migrateFavorite } from "@/lib/migrations";
-import { SCHEMA_VERSION, initialLiveStatus } from "@/lib/types";
+import { describe, expect, it } from "vitest";
 import type { FavoriteV1, FavoriteV2 } from "@/lib/migrations";
+import { migrateFavorite } from "@/lib/migrations";
 import type { Favorite } from "@/lib/types";
+import { initialLiveStatus, SCHEMA_VERSION } from "@/lib/types";
 
 describe("migrateFavorite", () => {
 	it("migrates a v1 record to the current schema, adding catatan and statusLamar defaults", () => {
