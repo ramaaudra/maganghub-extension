@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lowongan Magang Nasional — MagangHub</title>
+    <!--
+      HISTORICAL fixture, kept as a REGRESSION CASE. This is what the list
+      fixture looked like while its inner field classes were provisional —
+      `.mh-lowongan-title`, `.mh-penyelenggara`, `.mh-lowongan-location`,
+      `.mh-lowongan-kuota`, `.mh-lowongan-pelamar`, `.mh-lowongan-logo`.
+
+      The 2026-07-25 camofox recon confirmed none of those classes exist on the
+      live page (docs/live-dom-recon-2026-07-25.md §2). This markup was never
+      MagangHub's; it was ours, and the extension was tuned to it, which is
+      exactly why the breakage stayed invisible — the e2e suite proved the
+      extension worked against our own assumption.
+
+      It earns its keep as a card shape the retuned selectors have never seen:
+      no h3-adjacent organizer <p>, no lucide map-pin, no Badge pills. Starring
+      such a card must still produce a Favorite (title survives via `h3`, logo
+      via `img`) with the unreachable fields empty — never a throw, never a
+      wrong value. `lowongan-list-altered.html` remains the harder case, where
+      even `.mh-lowongan-card` is renamed and health must go `degraded`.
+    -->
+  </head>
+  <body>
+    <div id="__next">
+      <main class="container mx-auto px-4 py-6">
+        <h1 class="text-2xl font-bold">Lowongan Magang Nasional</h1>
+        <section class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <a class="group block h-full" href="/magang-nasional/lowongan/magang-data-analyst-a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d">
+            <div class="mh-lowongan-card rounded-lg border p-4 transition hover:shadow-md">
+              <div class="flex items-center gap-3">
+                <img class="mh-lowongan-logo h-10 w-10 rounded-full" src="https://maganghub.kemnaker.go.id/logos/pt-maju.png" alt="Logo PT Maju Bersama" />
+                <div>
+                  <h3 class="mh-lowongan-title text-base font-semibold">Magang Data Analyst</h3>
+                  <p class="mh-penyelenggara text-sm text-muted-foreground">PT Maju Bersama</p>
+                </div>
+              </div>
+              <div class="mt-3 flex flex-wrap gap-2 text-sm">
+                <span class="mh-lowongan-location rounded bg-muted px-2 py-0.5">Jakarta, DKI Jakarta</span>
+                <span class="mh-lowongan-kuota rounded bg-muted px-2 py-0.5">Kuota: 50</span>
+                <span class="mh-lowongan-pelamar rounded bg-muted px-2 py-0.5">Pelamar: 120</span>
+              </div>
+            </div>
+          </a>
+          <a class="group block h-full" href="/magang-nasional/lowongan/magang-software-engineer-b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e">
+            <div class="mh-lowongan-card rounded-lg border p-4 transition hover:shadow-md">
+              <div class="flex items-center gap-3">
+                <img class="mh-lowongan-logo h-10 w-10 rounded-full" src="https://maganghub.kemnaker.go.id/logos/kominfo.png" alt="Logo Kementerian Komunikasi" />
+                <div>
+                  <h3 class="mh-lowongan-title text-base font-semibold">Magang Software Engineer</h3>
+                  <p class="mh-penyelenggara text-sm text-muted-foreground">Kementerian Komunikasi dan Informatika</p>
+                </div>
+              </div>
+              <div class="mt-3 flex flex-wrap gap-2 text-sm">
+                <span class="mh-lowongan-location rounded bg-muted px-2 py-0.5">Jakarta Pusat, DKI Jakarta</span>
+                <span class="mh-lowongan-kuota rounded bg-muted px-2 py-0.5">Kuota: 30</span>
+                <span class="mh-lowongan-pelamar rounded bg-muted px-2 py-0.5">Pelamar: 25</span>
+              </div>
+            </div>
+          </a>
+          <a class="group block h-full" href="/magang-nasional/lowongan/magang-ui-ux-designer-c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f">
+            <div class="mh-lowongan-card rounded-lg border p-4 transition hover:shadow-md">
+              <div class="flex items-center gap-3">
+                <img class="mh-lowongan-logo h-10 w-10 rounded-full" src="https://maganghub.kemnaker.go.id/logos/kreatif.png" alt="Logo PT Kreatif Nusantara" />
+                <div>
+                  <h3 class="mh-lowongan-title text-base font-semibold">Magang UI/UX Designer</h3>
+                  <p class="mh-penyelenggara text-sm text-muted-foreground">PT Kreatif Nusantara</p>
+                </div>
+              </div>
+              <div class="mt-3 flex flex-wrap gap-2 text-sm">
+                <span class="mh-lowongan-location rounded bg-muted px-2 py-0.5">Bandung, Jawa Barat</span>
+                <span class="mh-lowongan-kuota rounded bg-muted px-2 py-0.5">Kuota: 10</span>
+                <span class="mh-lowongan-pelamar rounded bg-muted px-2 py-0.5">Pelamar: 8</span>
+              </div>
+            </div>
+          </a>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

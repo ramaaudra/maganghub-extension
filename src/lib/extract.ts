@@ -1,11 +1,14 @@
 import {
+	CARD_BADGE_LABELS,
+	CARD_BADGE_SELECTOR,
+	CARD_LOCATION_SELECTORS,
 	DETAIL_HEADER_SELECTORS,
 	FIELD_SELECTORS,
 	type FieldSelectors,
 	INFO_ROW_LABELS,
 	SHARE_CLUSTER_SELECTORS,
 } from "./constants";
-import { readInfoRows } from "./parse";
+import { normalizeWhitespace, readInfoRows } from "./parse";
 import { type LowonganSnapshot, UUID_REGEX } from "./types";
 
 /**
@@ -54,12 +57,62 @@ function textBySelector(
 	root: HTMLElement,
 	selectors: readonly string[],
 ): string {
-	return queryFirst(root, selectors)?.textContent?.trim() ?? "";
+	return normalizeWhitespace(queryFirst(root, selectors)?.textContent ?? "");
+}
+
+/**
+ * A card's location, resolved from its lucide map-pin icon (2026-07-25 recon).
+ *
+ * There is no location class on the live card, and the wrapper's utility
+ * classes are shared with the education-level and working-days spans beside it.
+ * The icon is the only thing that identifies which span is the location, so it
+ * is a landmark *inside* the target — the same shape as `findShareCluster`,
+ * which is why this can't be a plain `queryFirst` over the selector list.
+ */
+export function findCardLocation(card: ParentNode): string {
+	for (const selector of CARD_LOCATION_SELECTORS) {
+		const icon = card.querySelector(selector);
+		const span = icon?.closest("span");
+		if (span) return normalizeWhitespace(span.textContent ?? "");
+	}
+	return "";
+}
+
+/**
+ * Read a card's Kuota/Pelamar badge pills into a label → text map.
+ *
+ * The pills are structurally identical to each other and to the Hari Libur days
+ * that follow them, so they are matched by label text — the same approach
+ * `readInfoRows` takes to the detail page's info rows, for the same reason.
+ *
+ * Values keep their label ("Kuota: 5"), matching what this field held before
+ * the retune: `savedSnapshot.kuota`/`.pelamar` are display strings, and the
+ * refresh parser reads its own numbers from the detail page into `liveStatus`.
+ */
+export function readCardBadges(card: ParentNode): Map<string, string> {
+	const badges = new Map<string, string>();
+	for (const pill of card.querySelectorAll(CARD_BADGE_SELECTOR)) {
+		const text = normalizeWhitespace(pill.textContent ?? "");
+		const label = text.split(":")[0]?.trim().toLowerCase();
+		// Only labelled pills are ours; "Sabtu"/"Minggu" have no colon and are
+		// skipped rather than being mistaken for a value.
+		if (label && label !== text.toLowerCase() && !badges.has(label)) {
+			badges.set(label, text);
+		}
+	}
+	return badges;
 }
 
 /**
  * Capture an immutable snapshot of a card's visible fields. Missing fields come
  * back as empty strings (never throw) so a partially-parsed card still stars.
+ *
+ * Three different lookup strategies, because the live card offers three
+ * different kinds of handle (see constants.ts): title/organizer/logo are
+ * selectable, location is icon-anchored, and Kuota/Pelamar are label-matched.
+ * Using one uniform selector list for all of them is what broke this before —
+ * it silently produced empty `organizer`/`location`, which `searchFavorites`
+ * and `sortFavorites` then keyed on (docs/live-dom-recon-2026-07-25.md §2).
  */
 export function extractSnapshot(
 	card: HTMLElement,
@@ -67,12 +120,13 @@ export function extractSnapshot(
 ): LowonganSnapshot {
 	const logo = queryFirst(card, selectors.logo) as HTMLImageElement | null;
 	const logoUrl = logo?.getAttribute("src") ?? undefined;
+	const badges = readCardBadges(card);
 	return {
 		title: textBySelector(card, selectors.title),
 		organizer: textBySelector(card, selectors.organizer),
-		location: textBySelector(card, selectors.location),
-		kuota: textBySelector(card, selectors.kuota) || undefined,
-		pelamar: textBySelector(card, selectors.pelamar) || undefined,
+		location: findCardLocation(card),
+		kuota: badges.get(CARD_BADGE_LABELS.kuota) || undefined,
+		pelamar: badges.get(CARD_BADGE_LABELS.pelamar) || undefined,
 		logoUrl,
 		capturedAt: new Date().toISOString(),
 	};

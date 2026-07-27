@@ -10,9 +10,13 @@ import { openPopup } from "./pages/popup";
  * silent bug in their favorites.
  *
  * `lowongan-list-altered.html` is the same page with the card classes renamed.
+ * `lowongan-list-invented-classes.html` is the milder case: the card class
+ * still matches, so stars inject, but the inner field markup is one the
+ * retuned selectors have never seen.
  */
 
 const ALTERED = { listFixture: "lowongan-list-altered.html" };
+const INVENTED = { listFixture: "lowongan-list-invented-classes.html" };
 
 test("the content script no-ops silently when MagangHub's markup changes", async ({
 	page,
@@ -89,6 +93,36 @@ test("the health indicator clears once MagangHub renders normally again", async 
 
 	popup = await openPopup(context, extensionId);
 	await expect(popup.getByText(/tampilan MagangHub berubah/i)).toHaveCount(0);
+});
+
+test("a card whose inner fields are unreachable still stars, with what it can read", async ({
+	page,
+	context,
+	extensionId,
+}) => {
+	// The milder degradation: `.mh-lowongan-card` still matches, so the star
+	// injects and the Favorite saves — but the field markup inside is shaped
+	// differently, so location and the Kuota/Pelamar pills can't be found.
+	//
+	// This is the shape the extension was ACTUALLY tuned to before the
+	// 2026-07-25 recon, which is why it's kept: the failure it represents (a
+	// Favorite that saves with empty fields, silently) is the one that shipped.
+	// Title and logo survive on their structural anchors; nothing throws.
+	const errors: string[] = [];
+	page.on("pageerror", (err) => errors.push(String(err)));
+
+	await serveFixture(page, INVENTED);
+	await page.goto(LIST_URL);
+
+	const hosts = page.locator(".mh-lowongan-card .mh-favorite-host");
+	await expect(hosts).toHaveCount(3);
+	await hosts.first().click();
+	await expect(hosts.first()).toHaveAttribute("data-filled", "true");
+
+	const popup = await openPopup(context, extensionId);
+	// The title comes through `h3`, so the Favorite is still recognisable.
+	await expect(popup.getByText("Magang Data Analyst")).toBeVisible();
+	expect(errors).toEqual([]);
 });
 
 test("favorites saved before a MagangHub redesign are still listed", async ({

@@ -49,23 +49,93 @@ describe("extractSnapshot", () => {
 		new DOMParser().parseFromString(html, "text/html").body
 			.firstElementChild as HTMLElement;
 
-	it("captures title, organizer, location, kuota, pelamar, and logo from a card", () => {
-		const card = buildCard(`<div>
-      <img class="mh-lowongan-logo" src="https://example.com/logo.png" alt="logo" />
-      <h3 class="mh-lowongan-title">Magang Data Analyst</h3>
-      <p class="mh-penyelenggara">PT Maju Bersama</p>
-      <p class="mh-lowongan-location">Jakarta, DKI Jakarta</p>
-      <span class="mh-lowongan-kuota">Kuota: 50</span>
-      <span class="mh-lowongan-pelamar">Pelamar: 120</span>
-    </div>`);
-		const snap = extractSnapshot(card);
-		expect(snap.title).toBe("Magang Data Analyst");
-		expect(snap.organizer).toBe("PT Maju Bersama");
-		expect(snap.location).toBe("Jakarta, DKI Jakarta");
-		expect(snap.kuota).toBe("Kuota: 50");
-		expect(snap.pelamar).toBe("Pelamar: 120");
+	/**
+	 * The live card, structure-for-structure (2026-07-25 recon). Every hazard the
+	 * retune exists for is present here on purpose:
+	 *  - no `mh-lowongan-*` field classes (they never existed on the real page);
+	 *  - the Penyelenggara `<p>` is followed by a muted `<p>` holding the study
+	 *    program, so a naive "first muted p" would pick the wrong one;
+	 *  - the location span is identified only by its lucide icon, and sits beside
+	 *    two structurally identical spans;
+	 *  - Kuota/Pelamar are Badge pills sharing markup with the Hari Libur days;
+	 *  - `<!-- -->` hydration markers split each label from its number.
+	 */
+	const LIVE_CARD = `<div class="rounded-xl border bg-card mh-lowongan-card overflow-hidden h-full flex flex-col">
+    <div class="p-5 flex flex-col h-full">
+      <div class="flex items-start gap-4 h-full">
+        <div class="w-12 h-12 rounded-lg shrink-0 overflow-hidden">
+          <img alt="Organizer logo" loading="lazy" class="w-full h-full object-contain" src="https://example.com/logo.png" />
+        </div>
+        <div class="flex-1 min-w-0 h-full flex flex-col">
+          <div>
+            <h3 class="font-semibold text-base leading-snug">Fisikawan Medis</h3>
+            <p class="text-sm font-medium text-foreground">Rumah Sakit Umum Pusat Dr. Kariadi Semarang</p>
+            <p class="text-sm text-muted-foreground truncate">Fisika</p>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm text-muted-foreground">
+              <span class="flex items-center gap-1.5"><svg class="lucide lucide-map-pin w-3.5 h-3.5"></svg>Kota Semarang</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-muted-foreground">
+              <span class="flex items-center gap-1.5"><svg class="lucide lucide-graduation-cap w-3.5 h-3.5"></svg><span>Profesi</span></span>
+              <span class="flex items-center gap-1.5"><svg class="lucide lucide-calendar w-3.5 h-3.5"></svg>5<!-- --> hari/minggu</span>
+            </div>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold border-transparent bg-secondary text-secondary-foreground text-xs">Kuota: <!-- -->5</div>
+            <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold border-transparent bg-secondary text-secondary-foreground text-xs">Pelamar: <!-- -->0</div>
+          </div>
+          <div class="mt-auto pt-4">
+            <hr class="mb-4" />
+            <p class="text-xs font-semibold text-foreground mb-2">Hari Libur</p>
+            <div class="flex flex-wrap gap-1.5">
+              <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold text-foreground text-xs bg-white">Sabtu</div>
+              <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold text-foreground text-xs bg-white">Minggu</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+	it("captures title, organizer, location, kuota, pelamar, and logo from a live card", () => {
+		const snap = extractSnapshot(buildCard(LIVE_CARD));
+		expect(snap.title).toBe("Fisikawan Medis");
+		expect(snap.organizer).toBe("Rumah Sakit Umum Pusat Dr. Kariadi Semarang");
+		expect(snap.location).toBe("Kota Semarang");
+		expect(snap.kuota).toBe("Kuota: 5");
+		expect(snap.pelamar).toBe("Pelamar: 0");
 		expect(snap.logoUrl).toBe("https://example.com/logo.png");
 		expect(typeof snap.capturedAt).toBe("string");
+	});
+
+	it("reads the Penyelenggara, not the study program that follows it", () => {
+		// Both are <p> inside the same block; the muted one is the study program.
+		// On the DETAIL page `p.text-muted-foreground` IS the organizer, so the
+		// same class means opposite things on the two surfaces.
+		const snap = extractSnapshot(buildCard(LIVE_CARD));
+		expect(snap.organizer).not.toBe("Fisika");
+	});
+
+	it("picks the location span by its icon, not by position among its siblings", () => {
+		// The education-level and working-days spans are structurally identical to
+		// the location span and sit right after it.
+		const snap = extractSnapshot(buildCard(LIVE_CARD));
+		expect(snap.location).toBe("Kota Semarang");
+		expect(snap.location).not.toContain("Profesi");
+		expect(snap.location).not.toContain("hari/minggu");
+	});
+
+	it("does not mistake a Hari Libur pill for Kuota or Pelamar", () => {
+		// Same component, same shape, no label — they must not be picked up.
+		const snap = extractSnapshot(buildCard(LIVE_CARD));
+		expect(snap.kuota).not.toContain("Sabtu");
+		expect(snap.pelamar).not.toContain("Minggu");
+	});
+
+	it("survives the Next.js hydration marker splitting a label from its number", () => {
+		// textContent drops <!-- -->, but the value still arrives with whatever
+		// whitespace the server emitted around it.
+		const snap = extractSnapshot(buildCard(LIVE_CARD));
+		expect(snap.kuota).toBe("Kuota: 5");
 	});
 
 	it("returns empty strings (never throws) for a card missing the fields", () => {
@@ -77,6 +147,22 @@ describe("extractSnapshot", () => {
 		expect(snap.kuota).toBeUndefined();
 		expect(snap.pelamar).toBeUndefined();
 		expect(snap.logoUrl).toBeUndefined();
+	});
+
+	it("still captures what it can when MagangHub renames its utility classes", () => {
+		// The retuned selectors are layered so a restyle degrades field-by-field
+		// rather than all at once: the h3/img anchors and the lucide icon are
+		// independent of the Tailwind classes around them.
+		const card = buildCard(`<div class="card-v2">
+      <img src="https://example.com/logo.png" alt="logo" />
+      <h3>Magang Data Analyst</h3>
+      <p class="org-v2">PT Maju Bersama</p>
+      <span class="loc-v2"><svg class="lucide lucide-map-pin"></svg>Jakarta, DKI Jakarta</span>
+    </div>`);
+		const snap = extractSnapshot(card);
+		expect(snap.title).toBe("Magang Data Analyst");
+		expect(snap.organizer).toBe("PT Maju Bersama");
+		expect(snap.location).toBe("Jakarta, DKI Jakarta");
 	});
 });
 

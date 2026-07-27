@@ -75,8 +75,13 @@ function textOf(el: Element | null | undefined): string {
 
 /** Collapse all whitespace runs (newlines, tabs, non-breaking spaces) to a
  *  single space and trim. `\s` covers U+00A0 in JS regex, which matters because
- *  the page uses `&nbsp;` in places. */
-function normalizeWhitespace(text: string): string {
+ *  the page uses `&nbsp;` in places.
+ *
+ *  Exported for the same reason `readInfoRows` is: the list card has the same
+ *  hazard as the detail page — a Next.js `<!-- -->` marker splits "Kuota: " from
+ *  "5", and lines wrap at arbitrary points — so the snapshot extractor must
+ *  normalize text the identical way the refresh parser does. */
+export function normalizeWhitespace(text: string): string {
 	return text.replace(/\s+/g, " ").trim();
 }
 

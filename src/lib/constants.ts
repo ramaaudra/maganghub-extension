@@ -7,11 +7,13 @@
  *  - stable id = the UUID in that href
  *  - stack is Next.js + Tailwind + shadcn
  *
- * PROVISIONAL (inner field classes): Cloudflare blocked live exploration while
- * building the tracer bullet, so the field selectors below are best-effort and
- * MUST be confirmed/refreshed from the live DOM via camofox before relying on
- * them in production. They are centralized here so a single edit retunes them.
- * The e2e fixture (test/fixtures/lowongan-list.html) is built to match these.
+ * The inner field selectors below were PROVISIONAL — invented from the
+ * `.mh-lowongan-card` naming convention while Cloudflare blocked live
+ * exploration — until the 2026-07-25 recon confirmed that *none of them exist*:
+ * page-wide, `.mh-lowongan-title`, `.mh-penyelenggara`, `.mh-lowongan-location`,
+ * `.mh-lowongan-kuota`, `.mh-lowongan-pelamar` and `.mh-lowongan-logo` all match
+ * zero elements. Only `.mh-lowongan-card` and `.mh-container` are real. They are
+ * now retuned against the live markup; see docs/live-dom-recon-2026-07-25.md.
  */
 export const CARD_SELECTOR = ".mh-lowongan-card";
 
@@ -20,29 +22,79 @@ export const CARD_ANCHOR_SELECTOR = 'a[href*="/magang-nasional/lowongan/"]';
 
 /**
  * Per-field selector list, in priority order. First match wins.
+ *
+ * Only the fields a CSS selector can actually isolate live here. Location is
+ * icon-anchored (`CARD_LOCATION_SELECTORS`) and Kuota/Pelamar are label-matched
+ * (`CARD_BADGE_LABELS`) — see those constants for why.
  */
 export type FieldSelectors = {
 	readonly title: readonly string[];
 	readonly organizer: readonly string[];
-	readonly location: readonly string[];
-	readonly kuota: readonly string[];
-	readonly pelamar: readonly string[];
 	readonly logo: readonly string[];
 };
 
 /**
- * Inner field selectors, in priority order. First match wins.
- * `mh-lowongan-*` / `mh-penyelenggara` follow the confirmed `.mh-lowongan-card`
- * naming convention; structural fallbacks (h3, img) cover shadcn markup.
+ * Inner field selectors, in priority order. First match wins. CONFIRMED against
+ * the live card (2026-07-25):
+ *
+ *   <div class="mh-lowongan-card …">
+ *     <div class="w-12 h-12 …"><img class="w-full h-full object-contain"></div>
+ *     <h3 class="font-semibold text-base leading-snug">Fisikawan Medis</h3>
+ *     <p class="text-sm font-medium text-foreground">RSUP Dr. Kariadi</p>  ← Penyelenggara
+ *     <p class="text-sm text-muted-foreground truncate">Fisika</p>          ← study program
+ *
+ * Each `organizer` layer survives a different change: `h3 + p` rides the title
+ * anchor (itself confirmed), `p.text-foreground` rides shadcn's semantic colour
+ * class, and bare `p` rides document order. All three resolve to the same
+ * element today — which is the point, they are redundancy, not alternatives.
+ *
+ * `organizer` must NOT be `p.text-muted-foreground`: on a card that class is the
+ * study program ("Fisika"), not the Penyelenggara. It means the opposite here
+ * from what it means on the detail page.
  */
 export const FIELD_SELECTORS: FieldSelectors = {
-	title: [".mh-lowongan-title", "h3", "h2"],
-	organizer: [".mh-penyelenggara", '[data-field="organizer"]'],
-	location: [".mh-lowongan-location", '[data-field="location"]'],
-	kuota: [".mh-lowongan-kuota", '[data-field="kuota"]'],
-	pelamar: [".mh-lowongan-pelamar", '[data-field="pelamar"]'],
-	logo: ["img.mh-lowongan-logo", "img"],
+	title: ["h3", "h2"],
+	organizer: ["h3 + p", "p.text-foreground", "p"],
+	logo: ["img"],
 };
+
+/**
+ * Location on a card, anchored to its lucide map-pin icon rather than to a
+ * class — there is no location class, and the wrapper's utility classes
+ * (`flex items-center gap-1.5`) are shared with the education-level and
+ * working-days spans beside it.
+ *
+ * Resolved icon → `closest("span")`, so this is walked by `findCardLocation`
+ * rather than by `queryFirst` (the icon is a landmark *inside* the target, the
+ * same shape as `SHARE_CLUSTER_SELECTORS` / `findShareCluster`).
+ *
+ * Lucide class names are semantic and survive a restyle; the second layer
+ * catches a lucide version that renames the class but keeps the stem.
+ */
+export const CARD_LOCATION_SELECTORS = [
+	"svg.lucide-map-pin",
+	'svg[class*="map-pin"]',
+] as const;
+
+/**
+ * Kuota and Pelamar on a card are shadcn `Badge` pills:
+ *
+ *   <div class="… rounded-full … bg-secondary …">Kuota: <!-- -->5</div>
+ *   <div class="… rounded-full … bg-secondary …">Pelamar: <!-- -->0</div>
+ *
+ * They are structurally identical to each other AND to the Hari Libur day pills
+ * ("Sabtu", "Minggu") that follow them, differing only by a Tailwind variant.
+ * So they are told apart by LABEL TEXT, exactly as the detail page's info rows
+ * are (`INFO_ROW_LABELS` + `readInfoRows`). The `<!-- -->` is a Next.js
+ * hydration marker and vanishes from `textContent`.
+ */
+export const CARD_BADGE_SELECTOR = "div.rounded-full";
+
+/** Label prefixes of the badge pills, matched case-insensitively. */
+export const CARD_BADGE_LABELS = {
+	kuota: "kuota",
+	pelamar: "pelamar",
+} as const;
 
 /**
  * Detail-page header selectors — CONFIRMED against the live page via camofox

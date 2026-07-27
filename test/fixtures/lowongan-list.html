@@ -3,71 +3,184 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lowongan Magang Nasional — MagangHub</title>
+    <title>Program Pemagangan Lulusan Perguruan Tinggi : Maganghub - Kemnaker RI</title>
     <!--
-      PROVISIONAL fixture. Built from the CONFIRMED anchors in
-      docs/agents/camofox-browser.md (`.mh-lowongan-card` wrapped in
-      `<a class="group block h-full" href="/magang-nasional/lowongan/<slug>-<uuid>">`,
-      Tailwind/shadcn stack). The inner field classes follow the `.mh-lowongan-card`
-      naming convention but are NOT live-confirmed — re-record this fixture from the
-      real page via camofox once Cloudflare cooperates, then retune src/lib/constants.ts.
+      CONFIRMED structure (recorded via camofox 2026-07-25 — see
+      docs/live-dom-recon-2026-07-25.md). Hand-written rather than dumped: the
+      live page is ~210 KB of Next.js hydration payload, and dumping it would
+      commit real organizers' listings to the repo.
+
+      This fixture REPLACES a provisional one whose inner field classes
+      (.mh-lowongan-title, .mh-penyelenggara, .mh-lowongan-location,
+      .mh-lowongan-kuota, .mh-lowongan-pelamar, .mh-lowongan-logo) were
+      invented. Recon confirmed all six match ZERO elements on the live page —
+      only `.mh-lowongan-card` and `.mh-container` are real. The old fixture is
+      kept as lowongan-list-invented-classes.html, where it now serves as a
+      degradation case.
+
+      The live card keeps its fields behind three different kinds of handle,
+      which is why extract.ts uses three lookup strategies:
+
+        .mh-lowongan-card
+        └─ div.p-5 › div.flex.items-start.gap-4
+           ├─ div.w-12.h-12 › img                    ← logo (only img in card)
+           └─ div.flex-1
+              ├─ h3                                   ← title      (selectable)
+              ├─ p.text-foreground                    ← Penyelenggara (selectable)
+              ├─ p.text-muted-foreground              ← study program — NOT the
+              │                                          organizer. On the DETAIL
+              │                                          page this same class IS
+              │                                          the organizer.
+              ├─ span › svg.lucide-map-pin            ← location (icon-anchored)
+              ├─ span › svg.lucide-graduation-cap     ← education level
+              ├─ span › svg.lucide-calendar           ← working days
+              ├─ div.rounded-full "Kuota: <!-- -->N"  ← label-matched
+              ├─ div.rounded-full "Pelamar: <!-- -->N"← label-matched
+              └─ div.rounded-full "Sabtu"/"Minggu"    ← Hari Libur: SAME component
+                                                         as the two above, told
+                                                         apart only by label text
+
+      The `<!-- -->` between each label and its number is a Next.js hydration
+      marker; it vanishes from textContent but the whitespace around it does not,
+      which is why extraction normalizes.
+
+      Numbers are drawn from the live sample: Kuota is typically 2–5 and Pelamar
+      rarely exceeds a third of it. The previous fixture's "Kuota: 50 / Pelamar:
+      120" was invented and badly miscalibrated the ratio-badge design (A1).
     -->
   </head>
   <body>
     <div id="__next">
-      <main class="container mx-auto px-4 py-6">
-        <h1 class="text-2xl font-bold">Lowongan Magang Nasional</h1>
-        <section class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div class="mh-container py-6">
+        <h1 class="text-2xl font-bold">Lowongan Magang</h1>
+        <div class="text-muted-foreground mt-1">Ditemukan 28428 lowongan magang aktif</div>
+
+        <div class="bg-white flex items-stretch mt-4">
+          <div class="border border-input border-r-0 rounded-bl-xl rounded-tl-xl px-3 inline-flex items-center bg-gray-50">Urutkan:</div>
+          <button type="button" role="combobox" aria-expanded="false" data-state="closed" class="flex items-center justify-between whitespace-nowrap rounded-md border border-input px-3 py-2 h-10 sm:w-56 bg-white" aria-label="Urutkan">
+            <span style="pointer-events:none">Peluang Terbesar</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch mt-6">
           <a class="group block h-full" href="/magang-nasional/lowongan/magang-data-analyst-a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d">
-            <div class="mh-lowongan-card rounded-lg border p-4 transition hover:shadow-md">
-              <div class="flex items-center gap-3">
-                <img class="mh-lowongan-logo h-10 w-10 rounded-full" src="https://maganghub.kemnaker.go.id/logos/pt-maju.png" alt="Logo PT Maju Bersama" />
-                <div>
-                  <h3 class="mh-lowongan-title text-base font-semibold">Magang Data Analyst</h3>
-                  <p class="mh-penyelenggara text-sm text-muted-foreground">PT Maju Bersama</p>
+            <div class="rounded-xl border bg-card text-card-foreground shadow mh-lowongan-card overflow-hidden h-full flex flex-col">
+              <div class="p-5 flex flex-col h-full">
+                <div class="flex items-start gap-4 h-full">
+                  <div class="w-12 h-12 text-sm rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10 flex items-center justify-center font-bold text-primary shrink-0 overflow-hidden">
+                    <img alt="Organizer logo" loading="lazy" width="64" height="64" decoding="async" data-nimg="1" class="w-full h-full object-contain" src="https://maganghub.kemnaker.go.id/logos/pt-maju.png" />
+                  </div>
+                  <div class="flex-1 min-w-0 h-full flex flex-col">
+                    <div>
+                      <h3 class="font-semibold text-base leading-snug">Magang Data Analyst</h3>
+                      <p class="text-sm font-medium text-foreground">PT Maju Bersama</p>
+                      <p class="text-sm text-muted-foreground truncate">Statistika</p>
+                      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm text-muted-foreground">
+                        <span class="flex items-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lucide lucide-map-pin w-3.5 h-3.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Jakarta, DKI Jakarta</span>
+                      </div>
+                      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-muted-foreground">
+                        <span class="flex items-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lucide lucide-graduation-cap w-3.5 h-3.5"><path d="M22 10v6"></path></svg><span>Sarjana</span></span>
+                        <span class="flex items-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lucide lucide-calendar w-3.5 h-3.5"><rect width="18" height="18" x="3" y="4" rx="2"></rect></svg>5<!-- --> hari/minggu</span>
+                      </div>
+                    </div>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                      <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors border-transparent bg-secondary text-secondary-foreground text-xs">Kuota: <!-- -->5</div>
+                      <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors border-transparent bg-secondary text-secondary-foreground text-xs">Pelamar: <!-- -->1</div>
+                    </div>
+                    <div class="mt-auto pt-4">
+                      <hr class="mb-4" />
+                      <p class="text-xs font-semibold text-foreground mb-2">Hari Libur</p>
+                      <div class="flex flex-wrap gap-1.5">
+                        <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors text-foreground text-xs bg-white">Sabtu</div>
+                        <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors text-foreground text-xs bg-white">Minggu</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div class="mt-3 flex flex-wrap gap-2 text-sm">
-                <span class="mh-lowongan-location rounded bg-muted px-2 py-0.5">Jakarta, DKI Jakarta</span>
-                <span class="mh-lowongan-kuota rounded bg-muted px-2 py-0.5">Kuota: 50</span>
-                <span class="mh-lowongan-pelamar rounded bg-muted px-2 py-0.5">Pelamar: 120</span>
               </div>
             </div>
           </a>
+
           <a class="group block h-full" href="/magang-nasional/lowongan/magang-software-engineer-b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e">
-            <div class="mh-lowongan-card rounded-lg border p-4 transition hover:shadow-md">
-              <div class="flex items-center gap-3">
-                <img class="mh-lowongan-logo h-10 w-10 rounded-full" src="https://maganghub.kemnaker.go.id/logos/kominfo.png" alt="Logo Kementerian Komunikasi" />
-                <div>
-                  <h3 class="mh-lowongan-title text-base font-semibold">Magang Software Engineer</h3>
-                  <p class="mh-penyelenggara text-sm text-muted-foreground">Kementerian Komunikasi dan Informatika</p>
+            <div class="rounded-xl border bg-card text-card-foreground shadow mh-lowongan-card overflow-hidden h-full flex flex-col">
+              <div class="p-5 flex flex-col h-full">
+                <div class="flex items-start gap-4 h-full">
+                  <div class="w-12 h-12 text-sm rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10 flex items-center justify-center font-bold text-primary shrink-0 overflow-hidden">
+                    <img alt="Organizer logo" loading="lazy" width="64" height="64" decoding="async" data-nimg="1" class="w-full h-full object-contain" src="https://maganghub.kemnaker.go.id/logos/kominfo.png" />
+                  </div>
+                  <div class="flex-1 min-w-0 h-full flex flex-col">
+                    <div>
+                      <h3 class="font-semibold text-base leading-snug">Magang Software Engineer</h3>
+                      <p class="text-sm font-medium text-foreground">Kementerian Komunikasi dan Informatika</p>
+                      <p class="text-sm text-muted-foreground truncate">Teknik Informatika</p>
+                      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm text-muted-foreground">
+                        <span class="flex items-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lucide lucide-map-pin w-3.5 h-3.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Jakarta Pusat, DKI Jakarta</span>
+                      </div>
+                      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-muted-foreground">
+                        <span class="flex items-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lucide lucide-graduation-cap w-3.5 h-3.5"><path d="M22 10v6"></path></svg><span>Sarjana</span></span>
+                        <span class="flex items-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lucide lucide-calendar w-3.5 h-3.5"><rect width="18" height="18" x="3" y="4" rx="2"></rect></svg>5<!-- --> hari/minggu</span>
+                      </div>
+                    </div>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                      <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors border-transparent bg-secondary text-secondary-foreground text-xs">Kuota: <!-- -->3</div>
+                      <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors border-transparent bg-secondary text-secondary-foreground text-xs">Pelamar: <!-- -->0</div>
+                    </div>
+                    <div class="mt-auto pt-4">
+                      <hr class="mb-4" />
+                      <p class="text-xs font-semibold text-foreground mb-2">Hari Libur</p>
+                      <div class="flex flex-wrap gap-1.5">
+                        <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors text-foreground text-xs bg-white">Minggu</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div class="mt-3 flex flex-wrap gap-2 text-sm">
-                <span class="mh-lowongan-location rounded bg-muted px-2 py-0.5">Jakarta Pusat, DKI Jakarta</span>
-                <span class="mh-lowongan-kuota rounded bg-muted px-2 py-0.5">Kuota: 30</span>
-                <span class="mh-lowongan-pelamar rounded bg-muted px-2 py-0.5">Pelamar: 25</span>
               </div>
             </div>
           </a>
+
           <a class="group block h-full" href="/magang-nasional/lowongan/magang-ui-ux-designer-c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f">
-            <div class="mh-lowongan-card rounded-lg border p-4 transition hover:shadow-md">
-              <div class="flex items-center gap-3">
-                <img class="mh-lowongan-logo h-10 w-10 rounded-full" src="https://maganghub.kemnaker.go.id/logos/kreatif.png" alt="Logo PT Kreatif Nusantara" />
-                <div>
-                  <h3 class="mh-lowongan-title text-base font-semibold">Magang UI/UX Designer</h3>
-                  <p class="mh-penyelenggara text-sm text-muted-foreground">PT Kreatif Nusantara</p>
+            <div class="rounded-xl border bg-card text-card-foreground shadow mh-lowongan-card overflow-hidden h-full flex flex-col">
+              <div class="p-5 flex flex-col h-full">
+                <div class="flex items-start gap-4 h-full">
+                  <div class="w-12 h-12 text-sm rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10 flex items-center justify-center font-bold text-primary shrink-0 overflow-hidden">
+                    <img alt="Organizer logo" loading="lazy" width="64" height="64" decoding="async" data-nimg="1" class="w-full h-full object-contain" src="https://maganghub.kemnaker.go.id/logos/kreatif.png" />
+                  </div>
+                  <div class="flex-1 min-w-0 h-full flex flex-col">
+                    <div>
+                      <h3 class="font-semibold text-base leading-snug">Magang UI/UX Designer</h3>
+                      <p class="text-sm font-medium text-foreground">PT Kreatif Nusantara</p>
+                      <p class="text-sm text-muted-foreground truncate">Desain Komunikasi Visual</p>
+                      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm text-muted-foreground">
+                        <span class="flex items-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lucide lucide-map-pin w-3.5 h-3.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Bandung, Jawa Barat</span>
+                      </div>
+                      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-muted-foreground">
+                        <span class="flex items-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lucide lucide-graduation-cap w-3.5 h-3.5"><path d="M22 10v6"></path></svg><span>Diploma</span></span>
+                        <span class="flex items-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lucide lucide-calendar w-3.5 h-3.5"><rect width="18" height="18" x="3" y="4" rx="2"></rect></svg>5<!-- --> hari/minggu</span>
+                      </div>
+                    </div>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                      <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors border-transparent bg-secondary text-secondary-foreground text-xs">Kuota: <!-- -->2</div>
+                      <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors border-transparent bg-secondary text-secondary-foreground text-xs">Pelamar: <!-- -->0</div>
+                    </div>
+                    <div class="mt-auto pt-4">
+                      <hr class="mb-4" />
+                      <p class="text-xs font-semibold text-foreground mb-2">Hari Libur</p>
+                      <div class="flex flex-wrap gap-1.5">
+                        <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors text-foreground text-xs bg-white">Sabtu</div>
+                        <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors text-foreground text-xs bg-white">Minggu</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div class="mt-3 flex flex-wrap gap-2 text-sm">
-                <span class="mh-lowongan-location rounded bg-muted px-2 py-0.5">Bandung, Jawa Barat</span>
-                <span class="mh-lowongan-kuota rounded bg-muted px-2 py-0.5">Kuota: 10</span>
-                <span class="mh-lowongan-pelamar rounded bg-muted px-2 py-0.5">Pelamar: 8</span>
               </div>
             </div>
           </a>
-        </section>
-      </main>
+        </div>
+
+        <nav class="mx-auto flex w-full justify-center mt-8">
+          <span>1</span><span>2</span><span>3</span><span>More pages</span><span>1580</span>
+        </nav>
+      </div>
     </div>
   </body>
 </html>
