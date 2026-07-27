@@ -256,10 +256,17 @@ test("editing Catatan and toggling Status Lamar persists across popup reopen", a
 	await card.getByPlaceholder("Tambahkan catatan...").blur();
 	await expect(card.getByText("Tersimpan")).toBeVisible();
 
-	const statusLamarCheckbox = card.getByLabel("Sudah dilamar");
-	await expect(statusLamarCheckbox).not.toBeChecked();
-	await statusLamarCheckbox.check();
-	await expect(statusLamarCheckbox).toBeChecked();
+	// Status Lamar is a stage selector (v4). Default is "Belum dilamar" (no stage);
+	// set it to Dilamar and confirm the chip appears before closing.
+	const statusLamarSelect = card.getByLabel("Status Lamar");
+	await expect(statusLamarSelect).toHaveValue("");
+	await statusLamarSelect.selectOption("dilamar");
+	await expect(statusLamarSelect).toHaveValue("dilamar");
+	// The stage chip is a <span>; the <option> "Dilamar" is not a span, so this
+	// targets the chip only (not the select's options).
+	await expect(
+		card.locator("span").filter({ hasText: "Dilamar" }),
+	).toBeVisible();
 	await popup.close();
 
 	// Reopen: both must have persisted to storage.
@@ -268,5 +275,21 @@ test("editing Catatan and toggling Status Lamar persists across popup reopen", a
 	await expect(
 		reopenedCard.getByPlaceholder("Tambahkan catatan..."),
 	).toHaveValue("alasan aku simpan ini");
-	await expect(reopenedCard.getByLabel("Sudah dilamar")).toBeChecked();
+	await expect(reopenedCard.getByLabel("Status Lamar")).toHaveValue("dilamar");
+	await expect(
+		reopenedCard.locator("span").filter({ hasText: "Dilamar" }),
+	).toBeVisible();
+
+	// Clearing the stage back to "no stage" also persists (no stage is a real
+	// default, not just the initial state).
+	await reopenedCard.getByLabel("Status Lamar").selectOption("");
+	await popup.close();
+
+	popup = await openPopup(context, extensionId);
+	const clearedCard = popup.locator(`[data-favorite-uuid="${uuid}"]`);
+	await expect(clearedCard.getByLabel("Status Lamar")).toHaveValue("");
+	// No stage → no chip.
+	await expect(
+		clearedCard.locator("span").filter({ hasText: "Dilamar" }),
+	).toHaveCount(0);
 });

@@ -26,7 +26,7 @@ const fav = (over: {
 		capturedAt: "2026-01-01T00:00:00Z",
 	},
 	catatan: "",
-	statusLamar: "not_applied",
+	statusLamar: undefined,
 	liveStatus: { status: "unknown", lastChecked: null },
 	savedAt: over.savedAt ?? "2026-01-01T00:00:00Z",
 });

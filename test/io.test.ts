@@ -26,7 +26,7 @@ const baseFavorite = (uuid: string, title: string): Favorite => ({
 		capturedAt: "2026-01-01T00:00:00Z",
 	},
 	catatan: "",
-	statusLamar: "not_applied",
+	statusLamar: undefined,
 	liveStatus: { status: "unknown", lastChecked: null },
 	savedAt: "2026-01-01T00:00:00Z",
 });
@@ -86,12 +86,13 @@ describe("importFavorites", () => {
 		const after = await listFavorites();
 		expect(after.map((f) => f.uuid).sort()).toEqual([a.uuid, b.uuid]);
 		// The imported records match the originals field-for-field.
-		expect(await getFavorite(a.uuid)).toMatchObject({
+		const restored = await getFavorite(a.uuid);
+		expect(restored).toMatchObject({
 			uuid: a.uuid,
 			catatan: a.catatan,
-			statusLamar: a.statusLamar,
 			savedSnapshot: a.savedSnapshot,
 		});
+		expect(restored?.statusLamar).toBe(a.statusLamar); // undefined round-trips
 	});
 
 	it("migrates an old-schema (v1) file up to the current schema on import", async () => {
@@ -109,7 +110,7 @@ describe("importFavorites", () => {
 		const migrated = await getFavorite(v1.uuid);
 		expect(migrated?.schemaVersion).toBe(SCHEMA_VERSION);
 		expect(migrated?.catatan).toBe(""); // v1→v2 default
-		expect(migrated?.statusLamar).toBe("not_applied"); // v1→v2 default
+		expect(migrated?.statusLamar).toBeUndefined(); // v1→v2 not_applied → v3→v4 no stage
 		expect(migrated?.liveStatus).toEqual({
 			status: "unknown",
 			lastChecked: null,
@@ -167,19 +168,19 @@ describe("importFavorites", () => {
 	});
 
 	it("merge: imported Catatan/Status Lamar fill only when local is empty", async () => {
-		// Local favorite exists with empty catatan and not_applied status.
+		// Local favorite exists with empty catatan and no stage.
 		const local = baseFavorite(
 			"f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8091a2",
 			"Local Empty",
 		);
 		local.catatan = "";
-		local.statusLamar = "not_applied";
+		local.statusLamar = undefined;
 		await setFavorite(local);
 
-		// Imported copy carries a catatan + applied status.
+		// Imported copy carries a catatan + a stage.
 		const importedCopy = baseFavorite(local.uuid, "Local Empty");
 		importedCopy.catatan = "catatan impor";
-		importedCopy.statusLamar = "applied";
+		importedCopy.statusLamar = "dilamar";
 		const file: ExportFile = {
 			schemaVersion: SCHEMA_VERSION,
 			exportedAt: "2025-01-01T00:00:00Z",
@@ -191,7 +192,72 @@ describe("importFavorites", () => {
 
 		const after = await getFavorite(local.uuid);
 		expect(after?.catatan).toBe("catatan impor"); // local was empty → filled
-		expect(after?.statusLamar).toBe("applied"); // local was not_applied → filled
+		expect(after?.statusLamar).toBe("dilamar"); // local had no stage → filled
+	});
+
+	it("merge: a local stage is authoritative — an imported stage does NOT overwrite it", async () => {
+		const local = baseFavorite(
+			"38b8c9d0-e1f2-4a3b-4c5d-6e7f8091a2b5",
+			"Local Stage",
+		);
+		local.statusLamar = "interview";
+		await setFavorite(local);
+
+		const importedCopy = baseFavorite(local.uuid, "Local Stage");
+		importedCopy.statusLamar = "ditolak"; // a different stage
+		const file: ExportFile = {
+			schemaVersion: SCHEMA_VERSION,
+			exportedAt: "2025-01-01T00:00:00Z",
+			count: 1,
+			favorites: [importedCopy],
+		};
+
+		await importFavorites(file);
+
+		const after = await getFavorite(local.uuid);
+		expect(after?.statusLamar).toBe("interview"); // local stage wins
+	});
+
+	it("imports a v3 file: applied migrates to dilamar, not_applied to no stage", async () => {
+		const appliedUuid = "48b8c9d0-e1f2-4a3b-4c5d-6e7f8091a2b6";
+		const notAppliedUuid = "58b8c9d0-e1f2-4a3b-4c5d-6e7f8091a2b7";
+		const v3Record = (
+			uuid: string,
+			statusLamar: "applied" | "not_applied",
+		) => ({
+			schemaVersion: 3,
+			uuid,
+			detailUrl: `/magang-nasional/lowongan/magang-${uuid}`,
+			savedSnapshot: {
+				title: "Magang V3",
+				organizer: "PT V3",
+				location: "Bandung",
+				capturedAt: "2025-01-01T00:00:00Z",
+			},
+			catatan: "",
+			statusLamar,
+			liveStatus: { status: "unknown", lastChecked: null },
+			savedAt: "2025-01-01T00:00:00Z",
+		});
+		const file: ExportFile = {
+			schemaVersion: 3,
+			exportedAt: "2025-01-01T00:00:00Z",
+			count: 2,
+			favorites: [
+				v3Record(appliedUuid, "applied"),
+				v3Record(notAppliedUuid, "not_applied"),
+			] as unknown as Favorite[],
+		};
+
+		const result = await importFavorites(file);
+
+		expect(result.imported).toBe(2);
+		expect(result.warnings).toEqual([]);
+		const migratedApplied = await getFavorite(appliedUuid);
+		expect(migratedApplied?.schemaVersion).toBe(SCHEMA_VERSION);
+		expect(migratedApplied?.statusLamar).toBe("dilamar");
+		const migratedNotApplied = await getFavorite(notAppliedUuid);
+		expect(migratedNotApplied?.statusLamar).toBeUndefined();
 	});
 
 	it("merge: imported liveStatus is dropped — local liveStatus is kept (re-derived by refresh)", async () => {

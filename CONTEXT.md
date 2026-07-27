@@ -33,8 +33,8 @@ A free-text note the user attaches to a Favorite (e.g. the reason they saved it)
 _Avoid_: "memo", "comment"
 
 **Status Lamar**:
-A manual, self-reported flag on a Favorite indicating whether the user has applied to that Lowongan. Always user-set — the extension never detects applied state, because detecting it would require reading the login session, which the credential-free posture forbids.
-_Avoid_: "applied status" (when implying auto-detection)
+A manual, self-reported application stage on a Favorite, tracking where the user is in applying to that Lowongan. The stages are `(none) → Dilamar → Interview → Diterima / Ditolak`: `none` means saved but not yet applied (the majority of Favorites); **Dilamar** is the user's word for "I submitted the application"; **Interview** is real news the user receives; **Diterima** is the terminal positive; **Ditolak** is the terminal negative (the site itself never shows it). The vocabulary borrows from MagangHub's own "Alur Lamaran" where it fits; "Seleksi Lamaran" is dropped (indistinguishable from "dilamar, no news yet"). Always user-set, never auto-detected — detecting a stage would require reading the login session, which the credential-free posture forbids, and that manual-not-detected property survived the v4 change from a boolean flag to this stage enum (ADR-0007).
+_Avoid_: "applied status" (when implying auto-detection), "stage" without "Status Lamar" when the domain term is meant
 
 **Status Lowongan**:
 The live state of a Lowongan, computed by refreshing from the public detail page: **Open**, **Filling** (Pelamar ≥ ~80% of Kuota), or **Closed** (listing removed, Kuota full, or Batch closed), plus **unknown** when a refresh fails. Pelamar is exposed on the detail page, so Filling is reliable whenever both numbers parse (ADR-0006) — not merely best-effort. Exists in place of a deadline status, since a Lowongan has no calendar deadline.

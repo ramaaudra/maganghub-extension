@@ -28,7 +28,7 @@ function makeFavorite(uuid: string, savedAt: string, title: string): Favorite {
 			capturedAt: savedAt,
 		},
 		catatan: "",
-		statusLamar: "not_applied",
+		statusLamar: undefined,
 		liveStatus: initialLiveStatus(),
 		savedAt,
 	};
@@ -136,7 +136,7 @@ describe("favorites storage", () => {
 		expect(typeof fav.savedAt).toBe("string");
 	});
 
-	it("createFavorite defaults catatan to empty and statusLamar to not_applied", () => {
+	it("createFavorite defaults catatan to empty and statusLamar to no stage", () => {
 		const fav = createFavorite({
 			uuid: "55555555-5555-4555-8555-555555555555",
 			detailUrl:
@@ -149,7 +149,7 @@ describe("favorites storage", () => {
 			},
 		});
 		expect(fav.catatan).toBe("");
-		expect(fav.statusLamar).toBe("not_applied");
+		expect(fav.statusLamar).toBeUndefined();
 	});
 
 	it("setCatatan updates the Catatan on a stored favorite", async () => {
@@ -198,8 +198,21 @@ describe("favorites storage", () => {
 			"Magang D",
 		);
 		await setFavorite(fav);
-		await setStatusLamar(fav.uuid, "applied");
-		expect((await getFavorite(fav.uuid))?.statusLamar).toBe("applied");
+		await setStatusLamar(fav.uuid, "dilamar");
+		expect((await getFavorite(fav.uuid))?.statusLamar).toBe("dilamar");
+	});
+
+	it("setStatusLamar can clear a stage back to no stage (undefined)", async () => {
+		const fav = makeFavorite(
+			"77777777-7777-4777-8777-777777777778",
+			"2026-01-01T00:00:00Z",
+			"Magang D Clear",
+		);
+		await setFavorite(fav);
+		await setStatusLamar(fav.uuid, "interview");
+		expect((await getFavorite(fav.uuid))?.statusLamar).toBe("interview");
+		await setStatusLamar(fav.uuid, undefined);
+		expect((await getFavorite(fav.uuid))?.statusLamar).toBeUndefined();
 	});
 
 	it("setLiveStatus writes a refreshed liveStatus without touching the snapshot", async () => {
@@ -258,7 +271,7 @@ describe("favorites storage", () => {
 		const migrated = await getFavorite(v1.uuid);
 		expect(migrated?.schemaVersion).toBe(SCHEMA_VERSION);
 		expect(migrated?.catatan).toBe("");
-		expect(migrated?.statusLamar).toBe("not_applied");
+		expect(migrated?.statusLamar).toBeUndefined(); // v1→v2 not_applied → v3→v4 no stage
 	});
 
 	it("listFavorites lazily migrates v1 records to the current schema", async () => {
@@ -274,6 +287,6 @@ describe("favorites storage", () => {
 		const [migrated] = await listFavorites();
 		expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
 		expect(migrated.catatan).toBe("");
-		expect(migrated.statusLamar).toBe("not_applied");
+		expect(migrated.statusLamar).toBeUndefined(); // v1→v2 not_applied → v3→v4 no stage
 	});
 });

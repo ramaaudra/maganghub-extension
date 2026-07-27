@@ -21,9 +21,10 @@ import {
 	reportHealth,
 } from "@/lib/health";
 import {
-	migrateFavorite,
 	type FavoriteV1,
 	type FavoriteV2,
+	type FavoriteV3,
+	migrateFavorite,
 } from "@/lib/migrations";
 import {
 	createFavorite,
@@ -253,6 +254,7 @@ function setupStorageSync(): void {
 				| Favorite
 				| FavoriteV1
 				| FavoriteV2
+				| FavoriteV3
 				| undefined;
 			const favorite = stored ? migrateFavorite(stored) : undefined;
 			notifyUpdaters(uuid, favorite);

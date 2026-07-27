@@ -1,4 +1,4 @@
-import type { FavoriteV1, FavoriteV2 } from "./migrations";
+import type { FavoriteV1, FavoriteV2, FavoriteV3 } from "./migrations";
 import { migrateFavorite } from "./migrations";
 import type { Favorite, LiveStatus, StatusLamar } from "./types";
 import { initialLiveStatus, SCHEMA_VERSION } from "./types";
@@ -25,6 +25,7 @@ export async function getFavorite(uuid: string): Promise<Favorite | undefined> {
 		| Favorite
 		| FavoriteV1
 		| FavoriteV2
+		| FavoriteV3
 		| undefined;
 	return stored ? migrateFavorite(stored) : undefined;
 }
@@ -60,10 +61,13 @@ export async function setCatatan(uuid: string, catatan: string): Promise<void> {
 	await setFavorite({ ...favorite, catatan });
 }
 
-/** Set Status Lamar (manual, self-reported "sudah dilamar" flag) on a stored Favorite. */
+/**
+ * Set Status Lamar (the manual, self-reported application stage) on a stored
+ * Favorite. Pass `undefined` to clear the stage back to "no stage" (the default).
+ */
 export async function setStatusLamar(
 	uuid: string,
-	statusLamar: StatusLamar,
+	statusLamar: StatusLamar | undefined,
 ): Promise<void> {
 	const favorite = await getFavorite(uuid);
 	if (!favorite) return;
@@ -98,7 +102,7 @@ export function createFavorite(args: {
 		detailUrl: args.detailUrl,
 		savedSnapshot: args.savedSnapshot,
 		catatan: "",
-		statusLamar: "not_applied",
+		statusLamar: undefined,
 		liveStatus: initialLiveStatus(),
 		savedAt: new Date().toISOString(),
 	};

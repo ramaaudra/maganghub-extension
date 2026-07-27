@@ -7,9 +7,9 @@
  *  - a UUID absent locally → added as-is (migrated to current schema).
  *  - a UUID present locally → local wins: the local snapshot, savedAt, and
  *    liveStatus are kept; imported `catatan` and `statusLamar` fill in ONLY
- *    when the local fields are empty (`""` / `not_applied`). Imported
- *    `liveStatus` is always discarded — it is re-derived by refresh and is
- *    device-local (ADR-0002).
+ *    when the local fields are empty (`""` / no stage). Imported `liveStatus`
+ *    is always discarded — it is re-derived by refresh and is device-local
+ *    (ADR-0002).
  *
  * A file whose `schemaVersion` is newer than current is rejected wholesale
  * with a warning: importing a future shape would silently drop fields we don't
@@ -17,7 +17,7 @@
  * and re-imports.
  */
 
-import type { FavoriteV1, FavoriteV2 } from "./migrations";
+import type { FavoriteV1, FavoriteV2, FavoriteV3 } from "./migrations";
 import { migrateFavorite } from "./migrations";
 import { getFavorite, listFavorites, setFavorite } from "./storage";
 import type { Favorite } from "./types";
@@ -34,7 +34,7 @@ export interface ExportFile {
 	 *  on import — a mismatch surfaces as a warning but does not block import. */
 	count: number;
 	/** The favorites. Each is migrated individually on import. */
-	favorites: Array<Favorite | FavoriteV1 | FavoriteV2>;
+	favorites: Array<Favorite | FavoriteV1 | FavoriteV2 | FavoriteV3>;
 }
 
 /** Outcome of an import, surfaced to the popup UI. */
@@ -103,11 +103,11 @@ export async function importFavorites(file: ExportFile): Promise<ImportResult> {
 			}
 
 			// Conflict: local wins. Fill catatan/statusLamar only when local is
-			// empty. Always keep the local liveStatus (drop the imported one).
+			// empty (no stage = `undefined`). Always keep the local liveStatus
+			// (drop the imported one).
 			const fillCatatan = local.catatan === "" && migrated.catatan !== "";
 			const fillStatusLamar =
-				local.statusLamar === "not_applied" &&
-				migrated.statusLamar === "applied";
+				local.statusLamar === undefined && migrated.statusLamar !== undefined;
 			if (fillCatatan || fillStatusLamar) {
 				await setFavorite({
 					...local,

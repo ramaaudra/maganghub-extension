@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { FavoriteV1, FavoriteV2 } from "@/lib/migrations";
+import type { FavoriteV1, FavoriteV2, FavoriteV3 } from "@/lib/migrations";
 import { migrateFavorite } from "@/lib/migrations";
 import type { Favorite } from "@/lib/types";
 import { initialLiveStatus, SCHEMA_VERSION } from "@/lib/types";
@@ -24,7 +24,8 @@ describe("migrateFavorite", () => {
 
 		expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
 		expect(migrated.catatan).toBe("");
-		expect(migrated.statusLamar).toBe("not_applied");
+		// v1→v2 adds not_applied, then v3→v4 maps not_applied → no stage.
+		expect(migrated.statusLamar).toBeUndefined();
 		// Untouched fields carry over unchanged.
 		expect(migrated.uuid).toBe(v1.uuid);
 		expect(migrated.detailUrl).toBe(v1.detailUrl);
@@ -56,7 +57,8 @@ describe("migrateFavorite", () => {
 		// v2 fields carry over unchanged.
 		expect(migrated.uuid).toBe(v2.uuid);
 		expect(migrated.catatan).toBe("catatan lama");
-		expect(migrated.statusLamar).toBe("not_applied");
+		// v2's not_applied → v3→v4 no stage.
+		expect(migrated.statusLamar).toBeUndefined();
 		expect(migrated.savedSnapshot).toEqual(v2.savedSnapshot);
 	});
 
@@ -73,7 +75,7 @@ describe("migrateFavorite", () => {
 				capturedAt: "2026-01-02T00:00:00Z",
 			},
 			catatan: "sudah dicatat",
-			statusLamar: "applied",
+			statusLamar: "dilamar",
 			liveStatus: {
 				status: "open",
 				kuota: 5,
@@ -86,5 +88,63 @@ describe("migrateFavorite", () => {
 		};
 
 		expect(migrateFavorite(current)).toEqual(current);
+	});
+
+	it("migrates a v3 record to v4: applied → dilamar, not_applied → no stage", () => {
+		const applied: FavoriteV3 = {
+			schemaVersion: 3,
+			uuid: "d1e2f3a4-b5c6-4d7e-8f9a-0b1c2d3e4f5a",
+			detailUrl:
+				"/magang-nasional/lowongan/x-d1e2f3a4-b5c6-4d7e-8f9a-0b1c2d3e4f5a",
+			savedSnapshot: {
+				title: "Magang Sudah Dilamar",
+				organizer: "PT Contoh",
+				location: "Surabaya",
+				capturedAt: "2026-01-01T00:00:00Z",
+			},
+			catatan: "",
+			statusLamar: "applied",
+			liveStatus: initialLiveStatus(),
+			savedAt: "2026-01-01T00:00:00Z",
+		};
+		const notApplied: FavoriteV3 = {
+			...applied,
+			uuid: "e2f3a4b5-c6d7-4e8f-9a0b-1c2d3e4f5a6b",
+			detailUrl:
+				"/magang-nasional/lowongan/x-e2f3a4b5-c6d7-4e8f-9a0b-1c2d3e4f5a6b",
+			statusLamar: "not_applied",
+		};
+
+		expect(migrateFavorite(applied).statusLamar).toBe("dilamar");
+		expect(migrateFavorite(notApplied).statusLamar).toBeUndefined();
+		for (const rec of [applied, notApplied]) {
+			const migrated = migrateFavorite(rec);
+			expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+			// previousSample is additive: old records carry none.
+			expect(migrated.liveStatus.previousSample).toBeUndefined();
+		}
+	});
+
+	it("v3→v4 migration is idempotent: re-running the step on a v4 record is a no-op", () => {
+		// A v4 record at the current schema does not loop — migrateFavorite returns
+		// it untouched, so there is no second mapping of `dilamar`/`undefined`.
+		const v4: Favorite = {
+			schemaVersion: SCHEMA_VERSION,
+			uuid: "f3a4b5c6-d7e8-4f9a-0b1c-2d3e4f5a6b7c",
+			detailUrl:
+				"/magang-nasional/lowongan/x-f3a4b5c6-d7e8-4f9a-0b1c-2d3e4f5a6b7c",
+			savedSnapshot: {
+				title: "Magang V4",
+				organizer: "PT Contoh",
+				location: "Bandung",
+				capturedAt: "2026-01-01T00:00:00Z",
+			},
+			catatan: "",
+			statusLamar: "diterima",
+			liveStatus: initialLiveStatus(),
+			savedAt: "2026-01-01T00:00:00Z",
+		};
+
+		expect(migrateFavorite(v4)).toEqual(v4);
 	});
 });
