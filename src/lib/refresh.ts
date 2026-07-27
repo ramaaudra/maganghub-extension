@@ -1,3 +1,8 @@
+import {
+	hasMeaningfulChange,
+	isSuccessfulSample,
+	toLiveStatusSample,
+} from "./change";
 import type { ParsedDetail } from "./parse";
 import type { LiveStatus, StatusLowongan } from "./types";
 
@@ -54,11 +59,40 @@ function isGoneStatus(status: number): boolean {
 }
 
 /**
+ * Attach B1's one previous successful sample onto a newly built liveStatus.
+ * Unchanged refreshes keep any existing previousSample so a later real change
+ * still has something to compare against. Failed refreshes pass `recordChange:
+ * false` and only preserve an existing previousSample.
+ */
+function withPreviousSample(
+	live: LiveStatus,
+	previous: LiveStatus | undefined,
+	recordChange: boolean,
+): LiveStatus {
+	if (!recordChange) {
+		if (previous?.previousSample) live.previousSample = previous.previousSample;
+		return live;
+	}
+	const priorSample = isSuccessfulSample(previous)
+		? toLiveStatusSample(previous)
+		: previous?.previousSample;
+	if (priorSample && hasMeaningfulChange(live, priorSample)) {
+		live.previousSample = priorSample;
+	} else if (previous?.previousSample) {
+		live.previousSample = previous.previousSample;
+	}
+	return live;
+}
+
+/**
  * Fold an offscreen response + the previous liveStatus into the liveStatus to
- * persist. On success, replace the live fields. On a "gone" HTTP status, mark
- * `closed`. On any other failure, mark `unknown` and keep the previous
+ * persist. On success, replace the live fields and, when the previous sample
+ * was itself a successful refresh that differs in kuota/pelamar/status, keep
+ * it on `previousSample` for B1's change notice (D5). On a "gone" HTTP status,
+ * mark `closed`. On any other failure, mark `unknown` and keep the previous
  * kuota/pelamar/batch/tunjangan so the popup still shows the last-known numbers
- * ("no data loss", issue #5 AC).
+ * ("no data loss", issue #5 AC) — failed refreshes never overwrite
+ * `previousSample` and never count as changes.
  */
 export function toLiveStatus(
 	response: OffscreenResponse,
@@ -75,14 +109,16 @@ export function toLiveStatus(
 		if (parsed.pelamar !== undefined) live.pelamar = parsed.pelamar;
 		if (parsed.batch !== undefined) live.batch = parsed.batch;
 		if (parsed.tunjangan !== undefined) live.tunjangan = parsed.tunjangan;
-		return live;
+		return withPreviousSample(live, previous, true);
 	}
 
 	const status: StatusLowongan = isGoneStatus(response.httpStatus ?? 0)
 		? "closed"
 		: "unknown";
 
-	return {
+	// Closed-via-404 is a successful terminal sample for B1 (the listing is
+	// gone — that *is* a change). Unknown failures are not.
+	const live: LiveStatus = {
 		status,
 		lastChecked: now,
 		lastError: status === "unknown" ? response.error : undefined,
@@ -92,6 +128,7 @@ export function toLiveStatus(
 		batch: previous?.batch,
 		tunjangan: previous?.tunjangan,
 	};
+	return withPreviousSample(live, previous, status === "closed");
 }
 
 /**

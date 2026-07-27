@@ -1,3 +1,4 @@
+import { refreshToolbarBadge } from "@/lib/badge";
 import {
 	type OffscreenRequest,
 	type OffscreenResponse,
@@ -135,6 +136,8 @@ async function refreshOne(uuid: string, detailUrl: string): Promise<void> {
 	const response = await fetchAndParse(uuid, resolveDetailUrl(detailUrl));
 	const liveStatus = toLiveStatus(response, previous);
 	await setLiveStatus(uuid, liveStatus);
+	// B1: repaint the toolbar badge if this refresh introduced a change.
+	await refreshToolbarBadge();
 }
 
 /** Refresh every Favorite with throttled concurrency; persist each as it lands. */
@@ -155,6 +158,8 @@ async function refreshAll(): Promise<void> {
 			await setLiveStatus(fav.uuid, toLiveStatus(response, previous));
 		},
 	);
+	// One badge pass at the end of the batch (cheaper than per-item).
+	await refreshToolbarBadge();
 }
 
 function delay(ms: number): Promise<void> {

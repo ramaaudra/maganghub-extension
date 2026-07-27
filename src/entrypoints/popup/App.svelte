@@ -1,5 +1,6 @@
 <script lang="ts">
 import { onDestroy } from "svelte";
+import { markPopupOpened, syncToolbarBadge } from "@/lib/badge";
 import {
 	Card,
 	CardDescription,
@@ -31,6 +32,12 @@ async function refresh(): Promise<void> {
 	favorites = await listFavorites();
 	health = await readHealth();
 	loading = false;
+	// B1: while the popup is open the badge stays cleared. Each re-read also
+	// advances `popupLastOpenedAt`, so a refresh that lands mid-view does not
+	// re-raise the badge; only changes after the popup closes count as unseen.
+	const openedAt = new Date().toISOString();
+	await markPopupOpened(openedAt);
+	await syncToolbarBadge([], openedAt);
 }
 
 // Live-update when a favorite is starred/refreshed from anywhere — the

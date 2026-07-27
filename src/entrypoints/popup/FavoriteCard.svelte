@@ -1,5 +1,6 @@
 <script lang="ts">
 import { onDestroy } from "svelte";
+import { formatChangeNotice } from "@/lib/change";
 import { Card, CardContent } from "@/lib/components/ui/card";
 import { resolveDetailUrl } from "@/lib/refresh";
 import { STAGE_LABEL } from "@/lib/stage";
@@ -56,6 +57,8 @@ const live = $derived(favorite.liveStatus);
 const lastCheckedLabel = $derived(terakhirDicek(live.lastChecked));
 // A failed refresh: status unknown AND we have a lastError recorded.
 const refreshFailed = $derived(live.status === "unknown" && !!live.lastError);
+// B1: one-line change notice when kuota/pelamar/status moved since last sample.
+const changeNotice = $derived(formatChangeNotice(live));
 
 const STATUS_LABEL: Record<StatusLowongan, string> = {
 	open: "Buka",
@@ -148,6 +151,16 @@ onDestroy(() => {
           <span>Pelamar {live.pelamar}</span>
         {/if}
       </div>
+    {/if}
+
+    {#if changeNotice}
+      <p
+        class="rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-800"
+        data-change-notice
+        role="status"
+      >
+        {changeNotice}
+      </p>
     {/if}
 
     <div class="flex items-center gap-2">

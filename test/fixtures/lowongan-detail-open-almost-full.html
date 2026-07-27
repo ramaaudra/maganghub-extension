@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Magang Data Analyst — MagangHub</title>
+    <!--
+      CONFIRMED structure (recorded via camofox — ADR-0006). Matches the live
+      MagangHub detail page: info rows are
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-muted-foreground">LABEL</span>
+          <span class="font-semibold">VALUE</span>
+        </div>
+      Batch is a `<span class="mh-badge">Batch 1 · 2026</span>`, and "Lamar
+      Sekarang" is a `<button>`. The refresh parser (src/lib/parse.ts) targets
+      these anchors. UUID matches the first card in lowongan-list.html.
+    -->
+  </head>
+  <body>
+    <div id="__next">
+      <main class="mh-container py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div class="lg:col-span-2 space-y-8 order-2 lg:order-1">
+            <h1 class="text-xl sm:text-2xl font-bold mb-1">Magang Data Analyst</h1>
+            <p class="mh-penyelenggara text-sm text-muted-foreground">PT Maju Bersama</p>
+            <span class="mh-badge" style="background:hsl(142,72%,35%,0.1);color:hsl(142,72%,35%)">Batch 1<!-- --> · <!-- -->2026</span>
+            <section>
+              <h2>Deskripsi Lowongan</h2>
+              <p>Magang Data Analyst di PT Maju Bersama.</p>
+            </section>
+          </div>
+          <div class="space-y-5 order-1 lg:order-2">
+            <div class="bg-white border border-border rounded-2xl p-6">
+              <div class="space-y-4 mb-6">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-muted-foreground">Durasi Magang</span>
+                  <span class="font-semibold">5<!-- --> hari/minggu</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-muted-foreground">Lokasi Magang</span>
+                  <span class="font-semibold">Jakarta, DKI Jakarta</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-muted-foreground">Kuota</span>
+                  <span class="font-semibold">50<!-- --> orang</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-muted-foreground">Pelamar</span>
+                  <span class="font-semibold">49<!-- --> orang</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-muted-foreground">Tunjangan</span>
+                  <span class="font-semibold text-primary">Dari Pemerintah</span>
+                </div>
+              </div>
+              <button class="bg-primary text-white">Lamar Sekarang<!-- --> <svg></svg></button>
+              <div class="text-xs text-muted-foreground text-center mt-3">Gratis - nggak dipungut biaya sepeser pun</div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

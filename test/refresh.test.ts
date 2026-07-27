@@ -99,6 +99,90 @@ describe("toLiveStatus", () => {
 		expect(live.status).toBe("unknown");
 		expect(live.lastError).toBe("network: timeout");
 	});
+
+	it("keeps the previous successful sample when kuota/pelamar/status change (B1)", () => {
+		const previous: LiveStatus = {
+			status: "open",
+			kuota: 5,
+			pelamar: 2,
+			lastChecked: "2026-01-01T00:00:00Z",
+		};
+		const response: OffscreenResponse = {
+			ok: true,
+			uuid: "u5",
+			parsed: { status: "open", kuota: 5, pelamar: 4 },
+		};
+		const live = toLiveStatus(response, previous, now);
+		expect(live.previousSample).toEqual({
+			at: "2026-01-01T00:00:00Z",
+			status: "open",
+			kuota: 5,
+			pelamar: 2,
+		});
+		expect(live.pelamar).toBe(4);
+	});
+
+	it("does not set previousSample on the first successful refresh", () => {
+		const previous: LiveStatus = {
+			status: "unknown",
+			lastChecked: null,
+		};
+		const response: OffscreenResponse = {
+			ok: true,
+			uuid: "u6",
+			parsed: { status: "open", kuota: 5, pelamar: 2 },
+		};
+		expect(
+			toLiveStatus(response, previous, now).previousSample,
+		).toBeUndefined();
+	});
+
+	it("does not treat a failed refresh as a change (keeps prior previousSample)", () => {
+		const previous: LiveStatus = {
+			status: "open",
+			kuota: 5,
+			pelamar: 2,
+			lastChecked: "2026-01-01T00:00:00Z",
+			previousSample: {
+				at: "2025-12-01T00:00:00Z",
+				status: "open",
+				kuota: 5,
+				pelamar: 1,
+			},
+		};
+		const response: OffscreenResponse = {
+			ok: false,
+			uuid: "u7",
+			error: "HTTP 503",
+			httpStatus: 503,
+		};
+		const live = toLiveStatus(response, previous, now);
+		expect(live.status).toBe("unknown");
+		// Existing previousSample preserved; the failed sample is not recorded.
+		expect(live.previousSample).toEqual(previous.previousSample);
+	});
+
+	it("preserves previousSample across an unchanged successful refresh", () => {
+		const previous: LiveStatus = {
+			status: "open",
+			kuota: 5,
+			pelamar: 4,
+			lastChecked: "2026-01-02T00:00:00Z",
+			previousSample: {
+				at: "2026-01-01T00:00:00Z",
+				status: "open",
+				kuota: 5,
+				pelamar: 2,
+			},
+		};
+		const response: OffscreenResponse = {
+			ok: true,
+			uuid: "u8",
+			parsed: { status: "open", kuota: 5, pelamar: 4 },
+		};
+		const live = toLiveStatus(response, previous, now);
+		expect(live.previousSample).toEqual(previous.previousSample);
+	});
 });
 
 describe("runWithConcurrency", () => {
