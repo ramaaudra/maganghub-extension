@@ -2,6 +2,7 @@
 import { onDestroy } from "svelte";
 import { Card, CardContent } from "@/lib/components/ui/card";
 import { resolveDetailUrl } from "@/lib/refresh";
+import { STAGE_LABEL } from "@/lib/stage";
 import { setCatatan, setStatusLamar } from "@/lib/storage";
 import { terakhirDicek } from "@/lib/time";
 import type { Favorite, StatusLamar, StatusLowongan } from "@/lib/types";
@@ -70,13 +71,8 @@ const STATUS_CLASS: Record<StatusLowongan, string> = {
 	unknown: "bg-muted text-muted-foreground",
 };
 
-/** Display word + colour for each application stage (D2/D7). No stage → no chip. */
-const STAGE_LABEL: Record<StatusLamar, string> = {
-	dilamar: "Dilamar",
-	interview: "Interview",
-	diterima: "Diterima",
-	ditolak: "Ditolak",
-};
+/** Colour per stage (D2/D7). Words come from `STAGE_LABEL` in stage.ts so the
+ *  on-card chip (A2) stays in lockstep. No stage → no chip. */
 
 const STAGE_CLASS: Record<StatusLamar, string> = {
 	dilamar: "bg-primary/10 text-primary",

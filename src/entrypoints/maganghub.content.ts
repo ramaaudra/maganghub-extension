@@ -38,6 +38,10 @@ import {
 	setFavorite,
 	setStatusLamar,
 } from "@/lib/storage";
+import {
+	stageChipAriaLabel,
+	stageLabel,
+} from "@/lib/stage";
 import type { Favorite, StatusLamar } from "@/lib/types";
 import {
 	type UrgencyBand,
@@ -308,31 +312,39 @@ function injectStarIntoCard(card: HTMLElement): void {
 		card.style.setProperty("position", "relative");
 	}
 	const shadow = host.attachShadow({ mode: "closed" });
-	const { button, urgency } = buildStarChrome(shadow);
+	const { button, urgency, chip } = buildStarChrome(shadow);
 	applyUrgency(host, urgency, urgencyBandFromCard(card));
 	card.append(host);
 
 	const state: StarState = { interacted: false };
-	// The toggle's visual state is still just filled/not-filled, so the adapter
-	// reduces the Favorite to a boolean here. A2/A3 will hang their chip/tooltip
-	// reads off this same `apply` seam — the protocol now carries the full record.
-	const apply = (favorite: Favorite | undefined) =>
+	// Filled bit + stage chip both ride the Favorite shape from the updater
+	// protocol (issue #14 / #19). A3 will hang the Catatan tooltip off the same
+	// `apply` seam.
+	const apply = (favorite: Favorite | undefined) => {
 		setFilled(host, button, Boolean(favorite));
+		applyStageChip(host, chip, favorite?.statusLamar);
+	};
 	void reflectState(uuid, apply, state);
 	registerUpdater(uuid, apply, host);
-	attachStarToggle(card, uuid, anchor, host, button, state);
+	attachStarToggle(card, uuid, anchor, host, button, chip, state);
 }
 
 /**
- * Star button + urgency ring inside one closed shadow (issue #16).
+ * Star button + urgency ring + stage chip inside one closed shadow
+ * (issues #16 / #19).
  *
  * The ring is colour-only (pre-attentive). Title/aria-label for the band live
  * on the light-DOM host (see `applyUrgency`); `data-urgency` on the host lets
  * e2e assert the band without piercing the closed shadow.
+ *
+ * The stage chip is a real light-DOM element (slotted) so AT and e2e can
+ * reach it without piercing Shadow DOM — same pattern as the detail stage
+ * card's select. Colour channel is left to A1; the chip is text-only (D7).
  */
 function buildStarChrome(shadow: ShadowRoot): {
 	button: HTMLButtonElement;
 	urgency: HTMLElement;
+	chip: HTMLElement;
 } {
 	const style = document.createElement("style");
 	style.textContent = STAR_CSS;
@@ -345,8 +357,14 @@ function buildStarChrome(shadow: ShadowRoot): {
 	const urgency = document.createElement("span");
 	urgency.className = "mh-urgency";
 	urgency.hidden = true;
-	shadow.append(style, urgency, button);
-	return { button, urgency };
+	// Chip lives in light DOM via <slot>, so Playwright/AT see it on the host.
+	const chip = document.createElement("span");
+	chip.className = "mh-stage-chip";
+	chip.hidden = true;
+	chip.setAttribute("data-stage-chip", "true");
+	const slot = document.createElement("slot");
+	shadow.append(style, urgency, button, slot);
+	return { button, urgency, chip };
 }
 
 /**
@@ -376,6 +394,38 @@ function applyUrgency(
 	host.setAttribute("aria-label", label);
 	urgency.hidden = false;
 	urgency.setAttribute("data-band", band);
+}
+
+/**
+ * Show or hide the on-card stage chip (issue #19 / A2).
+ *
+ * The chip is a light-DOM child of the star host (slotted into the closed
+ * shadow), so e2e can assert `data-stage` / text without piercing Shadow DOM
+ * and AT can announce it via its own aria-label. No stage → no chip, so the
+ * majority of saved cards stay clean (D7). Colour is deliberately neutral —
+ * A1 owns the colour channel on this card.
+ */
+function applyStageChip(
+	host: HTMLElement,
+	chip: HTMLElement,
+	stage: StatusLamar | undefined,
+): void {
+	const label = stageLabel(stage);
+	if (!stage || !label) {
+		host.removeAttribute("data-stage");
+		chip.hidden = true;
+		chip.textContent = "";
+		chip.removeAttribute("aria-label");
+		// Detach so an empty chip never occupies layout or AT tree.
+		chip.remove();
+		return;
+	}
+	host.setAttribute("data-stage", stage);
+	chip.hidden = false;
+	chip.textContent = label;
+	chip.setAttribute("aria-label", stageChipAriaLabel(stage));
+	// Ensure the chip is a light-DOM child of the host (slotted).
+	if (chip.parentElement !== host) host.append(chip);
 }
 
 // ─────────────────────── Detail page: toggle near title ─────────────────────
@@ -672,6 +722,7 @@ function attachStarToggle(
 	anchor: HTMLAnchorElement,
 	host: HTMLElement,
 	button: HTMLButtonElement,
+	chip: HTMLElement,
 	state: StarState,
 ): void {
 	button.addEventListener("click", async (event) => {
@@ -683,6 +734,9 @@ function attachStarToggle(
 		if (currentlyFavorited) {
 			await removeFavorite(uuid);
 			setFilled(host, button, false);
+			// Optimistic: drop the stage chip with the star. Storage sync will
+			// confirm; without this the chip lingers until the event arrives.
+			applyStageChip(host, chip, undefined);
 		} else {
 			const favorite = createFavorite({
 				uuid,
@@ -693,6 +747,8 @@ function attachStarToggle(
 			if (!(await isFavorited(uuid))) {
 				await setFavorite(favorite);
 				setFilled(host, button, true);
+				// Fresh Favorite has no stage — keep the chip off (D7).
+				applyStageChip(host, chip, undefined);
 			}
 		}
 	});
@@ -742,6 +798,32 @@ const STAR_CSS = `
   .mh-urgency[data-band="calm"] { border-color: #22c55e; }
   .mh-urgency[data-band="hampir_penuh"] { border-color: #f59e0b; }
   .mh-urgency[data-band="lewat_kuota"] { border-color: #ef4444; }
+  /* Stage chip (issue #19 / A2): text only — colour channel belongs to A1.
+     Neutral slate so Dilamar and Ditolak never look the same via colour.
+     Positioned under the star so it doesn't cover MagangHub's title. */
+  ::slotted(.mh-stage-chip) {
+    position: absolute;
+    top: 34px;
+    right: 0;
+    display: inline-block;
+    max-width: 88px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 1px 6px;
+    border-radius: 9999px;
+    border: 1px solid rgb(203, 213, 225);
+    background: rgb(248, 250, 252);
+    color: rgb(51, 65, 85);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+    pointer-events: none;
+    box-sizing: border-box;
+  }
+  ::slotted(.mh-stage-chip[hidden]) { display: none; }
 `;
 
 /**
