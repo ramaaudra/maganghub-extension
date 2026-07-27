@@ -230,6 +230,7 @@ onDestroy(() => {
         bind:value={sortKey}
       >
         <option value="savedAt">Terbaru disimpan</option>
+        <option value="stageSeats">Status Lamar, sisa kursi</option>
         <option value="organizer">Penyelenggara</option>
         <option value="location">Lokasi</option>
       </select>

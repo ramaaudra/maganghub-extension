@@ -215,3 +215,255 @@ test("the list stays responsive with many Favorites", async ({
 	await popup.getByLabel("Urutkan").selectOption("organizer");
 	await expect(renderedTitles(popup).first()).toHaveText("Magang Nomor 0000");
 });
+
+// Issue #21 (B2): stage-then-seats sort. Seeds Favorites directly into storage
+// with Status Lamar + liveStatus numbers covering every bucket, then asserts
+// the popup orders them: with-seats (ascending) → over-subscribed → unrefreshed
+// → terminal. Seeding through storage (not star clicks) keeps the test about the
+// sort, which is what the AC is about.
+test("sorting by Status Lamar + sisa kursi orders by stage then seats", async ({
+	context,
+	extensionId,
+}) => {
+	const popup = await openPopup(context, extensionId);
+	await popup.evaluate(async () => {
+		// One Favorite per bucket, with distinct titles and savedAt so the
+		// within-bucket tie-break (newest-saved) is also exercised.
+		const records: Record<string, unknown> = {
+			// with-seats, remaining 1 (closest-to-full) → top of the list.
+			"fav:11111111-1111-4111-8111-111111111111": {
+				schemaVersion: 4,
+				uuid: "11111111-1111-4111-8111-111111111111",
+				detailUrl:
+					"/magang-nasional/lowongan/magang-beta-11111111-1111-4111-8111-111111111111",
+				savedSnapshot: {
+					title: "Beta Kursi 1",
+					organizer: "PT Contoh",
+					location: "Jakarta",
+					capturedAt: "2026-01-01T00:00:00Z",
+				},
+				catatan: "",
+				statusLamar: undefined,
+				liveStatus: {
+					status: "open",
+					lastChecked: "2026-01-01T00:00:00Z",
+					kuota: 50,
+					pelamar: 49,
+				},
+				savedAt: "2026-01-04T00:00:00Z",
+			},
+			// with-seats, remaining 38.
+			"fav:22222222-2222-4222-8222-222222222222": {
+				schemaVersion: 4,
+				uuid: "22222222-2222-4222-8222-222222222222",
+				detailUrl:
+					"/magang-nasional/lowongan/magang-alpha-22222222-2222-4222-8222-222222222222",
+				savedSnapshot: {
+					title: "Alpha Kursi 38",
+					organizer: "PT Contoh",
+					location: "Jakarta",
+					capturedAt: "2026-01-01T00:00:00Z",
+				},
+				catatan: "",
+				statusLamar: undefined,
+				liveStatus: {
+					status: "open",
+					lastChecked: "2026-01-01T00:00:00Z",
+					kuota: 50,
+					pelamar: 12,
+				},
+				savedAt: "2026-01-05T00:00:00Z",
+			},
+			// over-subscribed, remaining -5 (futile).
+			"fav:33333333-3333-4333-8333-333333333333": {
+				schemaVersion: 4,
+				uuid: "33333333-3333-4333-8333-333333333333",
+				detailUrl:
+					"/magang-nasional/lowongan/magang-gamma-33333333-3333-4333-8333-333333333333",
+				savedSnapshot: {
+					title: "Gamma Over",
+					organizer: "PT Contoh",
+					location: "Jakarta",
+					capturedAt: "2026-01-01T00:00:00Z",
+				},
+				catatan: "",
+				statusLamar: "dilamar",
+				liveStatus: {
+					status: "filling",
+					lastChecked: "2026-01-01T00:00:00Z",
+					kuota: 50,
+					pelamar: 55,
+				},
+				savedAt: "2026-01-03T00:00:00Z",
+			},
+			// unrefreshed: no kuota/pelamar, active stage. Newest-saved in its
+			// bucket (only one here, but savedAt is newer than the with-seats
+			// ones, so it must NOT jump above them).
+			"fav:44444444-4444-4444-8444-444444444444": {
+				schemaVersion: 4,
+				uuid: "44444444-4444-4444-8444-444444444444",
+				detailUrl:
+					"/magang-nasional/lowongan/magang-delta-44444444-4444-4444-8444-444444444444",
+				savedSnapshot: {
+					title: "Delta Belum Refresh",
+					organizer: "PT Contoh",
+					location: "Jakarta",
+					capturedAt: "2026-01-01T00:00:00Z",
+				},
+				catatan: "",
+				statusLamar: undefined,
+				liveStatus: { status: "unknown", lastChecked: null },
+				savedAt: "2026-01-06T00:00:00Z",
+			},
+			// terminal: Diterima (newest-saved among terminal).
+			"fav:55555555-5555-4555-8555-555555555555": {
+				schemaVersion: 4,
+				uuid: "55555555-5555-4555-8555-555555555555",
+				detailUrl:
+					"/magang-nasional/lowongan/magang-epsilon-55555555-5555-4555-8555-555555555555",
+				savedSnapshot: {
+					title: "Epsilon Diterima",
+					organizer: "PT Contoh",
+					location: "Jakarta",
+					capturedAt: "2026-01-01T00:00:00Z",
+				},
+				catatan: "",
+				statusLamar: "diterima",
+				liveStatus: { status: "unknown", lastChecked: null },
+				savedAt: "2026-01-07T00:00:00Z",
+			},
+			// terminal: Status Lowongan Closed (oldest-saved among terminal).
+			"fav:66666666-6666-4666-8666-666666666666": {
+				schemaVersion: 4,
+				uuid: "66666666-6666-4666-8666-666666666666",
+				detailUrl:
+					"/magang-nasional/lowongan/magang-zeta-66666666-6666-4666-8666-666666666666",
+				savedSnapshot: {
+					title: "Zeta Tutup",
+					organizer: "PT Contoh",
+					location: "Jakarta",
+					capturedAt: "2026-01-01T00:00:00Z",
+				},
+				catatan: "",
+				statusLamar: undefined,
+				liveStatus: {
+					status: "closed",
+					lastChecked: "2026-01-01T00:00:00Z",
+				},
+				savedAt: "2026-01-02T00:00:00Z",
+			},
+		};
+		const api = (
+			globalThis as unknown as {
+				chrome: { storage: { local: { set(r: unknown): Promise<void> } } };
+			}
+		).chrome;
+		await api.storage.local.set(records);
+	});
+
+	await expect(renderedTitles(popup)).toHaveCount(6, { timeout: 10_000 });
+
+	await popup.getByLabel("Urutkan").selectOption("stageSeats");
+
+	// with-seats ascending (Beta 1, Alpha 38) → over-subscribed (Gamma -5)
+	// → unrefreshed (Delta) → terminal newest-saved (Epsilon, Zeta).
+	await expect(renderedTitles(popup)).toHaveText([
+		"Beta Kursi 1",
+		"Alpha Kursi 38",
+		"Gamma Over",
+		"Delta Belum Refresh",
+		"Epsilon Diterima",
+		"Zeta Tutup",
+	]);
+});
+
+// Issue #21 (B2): the stageSeats sort respects the active search — the filtered
+// list is sorted within the filter, never escaping it.
+test("stageSeats sort respects the active search", async ({
+	context,
+	extensionId,
+}) => {
+	const popup = await openPopup(context, extensionId);
+	await popup.evaluate(async () => {
+		const records: Record<string, unknown> = {
+			// with-seats, title matches "Jakarta".
+			"fav:11111111-1111-4111-8111-111111111111": {
+				schemaVersion: 4,
+				uuid: "11111111-1111-4111-8111-111111111111",
+				detailUrl:
+					"/magang-nasional/lowongan/magang-a-11111111-1111-4111-8111-111111111111",
+				savedSnapshot: {
+					title: "A Jakarta Seats",
+					organizer: "PT Contoh",
+					location: "Jakarta",
+					capturedAt: "2026-01-01T00:00:00Z",
+				},
+				catatan: "",
+				statusLamar: undefined,
+				liveStatus: {
+					status: "open",
+					lastChecked: "2026-01-01T00:00:00Z",
+					kuota: 50,
+					pelamar: 1,
+				},
+				savedAt: "2026-01-01T00:00:00Z",
+			},
+			// terminal, title matches "Jakarta".
+			"fav:22222222-2222-4222-8222-222222222222": {
+				schemaVersion: 4,
+				uuid: "22222222-2222-4222-8222-222222222222",
+				detailUrl:
+					"/magang-nasional/lowongan/magang-b-22222222-2222-4222-8222-222222222222",
+				savedSnapshot: {
+					title: "B Jakarta Diterima",
+					organizer: "PT Contoh",
+					location: "Jakarta",
+					capturedAt: "2026-01-01T00:00:00Z",
+				},
+				catatan: "",
+				statusLamar: "diterima",
+				liveStatus: { status: "unknown", lastChecked: null },
+				savedAt: "2026-01-02T00:00:00Z",
+			},
+			// with-seats, title does NOT match "jakarta" — filtered out.
+			"fav:33333333-3333-4333-8333-333333333333": {
+				schemaVersion: 4,
+				uuid: "33333333-3333-4333-8333-333333333333",
+				detailUrl:
+					"/magang-nasional/lowongan/magang-c-33333333-3333-4333-8333-333333333333",
+				savedSnapshot: {
+					title: "C Bandung Seats",
+					organizer: "PT Contoh",
+					location: "Bandung",
+					capturedAt: "2026-01-01T00:00:00Z",
+				},
+				catatan: "",
+				statusLamar: undefined,
+				liveStatus: {
+					status: "open",
+					lastChecked: "2026-01-01T00:00:00Z",
+					kuota: 50,
+					pelamar: 2,
+				},
+				savedAt: "2026-01-03T00:00:00Z",
+			},
+		};
+		const api = (
+			globalThis as unknown as {
+				chrome: { storage: { local: { set(r: unknown): Promise<void> } } };
+			}
+		).chrome;
+		await api.storage.local.set(records);
+	});
+
+	await expect(renderedTitles(popup)).toHaveCount(3, { timeout: 10_000 });
+
+	await popup.getByPlaceholder("Cari favorit...").fill("jakarta");
+	await popup.getByLabel("Urutkan").selectOption("stageSeats");
+
+	// C is filtered out; with-seats A sorts above terminal B within the filter.
+	await expect(renderedTitles(popup)).toHaveText([
+		"A Jakarta Seats",
+		"B Jakarta Diterima",
+	]);
+});

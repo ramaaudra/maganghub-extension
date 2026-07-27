@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { searchFavorites, sortFavorites } from "@/lib/filter";
-import { type Favorite, SCHEMA_VERSION } from "@/lib/types";
+import { type Favorite, SCHEMA_VERSION, type StatusLamar } from "@/lib/types";
 
 /**
  * Contract tests for the popup's search + sort helpers (issue #6). These are
@@ -193,5 +193,384 @@ describe("sortFavorites", () => {
 		const result = sortFavorites(list, "organizer");
 
 		expect(result.map((f) => f.uuid)).toEqual([U.b, U.c, U.a]);
+	});
+});
+
+// ─── stageSeats sort (issue #21) ─────────────────────────────────────────────
+// A richer builder that can set the fields the stage-then-seats sort reads:
+// Status Lamar (stage) and the liveStatus numbers (kuota/pelamar/status). The
+// plain `fav` builder above stays for the savedAt/organizer/location tests.
+
+const stageFav = (over: {
+	uuid: string;
+	title?: string;
+	savedAt?: string;
+	stage?: StatusLamar | undefined;
+	status?: Favorite["liveStatus"]["status"];
+	kuota?: number;
+	pelamar?: number;
+}): Favorite => ({
+	schemaVersion: SCHEMA_VERSION,
+	uuid: over.uuid,
+	detailUrl: `/magang-nasional/lowongan/x-${over.uuid}`,
+	savedSnapshot: {
+		title: over.title ?? "Magang",
+		organizer: "PT Contoh",
+		location: "Jakarta",
+		capturedAt: "2026-01-01T00:00:00Z",
+	},
+	catatan: "",
+	statusLamar: over.stage,
+	liveStatus: {
+		status: over.status ?? "unknown",
+		lastChecked:
+			over.kuota !== undefined || over.pelamar !== undefined
+				? "2026-01-01T00:00:00Z"
+				: null,
+		kuota: over.kuota,
+		pelamar: over.pelamar,
+	},
+	savedAt: over.savedAt ?? "2026-01-01T00:00:00Z",
+});
+
+const S = {
+	a: "11111111-1111-4111-8111-111111111111",
+	b: "22222222-2222-4222-8222-222222222222",
+	c: "33333333-3333-4333-8333-333333333333",
+	d: "44444444-4444-4444-8444-444444444444",
+	e: "55555555-5555-4555-8555-555555555555",
+	f: "66666666-6666-4666-8666-666666666666",
+};
+
+describe("sortFavorites(stageSeats)", () => {
+	it("orders active-with-seats above active-over-subscribed, above unrefreshed, above terminal", () => {
+		// One per bucket, mixed stages, mixed savedAt — bucket must win.
+		const list = [
+			// terminal: Diterima.
+			stageFav({
+				uuid: S.e,
+				title: "Epsilon",
+				stage: "diterima",
+				savedAt: "2026-01-07T00:00:00Z",
+			}),
+			// unrefreshed: active stage, no numbers.
+			stageFav({ uuid: S.d, title: "Delta", savedAt: "2026-01-06T00:00:00Z" }),
+			// over-subscribed: active stage, remaining −5.
+			stageFav({
+				uuid: S.c,
+				title: "Gamma",
+				stage: "dilamar",
+				kuota: 50,
+				pelamar: 55,
+				savedAt: "2026-01-03T00:00:00Z",
+			}),
+			// with-seats: remaining 1 (closest-to-full).
+			stageFav({
+				uuid: S.b,
+				title: "Beta",
+				kuota: 50,
+				pelamar: 49,
+				savedAt: "2026-01-04T00:00:00Z",
+			}),
+			// with-seats: remaining 38.
+			stageFav({
+				uuid: S.a,
+				title: "Alpha",
+				kuota: 50,
+				pelamar: 12,
+				savedAt: "2026-01-05T00:00:00Z",
+			}),
+		];
+
+		const result = sortFavorites(list, "stageSeats");
+
+		expect(result.map((f) => f.uuid)).toEqual([S.b, S.a, S.c, S.d, S.e]);
+	});
+
+	it("within with-seats, sorts ascending by remaining (closest-to-full on top)", () => {
+		const list = [
+			stageFav({
+				uuid: S.a,
+				title: "Alpha",
+				kuota: 50,
+				pelamar: 12,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.b,
+				title: "Beta",
+				kuota: 50,
+				pelamar: 49,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.c,
+				title: "Charlie",
+				kuota: 50,
+				pelamar: 40,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+		];
+
+		const result = sortFavorites(list, "stageSeats");
+
+		// remaining: Beta 1, Charlie 10, Alpha 38.
+		expect(result.map((f) => f.uuid)).toEqual([S.b, S.c, S.a]);
+	});
+
+	it("within over-subscribed, sorts ascending by remaining (most-over first)", () => {
+		const list = [
+			stageFav({
+				uuid: S.a,
+				title: "Alpha",
+				kuota: 50,
+				pelamar: 60,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.b,
+				title: "Beta",
+				kuota: 50,
+				pelamar: 51,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.c,
+				title: "Charlie",
+				kuota: 50,
+				pelamar: 55,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+		];
+
+		const result = sortFavorites(list, "stageSeats");
+
+		// remaining: Alpha −10, Charlie −5, Beta −1 → ascending puts −10 first
+		// (most-over-subscribed first — one ascending rule covers both numeric
+		// buckets, mirroring with-seats' closest-to-full first).
+		expect(result.map((f) => f.uuid)).toEqual([S.a, S.c, S.b]);
+	});
+
+	it("treats remaining === 0 as over-subscribed (no seats), below any with-seats", () => {
+		const list = [
+			stageFav({
+				uuid: S.a,
+				title: "Full",
+				kuota: 50,
+				pelamar: 50,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.b,
+				title: "Open",
+				kuota: 50,
+				pelamar: 1,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+		];
+
+		const result = sortFavorites(list, "stageSeats");
+
+		expect(result.map((f) => f.uuid)).toEqual([S.b, S.a]);
+	});
+
+	it("within unrefreshed, sorts newest-saved first (deterministic, no shuffling)", () => {
+		const list = [
+			stageFav({ uuid: S.a, title: "Old", savedAt: "2026-01-01T00:00:00Z" }),
+			stageFav({ uuid: S.b, title: "New", savedAt: "2026-02-01T00:00:00Z" }),
+			stageFav({ uuid: S.c, title: "Mid", savedAt: "2026-01-15T00:00:00Z" }),
+		];
+
+		const result = sortFavorites(list, "stageSeats");
+
+		expect(result.map((f) => f.uuid)).toEqual([S.b, S.c, S.a]);
+	});
+
+	it("breaks ties on remaining by saved date, newest first", () => {
+		const list = [
+			stageFav({
+				uuid: S.a,
+				title: "Older",
+				kuota: 50,
+				pelamar: 10,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.b,
+				title: "Newer",
+				kuota: 50,
+				pelamar: 40,
+				savedAt: "2026-02-01T00:00:00Z",
+			}),
+		];
+
+		const result = sortFavorites(list, "stageSeats");
+
+		// Same remaining (40) → newest-saved first.
+		expect(result.map((f) => f.uuid)).toEqual([S.b, S.a]);
+	});
+
+	it("terminal stages (Diterima/Ditolak) sort above Closed Status Lowongan only by saved date", () => {
+		// All terminal regardless of seats/closed — terminal-stage wins even if seats remain.
+		const list = [
+			stageFav({
+				uuid: S.a,
+				title: "AcceptedWithSeats",
+				stage: "diterima",
+				kuota: 50,
+				pelamar: 1,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.b,
+				title: "Rejected",
+				stage: "ditolak",
+				kuota: 50,
+				pelamar: 5,
+				savedAt: "2026-02-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.c,
+				title: "ClosedNoStage",
+				status: "closed",
+				kuota: 50,
+				pelamar: 50,
+				savedAt: "2026-03-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.d,
+				title: "ActiveWithSeats",
+				kuota: 50,
+				pelamar: 1,
+				savedAt: "2026-04-01T00:00:00Z",
+			}),
+		];
+
+		const result = sortFavorites(list, "stageSeats");
+
+		// ActiveWithSeats is the only non-terminal → first. Terminal three sort newest-saved.
+		expect(result.map((f) => f.uuid)).toEqual([S.d, S.c, S.b, S.a]);
+	});
+
+	it("a Closed Status Lowongan is terminal even with an active stage", () => {
+		const list = [
+			stageFav({
+				uuid: S.a,
+				title: "DilamarClosed",
+				stage: "dilamar",
+				status: "closed",
+				kuota: 50,
+				pelamar: 50,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.b,
+				title: "DilamarOpen",
+				stage: "dilamar",
+				kuota: 50,
+				pelamar: 1,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+		];
+
+		const result = sortFavorites(list, "stageSeats");
+
+		expect(result.map((f) => f.uuid)).toEqual([S.b, S.a]);
+	});
+
+	it("Dilamar and Interview are active (above terminal), no-stage is active too", () => {
+		const list = [
+			stageFav({
+				uuid: S.a,
+				title: "None",
+				kuota: 50,
+				pelamar: 3,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.b,
+				title: "Dilamar",
+				stage: "dilamar",
+				kuota: 50,
+				pelamar: 2,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.c,
+				title: "Interview",
+				stage: "interview",
+				kuota: 50,
+				pelamar: 1,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.d,
+				title: "Diterima",
+				stage: "diterima",
+				kuota: 50,
+				pelamar: 0,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+		];
+
+		const result = sortFavorites(list, "stageSeats");
+
+		// All three active (remaining 47, 48, 49) above terminal Diterima, ascending.
+		expect(result.map((f) => f.uuid)).toEqual([S.a, S.b, S.c, S.d]);
+	});
+
+	it("respects the active search: sorts within a filtered list", () => {
+		// The popup applies search before sort. Here three Lowongan share
+		// "Magang" in the title; searching "magang" keeps all three, and the
+		// stageSeats order still holds. A fourth ("Other") is filtered out.
+		const list = [
+			stageFav({
+				uuid: S.a,
+				title: "Magang Alpha",
+				stage: "diterima",
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.b,
+				title: "Magang Beta",
+				kuota: 50,
+				pelamar: 1,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.c,
+				title: "Other",
+				kuota: 50,
+				pelamar: 2,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+		];
+
+		const filtered = searchFavorites(list, "magang");
+		const result = sortFavorites(filtered, "stageSeats");
+
+		expect(result.map((f) => f.uuid)).toEqual([S.b, S.a]);
+	});
+
+	it("does not mutate the input list", () => {
+		const list = [
+			stageFav({
+				uuid: S.a,
+				title: "Alpha",
+				stage: "diterima",
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.b,
+				title: "Beta",
+				kuota: 50,
+				pelamar: 1,
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+		];
+
+		sortFavorites(list, "stageSeats");
+
+		expect(list.map((f) => f.uuid)).toEqual([S.a, S.b]);
 	});
 });
