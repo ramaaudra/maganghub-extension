@@ -14,12 +14,25 @@ export const STAGE_LABEL: Record<StatusLamar, string> = {
 };
 
 /** Stage word, or `undefined` when no stage is set. */
-export function stageLabel(
-	stage: StatusLamar | undefined,
-): string | undefined {
+export function stageLabel(stage: StatusLamar | undefined): string | undefined {
 	if (!stage) return undefined;
 	return STAGE_LABEL[stage];
 }
+
+/**
+ * The (value, label) pairs for a Status Lamar select, shared by the popup's
+ * popup select and the detail-page stage card's select so the two surfaces
+ * never disagree on vocabulary or order. The leading `""` entry is
+ * "Belum dilamar" = no stage (issue #15).
+ */
+export const STAGE_SELECT_OPTIONS: ReadonlyArray<
+	readonly [value: string, label: string]
+> = [
+	["", "Belum dilamar"],
+	...(Object.keys(STAGE_LABEL) as StatusLamar[]).map(
+		(stage) => [stage, STAGE_LABEL[stage]] as const,
+	),
+];
 
 /**
  * Accessible name for the on-card stage chip (WCAG 1.4.1 / issue #19).

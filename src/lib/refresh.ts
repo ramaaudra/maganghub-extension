@@ -71,6 +71,9 @@ function withPreviousSample(
 ): LiveStatus {
 	if (!recordChange) {
 		if (previous?.previousSample) live.previousSample = previous.previousSample;
+		// A failed refresh observes no change — keep the frozen change timestamp
+		// so the toolbar badge does not re-count an already-seen change (#17).
+		if (previous?.changedAt) live.changedAt = previous.changedAt;
 		return live;
 	}
 	const priorSample = isSuccessfulSample(previous)
@@ -78,8 +81,14 @@ function withPreviousSample(
 		: previous?.previousSample;
 	if (priorSample && hasMeaningfulChange(live, priorSample)) {
 		live.previousSample = priorSample;
-	} else if (previous?.previousSample) {
-		live.previousSample = previous.previousSample;
+		// `lastChecked` is `now` here — freeze the change moment so a later
+		// no-change refresh (which advances `lastChecked` but not this) cannot
+		// re-count the change as unseen (issue #17, story 42).
+		live.changedAt = live.lastChecked;
+	} else {
+		if (previous?.previousSample) live.previousSample = previous.previousSample;
+		// Unchanged successful refresh: keep the prior change timestamp frozen.
+		if (previous?.changedAt) live.changedAt = previous.changedAt;
 	}
 	return live;
 }

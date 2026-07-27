@@ -64,6 +64,15 @@ export interface LiveStatus {
 	 * refresh observes a change.
 	 */
 	previousSample?: LiveStatusSample;
+	/**
+	 * ISO timestamp of when the live numbers last meaningfully changed — set
+	 * only when `previousSample` is updated (a real change was observed), and
+	 * frozen across later no-change refreshes. The toolbar badge (issue #17)
+	 * reads this, not `lastChecked`, so a refresh that merely re-confirms an
+	 * already-seen change does not re-count it as unseen. Added in schema v4;
+	 * `undefined` on old records and until a change is observed.
+	 */
+	changedAt?: string | null;
 }
 
 /**

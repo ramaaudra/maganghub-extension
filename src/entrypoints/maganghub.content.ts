@@ -39,6 +39,7 @@ import {
 	setStatusLamar,
 } from "@/lib/storage";
 import {
+	STAGE_SELECT_OPTIONS,
 	stageChipAriaLabel,
 	stageLabel,
 } from "@/lib/stage";
@@ -575,7 +576,7 @@ function injectStageCard(uuid: string): void {
 	const select = document.createElement("select");
 	select.setAttribute("aria-label", "Status Lamar");
 	select.dataset.stageSelect = "true";
-	for (const [value, label] of STAGE_OPTIONS) {
+	for (const [value, label] of STAGE_SELECT_OPTIONS) {
 		const option = document.createElement("option");
 		option.value = value;
 		option.textContent = label;
@@ -608,15 +609,6 @@ function injectStageCard(uuid: string): void {
 	registerUpdater(uuid, apply, host);
 	attachStageSelect(uuid, select, state);
 }
-
-/** Stage options, matching the popup's Status Lamar select (issue #15). */
-const STAGE_OPTIONS: ReadonlyArray<readonly [string, string]> = [
-	["", "Belum dilamar"],
-	["dilamar", "Dilamar"],
-	["interview", "Interview"],
-	["diterima", "Diterima"],
-	["ditolak", "Ditolak"],
-];
 
 /** Attribution copy (D3) — ownership must be unmistakable. */
 const STAGE_CARD_TITLE = "Lamaranku · catatan pribadi";

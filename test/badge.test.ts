@@ -44,6 +44,8 @@ describe("countsAsUnseenChange / countUnseenChanges", () => {
 			kuota: 5,
 			pelamar: 2,
 		},
+		// The change was observed at this refresh; frozen across later no-change refreshes.
+		changedAt: "2026-01-05T12:00:00Z",
 	});
 	const unchanged = makeFavorite("u2", {
 		status: "open",
@@ -74,6 +76,29 @@ describe("countsAsUnseenChange / countUnseenChanges", () => {
 	it("does not count unrefreshed or unchanged Favorites", () => {
 		expect(countsAsUnseenChange(unchanged, null)).toBe(false);
 		expect(countsAsUnseenChange(unrefreshed, null)).toBe(false);
+	});
+
+	it("does not re-count an already-seen change on a later no-change refresh (#17)", () => {
+		// Change observed at T1 (changedAt frozen there). User opened popup at
+		// T2 (badge cleared). A refresh at T3 re-confirms the same numbers —
+		// lastChecked advances to T3 but changedAt stays T1, so the still-present
+		// change notice must NOT re-count as unseen.
+		const reconfirmed = makeFavorite("u9", {
+			status: "open",
+			kuota: 5,
+			pelamar: 4,
+			lastChecked: "2026-01-08T00:00:00Z",
+			previousSample: {
+				at: "2026-01-01T00:00:00Z",
+				status: "open",
+				kuota: 5,
+				pelamar: 2,
+			},
+			changedAt: "2026-01-05T12:00:00Z",
+		});
+		expect(countsAsUnseenChange(reconfirmed, "2026-01-06T00:00:00Z")).toBe(
+			false,
+		);
 	});
 });
 
@@ -110,6 +135,7 @@ describe("popup last-opened storage + toolbar badge", () => {
 				kuota: 5,
 				pelamar: 2,
 			},
+			changedAt: "2026-01-05T12:00:00Z",
 		});
 
 		await syncToolbarBadge([changed], "2026-01-04T00:00:00Z");

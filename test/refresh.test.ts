@@ -183,6 +183,45 @@ describe("toLiveStatus", () => {
 		const live = toLiveStatus(response, previous, now);
 		expect(live.previousSample).toEqual(previous.previousSample);
 	});
+
+	it("freezes changedAt on a real change and keeps it frozen across a no-change refresh (#17)", () => {
+		const before: LiveStatus = {
+			status: "open",
+			kuota: 5,
+			pelamar: 2,
+			lastChecked: "2026-01-01T00:00:00Z",
+		};
+		const changeResponse: OffscreenResponse = {
+			ok: true,
+			uuid: "c1",
+			parsed: { status: "open", kuota: 5, pelamar: 4 },
+		};
+		const atChange = toLiveStatus(
+			changeResponse,
+			before,
+			"2026-01-02T00:00:00Z",
+		);
+		expect(atChange.previousSample?.pelamar).toBe(2);
+		// changedAt is the moment the change was observed, not the prior sample's `at`.
+		expect(atChange.changedAt).toBe("2026-01-02T00:00:00Z");
+
+		// Later: a no-change refresh re-confirms the same numbers. lastChecked
+		// advances to 2026-01-08; changedAt must stay frozen at the change moment so
+		// the toolbar badge does not re-count the already-seen change.
+		const noChangeResponse: OffscreenResponse = {
+			ok: true,
+			uuid: "c1",
+			parsed: { status: "open", kuota: 5, pelamar: 4 },
+		};
+		const afterNoChange = toLiveStatus(
+			noChangeResponse,
+			atChange,
+			"2026-01-08T00:00:00Z",
+		);
+		expect(afterNoChange.lastChecked).toBe("2026-01-08T00:00:00Z");
+		expect(afterNoChange.changedAt).toBe("2026-01-02T00:00:00Z");
+		expect(afterNoChange.previousSample).toEqual(atChange.previousSample);
+	});
 });
 
 describe("runWithConcurrency", () => {

@@ -1,6 +1,6 @@
 # MagangHub Extension
 
-A Chrome extension that augments the official [MagangHub](https://maganghub.kemnaker.go.id) internship listings with local favorites, Catatan, a manual Status Lamar flag, and refreshable Status Lowongan — without ever touching the user's SiapKerja credentials.
+A Chrome extension that augments the official [MagangHub](https://maganghub.kemnaker.go.id) internship listings with local favorites, Catatan, a manual Status Lamar stage tracker, and refreshable Status Lowongan — without ever touching the user's SiapKerja credentials.
 
 > **Status: unofficial, not published.** This is an independent, third-party
 > project. It is **not** affiliated with, endorsed by, or produced by
@@ -13,8 +13,7 @@ A Chrome extension that augments the official [MagangHub](https://maganghub.kemn
 
 - **Star Lowongan** from the list or detail page — saved locally as a Favorite.
 - **Catatan** — a free-text note per Favorite (why you saved it).
-- **Status Lamar** — a manual flag for whether you've applied. Always user-set;
-  the extension never auto-detects applied state.
+- **Status Lamar** — a manual application-stage tracker (Belum dilamar → Dilamar → Interview → Diterima / Ditolak). Always user-set; the extension never auto-detects applied state.
 - **Status Lowongan** — refresh a Favorite's live Kuota/Pelamar from the public
   detail page, individually or all at once (throttled, via an offscreen
   document).

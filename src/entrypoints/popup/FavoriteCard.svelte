@@ -3,7 +3,7 @@ import { onDestroy } from "svelte";
 import { formatChangeNotice } from "@/lib/change";
 import { Card, CardContent } from "@/lib/components/ui/card";
 import { resolveDetailUrl } from "@/lib/refresh";
-import { STAGE_LABEL } from "@/lib/stage";
+import { STAGE_LABEL, STAGE_SELECT_OPTIONS } from "@/lib/stage";
 import { setCatatan, setStatusLamar } from "@/lib/storage";
 import { terakhirDicek } from "@/lib/time";
 import type { Favorite, StatusLamar, StatusLowongan } from "@/lib/types";
@@ -180,11 +180,9 @@ onDestroy(() => {
           value={statusLamarValue}
           onchange={onStatusLamarChange}
         >
-          <option value="">Belum dilamar</option>
-          <option value="dilamar">Dilamar</option>
-          <option value="interview">Interview</option>
-          <option value="diterima">Diterima</option>
-          <option value="ditolak">Ditolak</option>
+          {#each STAGE_SELECT_OPTIONS as [value, label]}
+            <option {value}>{label}</option>
+          {/each}
         </select>
       </label>
       {#if favorite.detailUrl}

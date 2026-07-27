@@ -17,15 +17,17 @@ export const POPUP_LAST_OPENED_KEY = "meta:popupLastOpenedAt";
 /**
  * A Favorite counts toward the badge when it has a change notice AND the
  * change landed after the popup was last opened (or the popup has never been
- * opened). `lastChecked` is the moment the new sample was written, so it
- * doubles as "when the change was observed".
+ * opened). The change moment is `liveStatus.changedAt` — set only when
+ * `previousSample` is actually updated — NOT `lastChecked`, which advances on
+ * every refresh. Using `lastChecked` would re-count an already-seen change on
+ * a no-change refresh (issue #17, story 42).
  */
 export function countsAsUnseenChange(
 	favorite: Favorite,
 	lastOpenedAt: string | null | undefined,
 ): boolean {
 	if (!formatChangeNotice(favorite.liveStatus)) return false;
-	const changedAt = favorite.liveStatus.lastChecked;
+	const changedAt = favorite.liveStatus.changedAt;
 	if (!changedAt) return false;
 	if (!lastOpenedAt) return true;
 	return changedAt > lastOpenedAt;
