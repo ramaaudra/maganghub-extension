@@ -46,15 +46,21 @@ const VALUE_SELECTOR = ".font-semibold";
 const BATCH_BADGE_SELECTOR = ".mh-badge";
 
 const LAMAR_SEKARANG = "Lamar Sekarang";
-/** Pelamar ≥ this fraction of Kuota → Filling (issue #1 taxonomy). */
-const FILLING_THRESHOLD = 0.8;
+/** Pelamar ≥ this fraction of Kuota → Filling (issue #1 taxonomy).
+ *  Exported so the list-card urgency band (issue #16) uses the same line — a
+ *  card at 80% must not say "calm" while the popup's refresh badge says
+ *  "Filling". */
+export const FILLING_THRESHOLD = 0.8;
 
 /** Parse the first count out of a value string like "5 orang", "120 orang",
- *  or "1.234 orang". Indonesian uses '.' as a thousands separator (not a
- *  decimal point) and Lowongan counts are whole numbers of people, so we
- *  strip every non-digit character and parse the rest as an integer — never a
- *  float. Returns undefined when there are no digits. */
-function parseCount(value: string): number | undefined {
+ *  "1.234 orang", or a card badge "Kuota: 5". Indonesian uses '.' as a
+ *  thousands separator (not a decimal point) and Lowongan counts are whole
+ *  numbers of people, so we strip every non-digit character and parse the rest
+ *  as an integer — never a float. Returns undefined when there are no digits.
+ *
+ *  Exported so the list-card urgency band (issue #16) can turn badge text into
+ *  the same numbers the refresh parser produces from detail-page info rows. */
+export function parseCount(value: string): number | undefined {
 	const digits = value.replace(/[^0-9]/g, "");
 	if (!digits) return undefined;
 	const n = Number.parseInt(digits, 10);

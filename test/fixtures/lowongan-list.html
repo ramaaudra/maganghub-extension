@@ -44,9 +44,15 @@
       marker; it vanishes from textContent but the whitespace around it does not,
       which is why extraction normalizes.
 
-      Numbers are drawn from the live sample: Kuota is typically 2–5 and Pelamar
-      rarely exceeds a third of it. The previous fixture's "Kuota: 50 / Pelamar:
-      120" was invented and badly miscalibrated the ratio-badge design (A1).
+      Numbers are drawn from the live sample: Kuota is typically 2–5. The three
+      cards cover the three urgency bands (issue #16 / A1):
+        card 1 — Kuota 5 / Pelamar 1  → calm          (remaining 4, 20% filled)
+        card 2 — Kuota 5 / Pelamar 4  → hampir_penuh  (remaining 1)
+        card 3 — Kuota 2 / Pelamar 40 → lewat_kuota   (over-subscribed; recon
+                                                      measured 200%–8850%)
+      The previous fixture's "Kuota: 50 / Pelamar: 120" was invented and badly
+      miscalibrated the ratio-badge design; the pre-A1 "all calm" numbers are
+      gone for the same reason — e2e needs one of each band.
     -->
   </head>
   <body>
@@ -101,6 +107,7 @@
             </div>
           </a>
 
+          <!-- card 2: hampir_penuh (remaining 1) -->
           <a class="group block h-full" href="/magang-nasional/lowongan/magang-software-engineer-b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e">
             <div class="rounded-xl border bg-card text-card-foreground shadow mh-lowongan-card overflow-hidden h-full flex flex-col">
               <div class="p-5 flex flex-col h-full">
@@ -122,8 +129,8 @@
                       </div>
                     </div>
                     <div class="mt-4 flex flex-wrap gap-2">
-                      <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors border-transparent bg-secondary text-secondary-foreground text-xs">Kuota: <!-- -->3</div>
-                      <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors border-transparent bg-secondary text-secondary-foreground text-xs">Pelamar: <!-- -->0</div>
+                      <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors border-transparent bg-secondary text-secondary-foreground text-xs">Kuota: <!-- -->5</div>
+                      <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors border-transparent bg-secondary text-secondary-foreground text-xs">Pelamar: <!-- -->4</div>
                     </div>
                     <div class="mt-auto pt-4">
                       <hr class="mb-4" />
@@ -160,7 +167,7 @@
                     </div>
                     <div class="mt-4 flex flex-wrap gap-2">
                       <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors border-transparent bg-secondary text-secondary-foreground text-xs">Kuota: <!-- -->2</div>
-                      <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors border-transparent bg-secondary text-secondary-foreground text-xs">Pelamar: <!-- -->0</div>
+                      <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors border-transparent bg-secondary text-secondary-foreground text-xs">Pelamar: <!-- -->40</div>
                     </div>
                     <div class="mt-auto pt-4">
                       <hr class="mb-4" />

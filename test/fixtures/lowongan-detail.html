@@ -216,6 +216,10 @@
             <section class="mt-10">
               <h2 class="text-lg font-semibold mb-3">Lowongan Serupa</h2>
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Serupa cards use the same live badge pills as the list so the
+                     urgency signal (issue #16) fires here too. Invented title/
+                     organizer classes stay as a degradation path for extract;
+                     the badges are the real ones. -->
                 <a
                   class="group block h-full"
                   href="/magang-nasional/lowongan/magang-ui-designer-d4e5f6a7-b8c9-4d0e-9f1a-2b3c4d5e6f70"
@@ -231,6 +235,10 @@
                     <h3 class="mh-lowongan-title">Magang UI Designer</h3>
                     <p class="mh-penyelenggara">PT Kreatif Digital</p>
                     <span class="mh-lowongan-location">Bandung, Jawa Barat</span>
+                    <div class="mt-2 flex flex-wrap gap-2">
+                      <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold border-transparent bg-secondary text-secondary-foreground text-xs">Kuota: <!-- -->5</div>
+                      <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold border-transparent bg-secondary text-secondary-foreground text-xs">Pelamar: <!-- -->1</div>
+                    </div>
                   </div>
                 </a>
 
@@ -249,6 +257,10 @@
                     <h3 class="mh-lowongan-title">Magang QA Engineer</h3>
                     <p class="mh-penyelenggara">PT Uji Mutu</p>
                     <span class="mh-lowongan-location">Surabaya, Jawa Timur</span>
+                    <div class="mt-2 flex flex-wrap gap-2">
+                      <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold border-transparent bg-secondary text-secondary-foreground text-xs">Kuota: <!-- -->2</div>
+                      <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold border-transparent bg-secondary text-secondary-foreground text-xs">Pelamar: <!-- -->40</div>
+                    </div>
                   </div>
                 </a>
               </div>

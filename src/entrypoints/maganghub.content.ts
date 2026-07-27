@@ -39,6 +39,11 @@ import {
 	setStatusLamar,
 } from "@/lib/storage";
 import type { Favorite, StatusLamar } from "@/lib/types";
+import {
+	type UrgencyBand,
+	urgencyBandFromCard,
+	urgencyLabel,
+} from "@/lib/urgency";
 
 /**
  * Content script for MagangHub Lowongan pages.
@@ -303,7 +308,8 @@ function injectStarIntoCard(card: HTMLElement): void {
 		card.style.setProperty("position", "relative");
 	}
 	const shadow = host.attachShadow({ mode: "closed" });
-	const button = buildStarButton(shadow);
+	const { button, urgency } = buildStarChrome(shadow);
+	applyUrgency(host, urgency, urgencyBandFromCard(card));
 	card.append(host);
 
 	const state: StarState = { interacted: false };
@@ -317,7 +323,17 @@ function injectStarIntoCard(card: HTMLElement): void {
 	attachStarToggle(card, uuid, anchor, host, button, state);
 }
 
-function buildStarButton(shadow: ShadowRoot): HTMLButtonElement {
+/**
+ * Star button + urgency ring inside one closed shadow (issue #16).
+ *
+ * The ring is colour-only (pre-attentive). Title/aria-label for the band live
+ * on the light-DOM host (see `applyUrgency`); `data-urgency` on the host lets
+ * e2e assert the band without piercing the closed shadow.
+ */
+function buildStarChrome(shadow: ShadowRoot): {
+	button: HTMLButtonElement;
+	urgency: HTMLElement;
+} {
 	const style = document.createElement("style");
 	style.textContent = STAR_CSS;
 	const button = document.createElement("button");
@@ -326,8 +342,40 @@ function buildStarButton(shadow: ShadowRoot): HTMLButtonElement {
 	button.setAttribute("aria-label", "Tandai sebagai favorit");
 	button.setAttribute("aria-pressed", "false");
 	button.textContent = "★";
-	shadow.append(style, button);
-	return button;
+	const urgency = document.createElement("span");
+	urgency.className = "mh-urgency";
+	urgency.hidden = true;
+	shadow.append(style, urgency, button);
+	return { button, urgency };
+}
+
+/**
+ * Paint the urgency ring for a band, or hide it when numbers don't parse.
+ *
+ * The ring is purely visual (`pointer-events: none` so it never steals the
+ * star click). The textual equivalent (WCAG 1.4.1) therefore lives on the
+ * light-DOM host — same pattern as the stage card's attribution — where hover
+ * and AT can both reach it. The star button keeps its own aria-label.
+ */
+function applyUrgency(
+	host: HTMLElement,
+	urgency: HTMLElement,
+	band: UrgencyBand | undefined,
+): void {
+	if (!band) {
+		host.removeAttribute("data-urgency");
+		host.removeAttribute("title");
+		host.removeAttribute("aria-label");
+		urgency.hidden = true;
+		urgency.removeAttribute("data-band");
+		return;
+	}
+	const label = urgencyLabel(band);
+	host.setAttribute("data-urgency", band);
+	host.setAttribute("title", label);
+	host.setAttribute("aria-label", label);
+	urgency.hidden = false;
+	urgency.setAttribute("data-band", band);
 }
 
 // ─────────────────────── Detail page: toggle near title ─────────────────────
@@ -516,8 +564,7 @@ const STAGE_OPTIONS: ReadonlyArray<readonly [string, string]> = [
 
 /** Attribution copy (D3) — ownership must be unmistakable. */
 const STAGE_CARD_TITLE = "Lamaranku · catatan pribadi";
-const STAGE_CARD_SUBTITLE =
-	"Bukan fitur MagangHub — disimpan di browser kamu.";
+const STAGE_CARD_SUBTITLE = "Bukan fitur MagangHub — disimpan di browser kamu.";
 
 function reflectStageCard(
 	host: HTMLElement,
@@ -652,7 +699,13 @@ function attachStarToggle(
 }
 
 const STAR_CSS = `
-  :host { all: initial; }
+  :host {
+    all: initial;
+    position: relative;
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+  }
   .mh-star {
     all: initial;
     position: relative;
@@ -675,6 +728,20 @@ const STAR_CSS = `
   .mh-star:hover { transform: scale(1.08); color: #f59e0b; }
   .mh-star.is-filled { color: #f59e0b; background: rgba(255,255,255,1); }
   .mh-star.is-filled:hover { color: #d97706; }
+  /* Urgency ring (issue #16): colour only — the Kuota/Pelamar pills already
+     carry the numbers. Three bands share one element; band drives colour via
+     data-band so MagangHub's Tailwind cannot restyle it (closed shadow). */
+  .mh-urgency {
+    position: absolute;
+    inset: -3px;
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    pointer-events: none;
+    box-sizing: border-box;
+  }
+  .mh-urgency[data-band="calm"] { border-color: #22c55e; }
+  .mh-urgency[data-band="hampir_penuh"] { border-color: #f59e0b; }
+  .mh-urgency[data-band="lewat_kuota"] { border-color: #ef4444; }
 `;
 
 /**
