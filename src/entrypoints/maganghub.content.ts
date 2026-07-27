@@ -21,6 +21,11 @@ import {
 	reportHealth,
 } from "@/lib/health";
 import {
+	migrateFavorite,
+	type FavoriteV1,
+	type FavoriteV2,
+} from "@/lib/migrations";
+import {
 	createFavorite,
 	FAVORITE_KEY_PREFIX,
 	getFavorite,
@@ -28,6 +33,7 @@ import {
 	removeFavorite,
 	setFavorite,
 } from "@/lib/storage";
+import type { Favorite } from "@/lib/types";
 
 /**
  * Content script for MagangHub Lowongan pages.
@@ -165,7 +171,13 @@ interface StarState {
 	interacted: boolean;
 }
 
-type FilledUpdater = (filled: boolean) => void;
+/**
+ * The updater payload: the full `Favorite | undefined`, not a boolean. Carrying
+ * the whole record (not just "is it saved") is what lets on-page features read
+ * `statusLamar` (A2), `catatan` (A3), and `liveStatus` (C2 detail card) without
+ * each re-deriving them from storage. `undefined` = the Favorite was removed.
+ */
+type FavoriteUpdater = (favorite: Favorite | undefined) => void;
 
 /**
  * A registered toggle: the updater to call on a storage change, plus the host
@@ -174,7 +186,7 @@ type FilledUpdater = (filled: boolean) => void;
  * dead weight (issue #8: "cleanup on card removal").
  */
 interface Registration {
-	update: FilledUpdater;
+	update: FavoriteUpdater;
 	host: HTMLElement;
 }
 
@@ -183,7 +195,7 @@ const updaters = new Map<string, Set<Registration>>();
 
 function registerUpdater(
 	uuid: string,
-	update: FilledUpdater,
+	update: FavoriteUpdater,
 	host: HTMLElement,
 ): () => void {
 	let set = updaters.get(uuid);
@@ -199,10 +211,10 @@ function registerUpdater(
 	};
 }
 
-function notifyUpdaters(uuid: string, filled: boolean): void {
+function notifyUpdaters(uuid: string, favorite: Favorite | undefined): void {
 	const set = updaters.get(uuid);
 	if (!set) return;
-	for (const { update } of set) update(filled);
+	for (const { update } of set) update(favorite);
 }
 
 /**
@@ -234,8 +246,16 @@ function setupStorageSync(): void {
 		for (const key of Object.keys(changes)) {
 			if (!key.startsWith(FAVORITE_KEY_PREFIX)) continue;
 			const uuid = key.slice(FAVORITE_KEY_PREFIX.length);
-			const nowFavorited = changes[key].newValue !== undefined;
-			notifyUpdaters(uuid, nowFavorited);
+			// Migrate the raw stored record to the current shape, the same as the
+			// read paths in storage.ts. `newValue` is the persisted object (any past
+			// schema version); `undefined` means the Favorite was removed.
+			const stored = changes[key].newValue as
+				| Favorite
+				| FavoriteV1
+				| FavoriteV2
+				| undefined;
+			const favorite = stored ? migrateFavorite(stored) : undefined;
+			notifyUpdaters(uuid, favorite);
 		}
 	});
 }
@@ -280,7 +300,11 @@ function injectStarIntoCard(card: HTMLElement): void {
 	card.append(host);
 
 	const state: StarState = { interacted: false };
-	const apply = (filled: boolean) => setFilled(host, button, filled);
+	// The toggle's visual state is still just filled/not-filled, so the adapter
+	// reduces the Favorite to a boolean here. A2/A3 will hang their chip/tooltip
+	// reads off this same `apply` seam — the protocol now carries the full record.
+	const apply = (favorite: Favorite | undefined) =>
+		setFilled(host, button, Boolean(favorite));
 	void reflectState(uuid, apply, state);
 	registerUpdater(uuid, apply, host);
 	attachStarToggle(card, uuid, anchor, host, button, state);
@@ -328,8 +352,8 @@ function injectDetailToggle(uuid: string): void {
 	cluster.append(host);
 
 	const state: StarState = { interacted: false };
-	const apply = (filled: boolean) =>
-		setFilled(host, button, filled, DETAIL_LABELS);
+	const apply = (favorite: Favorite | undefined) =>
+		setFilled(host, button, Boolean(favorite), DETAIL_LABELS);
 	void reflectState(uuid, apply, state);
 	registerUpdater(uuid, apply, host);
 	attachDetailToggle(uuid, host, button, state);
@@ -417,13 +441,13 @@ const DETAIL_LABELS: FilledLabels = {
 
 async function reflectState(
 	uuid: string,
-	apply: FilledUpdater,
+	apply: FavoriteUpdater,
 	state: StarState,
 ): Promise<void> {
 	const fav = await getFavorite(uuid);
 	// Don't clobber a click that landed before the initial read resolved.
 	if (state.interacted) return;
-	apply(Boolean(fav));
+	apply(fav);
 }
 
 /**
