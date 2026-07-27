@@ -42,6 +42,7 @@ import {
 	stageChipAriaLabel,
 	stageLabel,
 } from "@/lib/stage";
+import { composeStarTitle } from "@/lib/star-title";
 import type { Favorite, StatusLamar } from "@/lib/types";
 import {
 	type UrgencyBand,
@@ -317,11 +318,10 @@ function injectStarIntoCard(card: HTMLElement): void {
 	card.append(host);
 
 	const state: StarState = { interacted: false };
-	// Filled bit + stage chip both ride the Favorite shape from the updater
-	// protocol (issue #14 / #19). A3 will hang the Catatan tooltip off the same
-	// `apply` seam.
+	// Filled bit, stage chip, and Catatan tooltip all ride the Favorite shape
+	// from the updater protocol (issues #14 / #19 / #18).
 	const apply = (favorite: Favorite | undefined) => {
-		setFilled(host, button, Boolean(favorite));
+		setFilled(host, button, Boolean(favorite), STAR_LABELS, favorite?.catatan);
 		applyStageChip(host, chip, favorite?.statusLamar);
 	};
 	void reflectState(uuid, apply, state);
@@ -458,7 +458,13 @@ function injectDetailToggle(uuid: string): void {
 
 	const state: StarState = { interacted: false };
 	const apply = (favorite: Favorite | undefined) =>
-		setFilled(host, button, Boolean(favorite), DETAIL_LABELS);
+		setFilled(
+			host,
+			button,
+			Boolean(favorite),
+			DETAIL_LABELS,
+			favorite?.catatan,
+		);
 	void reflectState(uuid, apply, state);
 	registerUpdater(uuid, apply, host);
 	attachDetailToggle(uuid, host, button, state);
@@ -698,19 +704,39 @@ async function reflectState(
  * observable without piercing the closed Shadow DOM, and update the shadow
  * button's visual + aria-pressed. aria-pressed lives only on the interactive
  * button — the host is a non-interactive div where AT would ignore it.
+ *
+ * Catatan rides the native `title` (issue #18 / A3). Compose rather than
+ * clobber: filled always writes the composed title (list stars gain a
+ * tooltip on save); unfilled keeps the detail toggle's seeded off-label and
+ * clears the list star so nothing residual lingers after unsave.
+ * `data-star-title` on the host mirrors the same string for e2e without
+ * piercing Shadow DOM. Urgency owns `host.title` separately — do not write
+ * Catatan there.
  */
 function setFilled(
 	host: HTMLElement,
 	button: HTMLButtonElement,
 	filled: boolean,
 	labels: FilledLabels = STAR_LABELS,
+	catatan?: string,
 ): void {
 	host.setAttribute("data-filled", String(filled));
 	button.classList.toggle("is-filled", filled);
 	button.setAttribute("aria-pressed", String(filled));
 	const label = filled ? labels.labelOn : labels.labelOff;
 	button.setAttribute("aria-label", label);
-	if (button.title) button.title = label;
+	// Filled: always write composed title (list stars gain a tooltip on save).
+	// Unfilled: detail keeps its seeded title (off-label); list clears so a
+	// previously-saved star does not leave a residual off-label tooltip.
+	if (filled) {
+		const title = composeStarTitle(label, catatan);
+		button.title = title;
+		host.setAttribute("data-star-title", title);
+	} else {
+		host.removeAttribute("data-star-title");
+		if (labels === DETAIL_LABELS) button.title = label;
+		else button.removeAttribute("title");
+	}
 	if (labels.textOn && labels.textOff) {
 		button.textContent = filled ? labels.textOn : labels.textOff;
 	}
