@@ -3,7 +3,7 @@ import {
 	CARD_SELECTOR,
 	DETAIL_HEADER_SELECTORS,
 } from "./constants";
-import { findShareCluster, queryFirst } from "./extract";
+import { extractSnapshot, findShareCluster, queryFirst } from "./extract";
 
 /**
  * Injection health (issue #8). MagangHub is a site we don't control; when its
@@ -22,13 +22,33 @@ export type HealthStatus = "ok" | "degraded";
  * "there is nothing to inject into": a filter with no results, or a list that
  * hasn't rendered its cards yet, is a healthy page with zero cards. Only the
  * absence of the whole card *structure* on a page that should have one counts.
+ *
+ * Field-aware (D1): card *presence* alone is not health. P1b shipped for weeks
+ * with `.mh-lowongan-card` present on every page but `organizer`/`location`
+ * silently empty, because this check only looked for the wrapper — which is why
+ * the bug survived 40 e2e tests and ten commits. A card that plainly exists yet
+ * carries neither organizer nor location means we lost the inner structure, not
+ * the data: the same failure `extractSnapshot` would store blank. One empty
+ * field can be real data; both empty on a card that exists means the page broke.
+ *
+ * Only the **first** card is inspected. Scanning all 18 cards on every mutation
+ * is exactly the DOM work AC #45 forbids ("must not slow down MagangHub page
+ * loads"), and one structurally-broken card means the page is broken — there is
+ * no per-card health, only per-page.
  */
 export function assessListMarkup(root: ParentNode): HealthStatus {
-	if (root.querySelector(CARD_SELECTOR)) return "ok";
-	// No cards. Is this a results list we've stopped recognizing, or a page with
-	// no results? Links to Lowongan detail pages are the tell: they mean results
-	// ARE rendered, we just can't find the card structure around them.
-	return root.querySelector(CARD_ANCHOR_SELECTOR) ? "degraded" : "ok";
+	const card = root.querySelector<HTMLElement>(CARD_SELECTOR);
+	if (!card) {
+		// No cards. Is this a results list we've stopped recognizing, or a page
+		// with no results? Links to Lowongan detail pages are the tell: they mean
+		// results ARE rendered, we just can't find the card structure around them.
+		return root.querySelector(CARD_ANCHOR_SELECTOR) ? "degraded" : "ok";
+	}
+	// Reuse `extractSnapshot` so the health check sees exactly what starring
+	// sees — the same selectors, the same failure mode — rather than a parallel
+	// read that could drift out of sync (the invariant `queryFirst` exists for).
+	const { organizer, location } = extractSnapshot(card);
+	return organizer === "" && location === "" ? "degraded" : "ok";
 }
 
 /**

@@ -28,14 +28,67 @@ function markup(html: string): HTMLElement {
 	return root;
 }
 
-const CARD = `
+// A realistic card: the wrapper PLUS the inner structure `extractSnapshot`
+// reads — an organizer `<p>` and a map-pin-anchored location span. Recon
+// (docs/live-dom-recon-2026-07-25.md §2) confirmed this is what the live card
+// looks like; the old `mh-lowongan-*` field classes match nothing.
+const CARD_WITH_FIELDS = `
 	<a class="group block h-full" href="/magang-nasional/lowongan/magang-data-analyst-a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d">
-		<div class="mh-lowongan-card"><h3 class="mh-lowongan-title">Magang Data Analyst</h3></div>
+		<div class="mh-lowongan-card">
+			<h3>Magang Data Analyst</h3>
+			<p class="text-sm font-medium text-foreground">PT Data Nusantara</p>
+			<span class="flex items-center gap-1.5"><svg class="lucide lucide-map-pin"></svg>Kota Jakarta</span>
+		</div>
 	</a>`;
 
 describe("assessListMarkup", () => {
-	it("reports ok when Lowongan cards are found", () => {
-		expect(assessListMarkup(markup(CARD))).toBe("ok");
+	it("reports ok when a card with readable fields is found", () => {
+		expect(assessListMarkup(markup(CARD_WITH_FIELDS))).toBe("ok");
+	});
+
+	it("reports ok when only one of organizer/location is empty — one blank field is real data, not breakage", () => {
+		// A card with an organizer but no location span. D1: a single empty field
+		// can be real data; both empty on a card that exists is the only signal
+		// that the structure broke. Flagging this would cry wolf on any card that
+		// genuinely omits a location.
+		const noLocation = markup(`
+			<a class="group block h-full" href="/magang-nasional/lowongan/magang-data-analyst-a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d">
+				<div class="mh-lowongan-card">
+					<h3>Magang Data Analyst</h3>
+					<p class="text-sm font-medium text-foreground">PT Data Nusantara</p>
+				</div>
+			</a>`);
+
+		expect(assessListMarkup(noLocation)).toBe("ok");
+	});
+
+	it("reports ok when only location is present and organizer is empty — the symmetric case", () => {
+		// D1's "both empty" rule is symmetric, so the inverse of the case above
+		// must also stay ok: a card with a map-pin-anchored location but no
+		// organizer `<p>` the selectors can read. One empty field is still real
+		// data, not a broken structure.
+		const noOrganizer = markup(`
+			<a class="group block h-full" href="/magang-nasional/lowongan/magang-data-analyst-a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d">
+				<div class="mh-lowongan-card">
+					<h3>Magang Data Analyst</h3>
+					<span class="flex items-center gap-1.5"><svg class="lucide lucide-map-pin"></svg>Kota Jakarta</span>
+				</div>
+			</a>`);
+
+		expect(assessListMarkup(noOrganizer)).toBe("ok");
+	});
+
+	it("reports degraded when the card wrapper survives but its inner fields are gone (P1b)", () => {
+		// The exact failure P1b exposed: `.mh-lowongan-card` is still on the page,
+		// but the organizer `<p>` and the location span are not — so starring
+		// would store blank organizer/location. Card presence alone missed this
+		// for weeks; the field-aware check is what closes that hole (D1).
+		const wrapperOnly = markup(`
+			<a class="group block h-full" href="/magang-nasional/lowongan/magang-data-analyst-a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d">
+				<div class="mh-lowongan-card"><h3>Magang Data Analyst</h3></div>
+			</a>`);
+
+		expect(assessListMarkup(wrapperOnly)).toBe("degraded");
 	});
 
 	it("reports ok for an empty result list — nothing to inject is not breakage", () => {
