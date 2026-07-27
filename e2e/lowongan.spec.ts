@@ -1,5 +1,6 @@
 import {
 	FIRST_DETAIL_URL as DETAIL_URL,
+	FIRST_UUID,
 	expect,
 	LIST_URL,
 	serveFixture,
@@ -235,6 +236,130 @@ test("favoriting from the detail page persists a snapshot the popup can render",
 		// icon, which a document-wide lookup would have persisted as the logo.
 		logoUrl: "https://maganghub.kemnaker.go.id/logos/pt-maju.png",
 	});
+});
+
+test("the stage card mounts as the last sidebar child only after the Lowongan is saved", async ({
+	page,
+}) => {
+	// Issue #20: the Status Lamar card lives at the sidebar tail (away from
+	// "Alur Lamaran") and only renders for a saved Favorite. Attribution copy
+	// is in the closed shadow, so e2e observes the light-DOM host + select.
+	await serveFixture(page);
+	await page.goto(DETAIL_URL);
+
+	const stageHost = page.locator(".mh-stage-card-host");
+	await expect(stageHost).toHaveCount(1);
+	// Host is present (idempotency marker is set) but hidden until favorited.
+	await expect(stageHost).toHaveAttribute("data-visible", "false");
+	await expect(stageHost).toBeHidden();
+
+	// Last child of the sidebar that holds "Alur Lamaran" — furthest from it.
+	const sidebar = page.locator("div.space-y-5:has(h3:text-is('Alur Lamaran'))");
+	await expect(sidebar.locator("> .mh-stage-card-host")).toHaveCount(1);
+	const lastChildIsStage = await sidebar.evaluate((el) => {
+		const last = el.lastElementChild;
+		return last?.classList.contains("mh-stage-card-host") ?? false;
+	});
+	expect(lastChildIsStage).toBe(true);
+
+	// Favoriting reveals the card. Attribution rides on the host (closed shadow
+	// keeps the visual copy isolated from MagangHub's CSS — ADR-0004).
+	await page.locator(".mh-favorite-detail-host").click();
+	await expect(stageHost).toHaveAttribute("data-visible", "true");
+	await expect(stageHost).toBeVisible();
+	await expect(stageHost).toHaveAttribute(
+		"data-stage-title",
+		"Lamaranku · catatan pribadi",
+	);
+	await expect(stageHost).toHaveAttribute(
+		"aria-label",
+		/Bukan fitur MagangHub/i,
+	);
+	await expect(stageHost.getByLabel("Status Lamar")).toHaveValue("");
+});
+
+test("setting a stage on the detail card persists and syncs to the popup", async ({
+	page,
+	context,
+	extensionId,
+}) => {
+	await serveFixture(page);
+	await page.goto(DETAIL_URL);
+
+	// Save first so the stage card becomes interactive.
+	await page.locator(".mh-favorite-detail-host").click();
+	const stageSelect = page.locator(".mh-stage-card-host").getByLabel("Status Lamar");
+	await expect(stageSelect).toBeVisible();
+	await stageSelect.selectOption("interview");
+	await expect(stageSelect).toHaveValue("interview");
+
+	// Popup reads the same Favorite record.
+	const popup = await openPopup(context, extensionId);
+	const card = popup.locator(`[data-favorite-uuid="${FIRST_UUID}"]`);
+	await expect(card.getByLabel("Status Lamar")).toHaveValue("interview");
+	await expect(
+		card.locator("span").filter({ hasText: "Interview" }),
+	).toBeVisible();
+});
+
+test("picking a stage on an unsaved Lowongan saves it first", async ({
+	page,
+	context,
+	extensionId,
+}) => {
+	// The card is hidden while unsaved, but the select still lives in the light
+	// DOM. Forcing a stage via evaluate exercises the save-first path the
+	// change handler owns (issue #20 AC: a stage never exists without a Favorite).
+	await serveFixture(page);
+	await page.goto(DETAIL_URL);
+
+	const detailHost = page.locator(".mh-favorite-detail-host");
+	await expect(detailHost).toHaveAttribute("data-filled", "false");
+
+	await page.locator(".mh-stage-card-host select").evaluate((el) => {
+		const select = el as HTMLSelectElement;
+		select.value = "dilamar";
+		select.dispatchEvent(new Event("change", { bubbles: true }));
+	});
+
+	// Favorite was created and the stage applied.
+	await expect(detailHost).toHaveAttribute("data-filled", "true");
+	const stageHost = page.locator(".mh-stage-card-host");
+	await expect(stageHost).toHaveAttribute("data-visible", "true");
+	await expect(stageHost.getByLabel("Status Lamar")).toHaveValue("dilamar");
+
+	const popup = await openPopup(context, extensionId);
+	const card = popup.locator(`[data-favorite-uuid="${FIRST_UUID}"]`);
+	await expect(card.getByLabel("Status Lamar")).toHaveValue("dilamar");
+	await expect(popup.getByText("Magang Data Analyst")).toBeVisible();
+});
+
+test("missing stage sidebar reports degraded and stages stay settable in the popup", async ({
+	page,
+	context,
+	extensionId,
+}) => {
+	// D4: all-miss → no injection + degraded. The popup is the safety net.
+	await serveFixture(page, {
+		detailFixture: "lowongan-detail-no-stage-sidebar.html",
+	});
+	await page.goto(DETAIL_URL);
+
+	await expect(page.locator("h1")).toHaveText("Magang Data Analyst");
+	// Share cluster still works — only the stage mount is gone.
+	await expect(page.locator(".mh-favorite-detail-host")).toHaveCount(1);
+	await expect(page.locator(".mh-stage-card-host")).toHaveCount(0);
+
+	// Favorite via the share-cluster toggle, then set the stage in the popup.
+	await page.locator(".mh-favorite-detail-host").click();
+	const popup = await openPopup(context, extensionId);
+	await expect(popup.getByText(/butuh update/i)).toBeVisible();
+	const card = popup.locator(`[data-favorite-uuid="${FIRST_UUID}"]`);
+	await card.getByLabel("Status Lamar").selectOption("ditolak");
+	await expect(card.getByLabel("Status Lamar")).toHaveValue("ditolak");
+	await expect(
+		card.locator("span").filter({ hasText: "Ditolak" }),
+	).toBeVisible();
 });
 
 test("editing Catatan and toggling Status Lamar persists across popup reopen", async ({

@@ -125,55 +125,12 @@
                 </section>
               </div>
 
-              <!-- Sidebar: MagangHub's own "Alur Lamaran" pipeline (recon §4b),
-                   the info rows the snapshot and the refresh parser both read,
-                   plus the apply CTA (its presence is the `open` signal —
-                   ADR-0006). The extension's Status Lamar stage card mounts as
-                   the LAST child of this sidebar (issue #20 / D3), furthest
-                   from "Alur Lamaran". -->
-              <div class="space-y-5 order-1 lg:order-2">
-                <div class="bg-white border border-border rounded-2xl p-6">
-                  <h3 class="text-base font-semibold mb-4">Alur Lamaran</h3>
-                  <ol class="space-y-4">
-                    <li class="flex items-start gap-3">
-                      <span
-                        class="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold shrink-0"
-                        >1</span
-                      >
-                      <div>
-                        <p class="font-medium text-sm">Submit Lamaran</p>
-                        <p class="text-xs text-muted-foreground">
-                          Isi kuesioner dan konfirmasi persyaratan lamaran
-                        </p>
-                      </div>
-                    </li>
-                    <li class="flex items-start gap-3">
-                      <span
-                        class="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold shrink-0"
-                        >2</span
-                      >
-                      <div>
-                        <p class="font-medium text-sm">Seleksi Lamaran</p>
-                        <p class="text-xs text-muted-foreground">
-                          Penyelenggara menseleksi &amp; verifikasi lamaranmu
-                        </p>
-                      </div>
-                    </li>
-                    <li class="flex items-start gap-3">
-                      <span
-                        class="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold shrink-0"
-                        >3</span
-                      >
-                      <div>
-                        <p class="font-medium text-sm">Interview</p>
-                        <p class="text-xs text-muted-foreground">
-                          Interview dengan perusahaan
-                        </p>
-                      </div>
-                    </li>
-                  </ol>
-                </div>
-
+              <!-- Issue #20 degradation case: MagangHub reshaped the sidebar so
+                   none of the three stage-card landmarks remain (no "Alur
+                   Lamaran" h3, no "Lamar Sekarang" button, no Penyelenggara
+                   a.block.group). Share cluster still present so the favorite
+                   toggle can mount; stages stay settable from the popup. -->
+              <div class="sidebar-v2 order-1 lg:order-2">
                 <div class="bg-white border border-border rounded-2xl p-5">
                   <div class="space-y-4 mb-6">
                     <div class="flex items-center justify-between text-sm">
@@ -197,13 +154,6 @@
                       <span class="font-semibold">Dari Pemerintah</span>
                     </div>
                   </div>
-
-                  <button
-                    class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium bg-primary text-white hover:bg-primary/90 h-11 rounded-md px-8 w-full gap-2"
-                    type="button"
-                  >
-                    Lamar Sekarang
-                  </button>
                   <p class="mt-2 text-center text-xs text-muted-foreground">
                     Gratis - nggak dipungut biaya sepeser pun
                   </p>

@@ -115,12 +115,16 @@ describe("assessListMarkup", () => {
 });
 
 describe("assessDetailMarkup", () => {
+	// A healthy detail page needs title + share cluster + stage sidebar. The
+	// stage sidebar is found via the "Lamar Sekarang" CTA (layer 2 of
+	// findStageSidebar) — the same landmark the recorded fixture carries.
 	const detailPage = (inner: string) =>
 		markup(
-			`<div class="flex flex-col sm:flex-row items-start gap-5">${inner}</div>`,
+			`<div class="flex flex-col sm:flex-row items-start gap-5">${inner}</div>
+			 <div class="space-y-5 order-1 lg:order-2"><button type="button">Lamar Sekarang</button></div>`,
 		);
 
-	it("reports ok when both the title and the injection point are present", () => {
+	it("reports ok when title, share cluster, and stage sidebar are all present", () => {
 		const detail = detailPage(
 			`<div class="flex-1"><h1>Magang Data Analyst</h1></div>
        <div class="flex gap-2 self-start"><button aria-label="Bagikan"></button></div>`,
@@ -144,6 +148,20 @@ describe("assessDetailMarkup", () => {
 		// with no button and no explanation.
 		const detail = detailPage(
 			`<div class="flex-1"><h1>Magang Data Analyst</h1></div>`,
+		);
+
+		expect(assessDetailMarkup(detail)).toBe("degraded");
+	});
+
+	it("reports degraded when the stage-card sidebar is gone (issue #20 / D4)", () => {
+		// Stages stay settable from the popup — the safety net — but the page
+		// itself must report degraded so the user knows the on-page card cannot
+		// mount. No fallback placement (issue #10's reasoning).
+		const detail = markup(
+			`<div class="flex flex-col sm:flex-row items-start gap-5">
+				<div class="flex-1"><h1>Magang Data Analyst</h1></div>
+				<div class="flex gap-2 self-start"><button aria-label="Bagikan"></button></div>
+			 </div>`,
 		);
 
 		expect(assessDetailMarkup(detail)).toBe("degraded");

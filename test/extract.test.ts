@@ -6,6 +6,7 @@ import {
 	extractUuidFromHref,
 	findDetailHeader,
 	findShareCluster,
+	findStageSidebar,
 } from "@/lib/extract";
 
 describe("extractUuidFromHref", () => {
@@ -208,6 +209,88 @@ describe("findDetailHeader / findShareCluster", () => {
 	it("returns null when no layer matches (caller injects nothing, health degrades)", () => {
 		const doc = buildPage(`<div><h1>Magang Data Analyst</h1></div>`);
 		expect(findShareCluster(doc)).toBeNull();
+	});
+});
+
+describe("findStageSidebar", () => {
+	const buildPage = (html: string): Document =>
+		new DOMParser().parseFromString(html, "text/html");
+
+	it("finds the sidebar via the Alur Lamaran heading (layer 1)", () => {
+		const doc = buildPage(`
+			<div class="space-y-5 order-1 lg:order-2">
+				<div class="bg-white border rounded-2xl p-6">
+					<h3>Alur Lamaran</h3>
+					<ol><li>Submit Lamaran</li></ol>
+				</div>
+				<div class="bg-white border rounded-2xl p-5">
+					<button type="button">Lamar Sekarang</button>
+				</div>
+			</div>`);
+		const sidebar = findStageSidebar(doc);
+		expect(sidebar?.className).toContain("space-y-5");
+		expect(sidebar?.querySelector("h3")?.textContent).toBe("Alur Lamaran");
+	});
+
+	it("falls back to the Lamar Sekarang button when Alur Lamaran is absent (layer 2)", () => {
+		// The recorded fixture today has the CTA but not yet the Alur Lamaran
+		// card — layer 2 is what makes the stage card mount on that page.
+		const doc = buildPage(`
+			<div class="space-y-5 order-1 lg:order-2">
+				<div class="bg-white border rounded-2xl p-5">
+					<button type="button">Lamar Sekarang</button>
+				</div>
+			</div>`);
+		const sidebar = findStageSidebar(doc);
+		expect(sidebar?.className).toContain("space-y-5");
+		expect(sidebar?.querySelector("button")?.textContent?.trim()).toBe(
+			"Lamar Sekarang",
+		);
+	});
+
+	it("falls back to the Penyelenggara a.block.group when CTA and heading both miss (layer 3)", () => {
+		const doc = buildPage(`
+			<div class="space-y-5 order-1 lg:order-2">
+				<a class="block group" href="/magang-nasional/penyelenggara/pt-maju">
+					<p>PT Maju Bersama</p>
+				</a>
+			</div>`);
+		const sidebar = findStageSidebar(doc);
+		expect(sidebar?.className).toContain("space-y-5");
+		expect(sidebar?.querySelector("a.block.group")).not.toBeNull();
+	});
+
+	it("ignores Lowongan Serupa card links that share the group/block utilities", () => {
+		// Serupa cards are `a.group.block.h-full` wrapping `.mh-lowongan-card`.
+		// Without this guard, layer 3 would mount the stage card into the grid.
+		const doc = buildPage(`
+			<div class="grid gap-4">
+				<a class="group block h-full" href="/magang-nasional/lowongan/x-a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d">
+					<div class="mh-lowongan-card"><h3>Magang UI Designer</h3></div>
+				</a>
+			</div>`);
+		expect(findStageSidebar(doc)).toBeNull();
+	});
+
+	it("returns null when no layer matches (caller injects nothing, health degrades)", () => {
+		const doc = buildPage(`
+			<div class="flex-1"><h1>Magang Data Analyst</h1></div>
+			<div class="flex gap-2 self-start"><button aria-label="Bagikan"></button></div>`);
+		expect(findStageSidebar(doc)).toBeNull();
+	});
+
+	it("does not treat a non-sidebar space-y-5 as the mount point via a stray heading", () => {
+		// A main-column section that happens to use space-y-5 must not steal the
+		// mount when the real sidebar is findable via the CTA.
+		const doc = buildPage(`
+			<div class="lg:col-span-2 space-y-5">
+				<section><h3>Deskripsi</h3></section>
+			</div>
+			<div class="space-y-5 order-1 lg:order-2" data-sidebar>
+				<button type="button">Lamar Sekarang</button>
+			</div>`);
+		const sidebar = findStageSidebar(doc);
+		expect(sidebar?.hasAttribute("data-sidebar")).toBe(true);
 	});
 });
 

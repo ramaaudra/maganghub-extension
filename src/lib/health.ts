@@ -3,7 +3,12 @@ import {
 	CARD_SELECTOR,
 	DETAIL_HEADER_SELECTORS,
 } from "./constants";
-import { extractSnapshot, findShareCluster, queryFirst } from "./extract";
+import {
+	extractSnapshot,
+	findShareCluster,
+	findStageSidebar,
+	queryFirst,
+} from "./extract";
 
 /**
  * Injection health (issue #8). MagangHub is a site we don't control; when its
@@ -54,13 +59,17 @@ export function assessListMarkup(root: ParentNode): HealthStatus {
 /**
  * Assess a detail page's markup.
  *
- * Checks BOTH the title (can we read the page?) and the share cluster (can we
- * inject into it?). Title alone is not enough: since issue #10 removed the
- * fallback injection point, a missing share cluster means no toggle is
- * rendered at all — and reporting `ok` there would leave the user staring at a
- * page with no button and no explanation, which is the worst outcome
- * available. Unlike the list, there is no benign "zero results" case: a detail
- * page always has both.
+ * Checks the title (can we read the page?), the share cluster (can we inject
+ * the favorite toggle?), AND the stage-card sidebar (can we inject the Status
+ * Lamar card? — issue #20 / D4). Title alone is not enough: since issue #10
+ * removed the fallback injection point, a missing share cluster means no
+ * toggle is rendered at all — and reporting `ok` there would leave the user
+ * staring at a page with no button and no explanation. The stage sidebar is
+ * the same shape: all-miss means no stage card, and the popup is the safety
+ * net (stages stay settable there).
+ *
+ * Unlike the list, there is no benign "zero results" case: a detail page
+ * always has these anchors.
  *
  * The "Lowongan Serupa" cards further down the page are deliberately NOT part
  * of this signal. That section may legitimately be empty, and folding
@@ -69,8 +78,9 @@ export function assessListMarkup(root: ParentNode): HealthStatus {
  */
 export function assessDetailMarkup(root: ParentNode): HealthStatus {
 	const hasTitle = queryFirst(root, DETAIL_HEADER_SELECTORS.title) !== null;
-	const hasInjectionPoint = findShareCluster(root) !== null;
-	return hasTitle && hasInjectionPoint ? "ok" : "degraded";
+	const hasShareCluster = findShareCluster(root) !== null;
+	const hasStageSidebar = findStageSidebar(root) !== null;
+	return hasTitle && hasShareCluster && hasStageSidebar ? "ok" : "degraded";
 }
 
 /**

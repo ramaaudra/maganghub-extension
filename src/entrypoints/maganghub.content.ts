@@ -3,6 +3,8 @@ import {
 	CARD_SELECTOR,
 	DETAIL_HOST_CLASS,
 	DETAIL_INJECTED_ATTR,
+	STAGE_HOST_CLASS,
+	STAGE_INJECTED_ATTR,
 	STAR_HOST_CLASS,
 	STAR_INJECTED_ATTR,
 } from "@/lib/constants";
@@ -13,6 +15,7 @@ import {
 	extractUuidFromHref,
 	findDetailHeader,
 	findShareCluster,
+	findStageSidebar,
 } from "@/lib/extract";
 import {
 	assessDetailMarkup,
@@ -33,8 +36,9 @@ import {
 	isFavorited,
 	removeFavorite,
 	setFavorite,
+	setStatusLamar,
 } from "@/lib/storage";
-import type { Favorite } from "@/lib/types";
+import type { Favorite, StatusLamar } from "@/lib/types";
 
 /**
  * Content script for MagangHub Lowongan pages.
@@ -102,6 +106,7 @@ function scanList(): HealthStatus {
 
 function scanDetail(uuid: string): HealthStatus {
 	injectDetailToggle(uuid);
+	injectStageCard(uuid);
 	// A detail page also renders a "Lowongan Serupa" grid of the same
 	// `.mh-lowongan-card` elements the list page uses (issue #10). They carry
 	// UUID-bearing anchors, so they star exactly like list cards — a card that
@@ -420,6 +425,145 @@ function attachDetailToggle(
 	});
 }
 
+// ──────────────── Detail page: Status Lamar stage card (issue #20) ──────────
+
+/**
+ * Inject the user's Status Lamar stage tracker into the detail sidebar.
+ *
+ * Mounts as the LAST child of the sidebar — furthest from MagangHub's own
+ * "Alur Lamaran" card — so it never reads as a second instance of the site's
+ * pipeline (D3). Attribution copy is in the light DOM (title + footnote) so a
+ * glance makes ownership unmistakable; the interactive control is also light
+ * DOM (via a closed-shadow `<slot>`) so e2e and assistive tech can reach it
+ * without piercing Shadow DOM, while styles stay isolated (ADR-0004).
+ *
+ * Visibility rule (issue #20): the card only renders for a saved Favorite.
+ * Picking a stage on an unsaved Lowongan saves it first, then sets the stage —
+ * a stage never exists without a Favorite to attach to. Unfavoriting (via the
+ * share-cluster toggle or the popup) hides the card again via the storage sync.
+ *
+ * If the sidebar can't be found, nothing is injected — `assessDetailMarkup`
+ * reports `degraded` for the same condition, and stages stay settable from the
+ * popup (D4 safety net).
+ */
+function injectStageCard(uuid: string): void {
+	const sidebar = findStageSidebar(document.body);
+	if (!sidebar) return;
+	if (sidebar.hasAttribute(STAGE_INJECTED_ATTR)) return;
+	sidebar.setAttribute(STAGE_INJECTED_ATTR, uuid);
+
+	const host = document.createElement("div");
+	host.className = STAGE_HOST_CLASS;
+	host.setAttribute("data-visible", "false");
+	// Ownership copy also rides on the host so e2e/AT can assert attribution
+	// without piercing the closed shadow (same pattern as data-filled on the
+	// star host). Visual title stays inside the shadow so MagangHub's Tailwind
+	// cannot restyle it (ADR-0004).
+	host.setAttribute("data-stage-title", STAGE_CARD_TITLE);
+	host.setAttribute(
+		"aria-label",
+		`${STAGE_CARD_TITLE}. ${STAGE_CARD_SUBTITLE}`,
+	);
+	host.hidden = true;
+
+	// Light-DOM control only: Playwright and AT reach the select without
+	// piercing Shadow DOM. The shadow styles it via `::slotted(select)`.
+	const select = document.createElement("select");
+	select.setAttribute("aria-label", "Status Lamar");
+	select.dataset.stageSelect = "true";
+	for (const [value, label] of STAGE_OPTIONS) {
+		const option = document.createElement("option");
+		option.value = value;
+		option.textContent = label;
+		select.append(option);
+	}
+	host.append(select);
+
+	const shadow = host.attachShadow({ mode: "closed" });
+	const style = document.createElement("style");
+	style.textContent = STAGE_CARD_CSS;
+	const card = document.createElement("div");
+	card.className = "mh-stage-card";
+	card.innerHTML = `
+		<p class="mh-stage-title">${STAGE_CARD_TITLE}</p>
+		<p class="mh-stage-sub">${STAGE_CARD_SUBTITLE}</p>
+		<label class="mh-stage-label">
+			<span class="mh-stage-label-text">Status Lamar</span>
+			<slot></slot>
+		</label>
+	`;
+	shadow.append(style, card);
+
+	// LAST child of the sidebar — away from "Alur Lamaran" (D3).
+	sidebar.append(host);
+
+	const state: StarState = { interacted: false };
+	const apply = (favorite: Favorite | undefined) =>
+		reflectStageCard(host, select, favorite);
+	void reflectState(uuid, apply, state);
+	registerUpdater(uuid, apply, host);
+	attachStageSelect(uuid, select, state);
+}
+
+/** Stage options, matching the popup's Status Lamar select (issue #15). */
+const STAGE_OPTIONS: ReadonlyArray<readonly [string, string]> = [
+	["", "Belum dilamar"],
+	["dilamar", "Dilamar"],
+	["interview", "Interview"],
+	["diterima", "Diterima"],
+	["ditolak", "Ditolak"],
+];
+
+/** Attribution copy (D3) — ownership must be unmistakable. */
+const STAGE_CARD_TITLE = "Lamaranku · catatan pribadi";
+const STAGE_CARD_SUBTITLE =
+	"Bukan fitur MagangHub — disimpan di browser kamu.";
+
+function reflectStageCard(
+	host: HTMLElement,
+	select: HTMLSelectElement,
+	favorite: Favorite | undefined,
+): void {
+	const visible = Boolean(favorite);
+	host.setAttribute("data-visible", String(visible));
+	host.hidden = !visible;
+	// "" = no stage. Only rewrite the select when a Favorite is present; when
+	// hidden the value is irrelevant and rewriting would thrash focus.
+	if (favorite) {
+		select.value = favorite.statusLamar ?? "";
+	}
+}
+
+function attachStageSelect(
+	uuid: string,
+	select: HTMLSelectElement,
+	state: StarState,
+): void {
+	select.addEventListener("change", async () => {
+		state.interacted = true;
+		const stage =
+			select.value === "" ? undefined : (select.value as StatusLamar);
+
+		// A stage never exists without a Favorite. Picking one on an unsaved
+		// Lowongan saves it first (issue #20 AC), then sets the stage.
+		if (!(await isFavorited(uuid))) {
+			const favorite = createFavorite({
+				uuid,
+				detailUrl: location.pathname,
+				savedSnapshot: extractDetailSnapshot(
+					findDetailHeader(document.body),
+					document,
+				),
+			});
+			favorite.statusLamar = stage;
+			await setFavorite(favorite);
+			return;
+		}
+
+		await setStatusLamar(uuid, stage);
+	});
+}
+
 // ───────────────────────────── Shared helpers ───────────────────────────────
 
 interface FilledLabels {
@@ -560,4 +704,73 @@ const DETAIL_CSS = `
   .mh-favorite-detail.is-filled { color: #f59e0b; border-color: rgba(245,158,11,0.6); }
   .mh-favorite-detail.is-filled svg { fill: currentColor; }
   .mh-favorite-detail.is-filled:hover { color: #d97706; }
+`;
+
+/**
+ * Stage card styles (issue #20 / D3).
+ *
+ * Deliberate visual distance from MagangHub's "Alur Lamaran" card:
+ *  - no numbered discs, no primary colour accents
+ *  - slate border/background instead of pure white + primary chips
+ *  - still uses the site's 16px radius / 20px padding so it doesn't look bolted on
+ * Attribution lives in the title + subtitle, not a colour alone.
+ */
+const STAGE_CARD_CSS = `
+  :host {
+    all: initial;
+    display: block;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  :host([hidden]) { display: none; }
+  .mh-stage-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid rgb(203, 213, 225);
+    background: rgb(248, 250, 252);
+    color: rgb(15, 23, 41);
+    box-sizing: border-box;
+  }
+  .mh-stage-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: rgb(51, 65, 85);
+  }
+  .mh-stage-sub {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: rgb(100, 116, 139);
+  }
+  .mh-stage-label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .mh-stage-label-text {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgb(71, 85, 105);
+  }
+  ::slotted(select) {
+    appearance: auto;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 8px;
+    border: 1px solid rgb(203, 213, 225);
+    background: rgb(255, 255, 255);
+    color: rgb(15, 23, 41);
+    font-size: 13px;
+    line-height: 1.4;
+    padding: 8px 10px;
+    cursor: pointer;
+  }
+  ::slotted(select:focus) {
+    outline: 2px solid rgb(100, 116, 139);
+    outline-offset: 1px;
+  }
 `;

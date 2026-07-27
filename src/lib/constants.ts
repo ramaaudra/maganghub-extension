@@ -158,6 +158,27 @@ export const SHARE_CLUSTER_SELECTORS = [
 	"svg.lucide-share2",
 ] as const;
 
+/**
+ * Where the Status Lamar stage card mounts on a detail page: the LAST child of
+ * the detail sidebar (`div.space-y-5.order-1.lg:order-2`), furthest from
+ * MagangHub's own "Alur Lamaran" card (issue #20, D3/D4).
+ *
+ * Landmarks walked by `findStageSidebar` (not plain `queryFirst`) — each is a
+ * handle *inside* the sidebar and needs its own step back:
+ *  1. an h3 whose text is "Alur Lamaran" → `closest('div.space-y-5')`
+ *  2. a button whose text is "Lamar Sekarang" → `closest('div.space-y-5')`
+ *  3. the Penyelenggara `a.block.group` → `parentElement`
+ *
+ * If all three miss, inject nothing and report `degraded` — no fallback
+ * placement (issue #10's reasoning). The text anchors survive a Tailwind
+ * reshuffle; the Penyelenggara link survives MagangHub renaming the CTA.
+ */
+export const STAGE_SIDEBAR_LANDMARKS = {
+	alurLamaranHeading: "Alur Lamaran",
+	lamarSekarangButton: "Lamar Sekarang",
+	penyelenggaraLink: "a.block.group",
+} as const;
+
 /** Attribute marking a card that already has a star injected (idempotency). */
 export const STAR_INJECTED_ATTR = "data-mh-star";
 
@@ -167,6 +188,9 @@ export const STAR_HOST_CLASS = "mh-favorite-host";
 /** Shadow host class for the detail-page favorite toggle. */
 export const DETAIL_HOST_CLASS = "mh-favorite-detail-host";
 
+/** Shadow host class for the detail-page Status Lamar stage card (issue #20). */
+export const STAGE_HOST_CLASS = "mh-stage-card-host";
+
 /**
  * Attribute marking the share cluster we've already injected the detail toggle
  * into. The `h1` used to carry the injected marker, but the toggle no longer
@@ -174,3 +198,10 @@ export const DETAIL_HOST_CLASS = "mh-favorite-detail-host";
  * a re-scan would inject a second toggle beside the first.
  */
 export const DETAIL_INJECTED_ATTR = "data-mh-favorite";
+
+/**
+ * Attribute marking the sidebar we've already injected the stage card into
+ * (idempotency for issue #20). Lives on the sidebar itself, matching how
+ * `DETAIL_INJECTED_ATTR` lives on the share cluster.
+ */
+export const STAGE_INJECTED_ATTR = "data-mh-stage";

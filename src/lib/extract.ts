@@ -2,11 +2,13 @@ import {
 	CARD_BADGE_LABELS,
 	CARD_BADGE_SELECTOR,
 	CARD_LOCATION_SELECTORS,
+	CARD_SELECTOR,
 	DETAIL_HEADER_SELECTORS,
 	FIELD_SELECTORS,
 	type FieldSelectors,
 	INFO_ROW_LABELS,
 	SHARE_CLUSTER_SELECTORS,
+	STAGE_SIDEBAR_LANDMARKS,
 } from "./constants";
 import { normalizeWhitespace, readInfoRows } from "./parse";
 import { type LowonganSnapshot, UUID_REGEX } from "./types";
@@ -170,6 +172,57 @@ export function findShareCluster(root: ParentNode): HTMLElement | null {
 	const byIcon = root.querySelector<SVGElement>(shareIcon);
 	const iconButton = byIcon?.closest("button");
 	return iconButton?.parentElement ?? null;
+}
+
+/**
+ * The detail-page sidebar the Status Lamar stage card mounts into, or null
+ * (issue #20).
+ *
+ * Layered like `findShareCluster`: each landmark is inside the sidebar and
+ * needs its own step back, so this cannot be a plain `queryFirst`. Returning
+ * null is a real outcome — the caller injects nothing and reports `degraded`
+ * rather than falling back to a second mount point that would rot (issue #10).
+ *
+ * The stage card is appended as the LAST child of this node, furthest from
+ * MagangHub's "Alur Lamaran" card (D3).
+ */
+export function findStageSidebar(root: ParentNode): HTMLElement | null {
+	// Layer 1: the "Alur Lamaran" h3 → closest space-y-5 ancestor.
+	for (const h3 of root.querySelectorAll("h3")) {
+		if (normalizeWhitespace(h3.textContent ?? "") === STAGE_SIDEBAR_LANDMARKS.alurLamaranHeading) {
+			const sidebar = h3.closest<HTMLElement>("div.space-y-5");
+			if (sidebar) return sidebar;
+		}
+	}
+
+	// Layer 2: the "Lamar Sekarang" button → closest space-y-5 ancestor.
+	// The fixture and live page both render the CTA as a <button>; match by
+	// exact text so a renamed class still finds it.
+	for (const button of root.querySelectorAll("button")) {
+		if (
+			normalizeWhitespace(button.textContent ?? "") ===
+			STAGE_SIDEBAR_LANDMARKS.lamarSekarangButton
+		) {
+			const sidebar = button.closest<HTMLElement>("div.space-y-5");
+			if (sidebar) return sidebar;
+		}
+	}
+
+	// Layer 3: the Penyelenggara `a.block.group` → its parent (the sidebar).
+	// Live recon: the organizer card is an anchor with those utility classes.
+	// Skip anchors that wrap a Lowongan card — "Lowongan Serupa" uses the same
+	// `group block` utilities on its card links, and their parent is the grid,
+	// not the sidebar. Only accept a parent that is itself a `div.space-y-5`
+	// (the sidebar's confirmed layout class).
+	for (const link of root.querySelectorAll<HTMLAnchorElement>(
+		STAGE_SIDEBAR_LANDMARKS.penyelenggaraLink,
+	)) {
+		if (link.querySelector(CARD_SELECTOR)) continue;
+		const parent = link.parentElement;
+		if (parent?.matches("div.space-y-5")) return parent;
+	}
+
+	return null;
 }
 
 /**
