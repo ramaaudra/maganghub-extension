@@ -8,6 +8,7 @@ import {
 	CardTitle,
 } from "@/lib/components/ui/card";
 import { type SortKey, searchFavorites, sortFavorites } from "@/lib/filter";
+import { groupFavorites, summaryText } from "@/lib/group";
 import { type HealthStatus, readHealth } from "@/lib/health";
 import { type ExportFile, exportFavorites, importFavorites } from "@/lib/io";
 import type { RefreshRequest, RefreshResponse } from "@/lib/refresh";
@@ -99,6 +100,30 @@ let sortKey = $state<SortKey>("savedAt");
 const visible = $derived(
 	sortFavorites(searchFavorites(favorites, query), sortKey),
 );
+
+// Issue #22 (C4): collapse Favorites by Penyelenggara when one org has
+// more than 3, with a stage-summary header. Composes AFTER search + sort so
+// the summary reflects the active list, never the whole storage set.
+const groups = $derived(groupFavorites(visible));
+
+// Per-group collapse state, keyed by organizer name. Default expanded so the
+// user's favorites are visible; collapsing is the power-user move for taming a
+// noisy 360px popup. Kept across re-renders (the list re-derives from storage
+// on every change) so a storage sync never re-opens a group the user closed.
+let collapsed = $state<Set<string>>(new Set());
+
+function toggleGroup(organizer: string): void {
+	// Assign a fresh Set so Svelte's rune reactivity re-reads the flag for the
+	// toggled group (mutating the Set in place would not trigger the {#each}).
+	const next = new Set(collapsed);
+	if (next.has(organizer)) next.delete(organizer);
+	else next.add(organizer);
+	collapsed = next;
+}
+
+function isCollapsed(organizer: string): boolean {
+	return collapsed.has(organizer);
+}
 /** The user has favorites, but the current query matches none of them. */
 const noMatches = $derived(favorites.length > 0 && visible.length === 0);
 
@@ -297,12 +322,41 @@ onDestroy(() => {
       </CardHeader>
     </Card>
   {:else}
-    {#each visible as fav (fav.uuid)}
-      <FavoriteCard
-        favorite={fav}
-        refreshing={refreshing.has(fav.uuid) || refreshingAll}
-        onrefresh={() => refreshOne(fav)}
-      />
+    {#each groups as item (item.kind === "group" ? `group:${item.organizer}` : `solo:${item.favorite.uuid}`)}
+      {#if item.kind === "solo"}
+        <FavoriteCard
+          favorite={item.favorite}
+          refreshing={refreshing.has(item.favorite.uuid) || refreshingAll}
+          onrefresh={() => refreshOne(item.favorite)}
+        />
+      {:else}
+        <section class="mh-group" data-group-organizer={item.organizer}>
+          <button
+            type="button"
+            class="flex w-full items-center justify-between rounded-md border bg-muted/40 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
+            aria-expanded={!isCollapsed(item.organizer)}
+            data-group-toggle
+            onclick={() => toggleGroup(item.organizer)}
+          >
+            <span class="min-w-0">
+              <span class="block truncate text-sm font-semibold">{item.organizer}</span>
+              <span class="block truncate text-xs text-muted-foreground" data-group-summary>{summaryText(item.summary) || `${item.favorites.length} favorit`}</span>
+            </span>
+            <span class="ml-2 shrink-0 text-xs text-muted-foreground" aria-hidden="true">{isCollapsed(item.organizer) ? '▸' : '▾'}</span>
+          </button>
+          {#if !isCollapsed(item.organizer)}
+            <div class="mt-1 space-y-2">
+              {#each item.favorites as fav (fav.uuid)}
+                <FavoriteCard
+                  favorite={fav}
+                  refreshing={refreshing.has(fav.uuid) || refreshingAll}
+                  onrefresh={() => refreshOne(fav)}
+                />
+              {/each}
+            </div>
+          {/if}
+        </section>
+      {/if}
     {/each}
   {/if}
 </main>
