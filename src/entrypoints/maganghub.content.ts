@@ -583,9 +583,13 @@ function injectStageCard(uuid: string): void {
 
 	// Light-DOM control only: Playwright and AT reach the select without
 	// piercing Shadow DOM. The shadow styles it via `::slotted(select)`.
+	// Font metrics also land as inline styles: the select inherits MagangHub's
+	// light-DOM cascade (often 16px body), and `::slotted` alone loses that fight
+	// on some builds — the value then reads louder than the attribution title.
 	const select = document.createElement("select");
 	select.setAttribute("aria-label", "Status Lamar");
 	select.dataset.stageSelect = "true";
+	Object.assign(select.style, STAGE_SELECT_INLINE_STYLE);
 	for (const [value, label] of STAGE_SELECT_OPTIONS) {
 		const option = document.createElement("option");
 		option.value = value;
@@ -916,7 +920,26 @@ const DETAIL_CSS = `
  *  - slate border/background instead of pure white + primary chips
  *  - still uses the site's 16px radius / 20px padding so it doesn't look bolted on
  * Attribution lives in the title + subtitle, not a colour alone.
+ *
+ * Type ramp (Operate, dense sidebar instrument — not a second page heading):
+ *  title 14/600 → caption 12/400 → field label 12/500 → value 12/400.
+ * Hierarchy is weight + tone, not size bloat. The value must never outrank
+ * the ownership title; popup Status Lamar is `text-xs` (12px), and this
+ * control matches that role across surfaces. Sizes stay on the 12/14 steps
+ * shared with DESIGN.md even though the content script ships no Geist.
  */
+// Inline on the light-DOM select so MagangHub's `font: inherit` / body scale
+// cannot inflate the value past the card's type ramp. Keep in lockstep with
+// the `::slotted(select)` block below.
+const STAGE_SELECT_INLINE_STYLE = {
+	fontFamily:
+		'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
+	fontSize: "12px",
+	fontWeight: "400",
+	lineHeight: "1.35",
+	color: "rgb(15, 23, 41)",
+} as const;
+
 const STAGE_CARD_CSS = `
   :host {
     all: initial;
@@ -927,14 +950,15 @@ const STAGE_CARD_CSS = `
   .mh-stage-card {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 20px;
+    gap: 0;
+    padding: 16px 18px;
     border-radius: 16px;
     border: 1px solid rgb(203, 213, 225);
     background: rgb(248, 250, 252);
     color: rgb(15, 23, 41);
     box-sizing: border-box;
   }
+  /* Title + trust note sit as one attribution block; control sits below. */
   .mh-stage-title {
     margin: 0;
     font-size: 14px;
@@ -943,33 +967,48 @@ const STAGE_CARD_CSS = `
     color: rgb(51, 65, 85);
   }
   .mh-stage-sub {
-    margin: 0;
+    margin: 4px 0 0;
     font-size: 12px;
+    font-weight: 400;
     line-height: 1.4;
     color: rgb(100, 116, 139);
   }
   .mh-stage-label {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
+    margin-top: 12px;
   }
   .mh-stage-label-text {
     font-size: 12px;
     font-weight: 500;
-    color: rgb(71, 85, 105);
+    line-height: 1.3;
+    color: rgb(100, 116, 139);
   }
   ::slotted(select) {
-    appearance: auto;
+    -webkit-appearance: none;
+    appearance: none;
     width: 100%;
     box-sizing: border-box;
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid rgb(203, 213, 225);
-    background: rgb(255, 255, 255);
+    background-color: rgb(255, 255, 255);
+    /* Chevron drawn so we can drop UA appearance bloat without losing the
+       affordance. Right padding keeps the value clear of the glyph. */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 12px;
     color: rgb(15, 23, 41);
-    font-size: 13px;
-    line-height: 1.4;
-    padding: 8px 10px;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.35;
+    padding: 6px 28px 6px 8px;
     cursor: pointer;
+  }
+  ::slotted(select:hover) {
+    border-color: rgb(148, 163, 184);
   }
   ::slotted(select:focus) {
     outline: 2px solid rgb(100, 116, 139);
