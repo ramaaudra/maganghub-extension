@@ -210,3 +210,66 @@ body {
 		@apply font-sans;
 	}
 }
+
+/*
+ * Field-notebook motion (Operate).
+ * Feedback + state only — no page-load choreography. Click- or state-delta
+ * gated in components. PRM keeps opacity/color; drops translate/spin.
+ */
+@keyframes mh-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes mh-rise-in {
+	from {
+		opacity: 0;
+		transform: translateY(3px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes mh-fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+.mh-spin {
+	animation: mh-spin 0.65s linear infinite;
+}
+
+/*
+ * Brief static Field Blue wash after a refresh lands new values.
+ * No keyframed paint tween — class on/off only (JS holds ~240ms).
+ * Readable seats stay fully opaque; the wash is the acknowledgment.
+ */
+.mh-signal-flash {
+	border-radius: 0;
+	background-color: oklch(0.5 0.134 242.749 / 0.1);
+}
+
+.mh-rise-in {
+	animation: mh-rise-in 200ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.mh-fade-in {
+	animation: mh-fade-in 150ms ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.mh-spin {
+		animation: none;
+	}
+	/* Keep color/opacity feedback; drop movement. */
+	.mh-rise-in {
+		animation: mh-fade-in 150ms ease both;
+	}
+}

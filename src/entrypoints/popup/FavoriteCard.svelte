@@ -28,12 +28,50 @@ let catatanDraft = $state("");
 let savedFlash = $state(false);
 let catatanFocused = $state(false);
 let saveFlashTimer: ReturnType<typeof setTimeout> | undefined;
+/** One-shot flash when live seats/status land after a refresh the user ran. */
+let signalFlash = $state(false);
+let signalFlashTimer: ReturnType<typeof setTimeout> | undefined;
+// Bookkeeping stays non-reactive so the effect does not re-enter on its own writes.
+let lastLiveKey: string | undefined;
+let wasRefreshing = false;
 
 $effect.pre(() => {
 	catatanDraft = favorite.catatan;
 });
 
 const catatanDirty = $derived(catatanDraft !== favorite.catatan);
+
+function liveFingerprint(fav: Favorite): string {
+	const l = fav.liveStatus;
+	return [
+		l.status,
+		l.kuota ?? "",
+		l.pelamar ?? "",
+		l.batch ?? "",
+		l.lastChecked ?? "",
+		l.lastError ?? "",
+	].join("|");
+}
+
+// Flash seats/status only after a refresh this card was waiting on, and only
+// when the live sample actually changed — storage re-reads must not flicker.
+$effect(() => {
+	const key = liveFingerprint(favorite);
+	if (refreshing) {
+		wasRefreshing = true;
+		return;
+	}
+	if (wasRefreshing && lastLiveKey !== undefined && lastLiveKey !== key) {
+		signalFlash = true;
+		clearTimeout(signalFlashTimer);
+		// Match .mh-signal-flash hold — brief static wash, not a long paint tween.
+		signalFlashTimer = setTimeout(() => {
+			signalFlash = false;
+		}, 240);
+	}
+	wasRefreshing = false;
+	lastLiveKey = key;
+});
 
 async function saveCatatan(): Promise<void> {
 	if (catatanDraft === favorite.catatan) return;
@@ -114,6 +152,8 @@ const ACTIVE_STAGES: ReadonlySet<StatusLamar> = new Set([
 // flush the draft on unmount. chrome.storage.local.set is browser-process
 // backed, so the write completes even after the popup page unloads.
 onDestroy(() => {
+	clearTimeout(saveFlashTimer);
+	clearTimeout(signalFlashTimer);
 	if (catatanDraft !== favorite.catatan) {
 		void setCatatan(favorite.uuid, catatanDraft);
 	}
@@ -122,7 +162,7 @@ onDestroy(() => {
 
 <Card
   class={cn(
-	  'gap-1.5 py-3',
+	  'gap-1.5 py-3 transition-[background-color,border-color] duration-200 ease-out',
 	  stage && ACTIVE_STAGES.has(stage) && 'border border-primary/40 bg-primary/5 ring-primary/40',
   )}
   data-favorite-uuid={favorite.uuid}
@@ -141,7 +181,8 @@ onDestroy(() => {
       <div class="flex shrink-0 flex-col items-end gap-0.5">
         {#if stage}
           <!-- title (not aria-label "Status Lamar:…") so e2e getByLabel('Status Lamar')
-               still uniquely targets the select control. -->
+               still uniquely targets the select control. No enter animation on mount —
+               a full list of chip-ins would choreograph every popup open. -->
           <Badge class={STAGE_CLASS[stage]} title="Status Lamar: {STAGE_LABEL[stage]}">
             <span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span>
             {STAGE_LABEL[stage]}
@@ -149,7 +190,10 @@ onDestroy(() => {
         {/if}
         {#if hasBeenChecked}
           <Badge
-            class={cn(refreshFailed ? 'text-rose-600' : STATUS_CLASS[live.status])}
+            class={cn(
+              refreshFailed ? 'text-rose-600' : STATUS_CLASS[live.status],
+              signalFlash && 'mh-signal-flash',
+            )}
             title="Status Lowongan: {refreshFailed ? 'Refresh gagal' : STATUS_LABEL[live.status]}"
           >
             <span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span>
@@ -167,7 +211,10 @@ onDestroy(() => {
     <!-- Signal strip: live seats after check; snapshot seats while cold (hybrid) -->
     {#if showSignalStrip}
       <div
-        class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground"
+        class={cn(
+          'flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground',
+          signalFlash && 'mh-signal-flash',
+        )}
         data-signal-strip
       >
         {#if hasBeenChecked}
@@ -194,13 +241,15 @@ onDestroy(() => {
     {/if}
 
     {#if changeNotice}
-      <p
-        class="text-xs text-amber-700"
-        data-change-notice
-        role="status"
-      >
-        {changeNotice}
-      </p>
+      {#key changeNotice}
+        <p
+          class="mh-rise-in text-xs text-amber-700"
+          data-change-notice
+          role="status"
+        >
+          {changeNotice}
+        </p>
+      {/key}
     {/if}
 
     <!-- Status Lamar full-width — never squeezed between actions -->
@@ -222,11 +271,18 @@ onDestroy(() => {
     <div class="flex items-center gap-2">
       <button
         type="button"
-        class="inline-flex h-7 shrink-0 items-center justify-center whitespace-nowrap rounded-none border border-border bg-transparent px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-muted outline-none disabled:pointer-events-none disabled:opacity-50 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+        class="inline-flex h-7 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-none border border-border bg-transparent px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-muted outline-none disabled:pointer-events-none disabled:opacity-50 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
         onclick={onrefresh}
         disabled={refreshing}
         aria-label="Segarkan Status Lowongan"
+        aria-busy={refreshing}
       >
+        {#if refreshing}
+          <span
+            class="mh-spin size-3 shrink-0 rounded-none border border-current border-r-transparent"
+            aria-hidden="true"
+          ></span>
+        {/if}
         {refreshing ? 'Memperbarui…' : 'Segarkan'}
       </button>
       {#if favorite.detailUrl}

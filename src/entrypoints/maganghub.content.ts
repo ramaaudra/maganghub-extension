@@ -419,12 +419,35 @@ function applyStageChip(
 		chip.remove();
 		return;
 	}
+	const prev = host.getAttribute("data-stage");
 	host.setAttribute("data-stage", stage);
 	chip.hidden = false;
 	chip.textContent = label;
 	chip.setAttribute("aria-label", stageChipAriaLabel(stage));
 	// Ensure the chip is a light-DOM child of the host (slotted).
-	if (chip.parentElement !== host) host.append(chip);
+	const mounted = chip.parentElement === host;
+	if (!mounted) host.append(chip);
+	// Enter / stage-change acknowledgment. WAAPI on the light-DOM chip —
+	// `::slotted` cannot reliably own keyframe animations across browsers.
+	if (!mounted || prev !== stage) {
+		for (const anim of chip.getAnimations()) anim.cancel();
+		const reduce = window.matchMedia(
+			"(prefers-reduced-motion: reduce)",
+		).matches;
+		// PRM: opacity only. Full motion: short rise.
+		chip.animate(
+			reduce
+				? [{ opacity: 0 }, { opacity: 1 }]
+				: [
+						{ opacity: 0, transform: "translateY(-2px)" },
+						{ opacity: 1, transform: "translateY(0)" },
+				  ],
+			{
+				duration: reduce ? 120 : 180,
+				easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+			},
+		);
+	}
 }
 
 // ─────────────────────── Detail page: toggle near title ─────────────────────
@@ -636,8 +659,24 @@ function reflectStageCard(
 	favorite: Favorite | undefined,
 ): void {
 	const visible = Boolean(favorite);
+	const wasVisible = host.getAttribute("data-visible") === "true";
 	host.setAttribute("data-visible", String(visible));
-	host.hidden = !visible;
+	if (visible) {
+		// Show first so the enter animation can paint; hide stays instant so
+		// e2e `toBeHidden` and AT never wait on an exit sequence.
+		host.hidden = false;
+		if (!wasVisible) {
+			// Class drives `:host(.is-entering) .mh-stage-card` inside the closed
+			// shadow — animationend does not cross that boundary, so we leave the
+			// class on; the next hide/show cycle restarts it cleanly.
+			host.classList.remove("is-entering");
+			void host.offsetWidth;
+			host.classList.add("is-entering");
+		}
+	} else {
+		host.hidden = true;
+		host.classList.remove("is-entering");
+	}
 	// "" = no stage. Only rewrite the select when a Favorite is present; when
 	// hidden the value is irrelevant and rewriting would thrash focus.
 	if (favorite) {
@@ -753,38 +792,79 @@ function setFilled(
 /**
  * One-shot click feedback for the favorite toggle.
  *
- * Only the user's own click plays this — storage-driven `setFilled` leaves the
- * class alone so a cross-tab sync does not bounce every star on the page.
- * Class is removed on the button's own `animationend` so rapid re-clicks can
- * retrigger cleanly.
+ * Only the user's own click plays this — storage-driven `setFilled` never
+ * calls it, so cross-tab sync does not bounce every star. WAAPI (not CSS
+ * keyframes) so rapid re-clicks cancel and retarget from the current frame.
+ * Budget: save ≤180ms, unsave ≤140ms; scale floor 0.94 — field-notebook, not
+ * bounce. Color swap alone carries state under reduced motion.
  */
-/** Per-button generation so a stale animationend cannot clear a newer toggle. */
-const favoriteMotionGen = new WeakMap<HTMLButtonElement, number>();
+const favoriteMotion = new WeakMap<HTMLButtonElement, Animation[]>();
 
 function playFavoriteToggleMotion(
 	button: HTMLButtonElement,
 	filled: boolean,
 ): void {
-	// Color swap already carries state under reduced motion; don't leave a
-	// stuck class waiting on an animationend that never fires.
 	if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-	const on = "is-toggling-on";
-	const off = "is-toggling-off";
-	button.classList.remove(on, off);
-	// Force a style flush so the same class can restart mid-animation.
-	void button.offsetWidth;
-	const cls = filled ? on : off;
-	const gen = (favoriteMotionGen.get(button) ?? 0) + 1;
-	favoriteMotionGen.set(button, gen);
-	button.classList.add(cls);
-	const done = (event: AnimationEvent) => {
-		// Ignore the SVG child's animationend — only the button owns the class.
-		if (event.target !== button) return;
-		button.removeEventListener("animationend", done);
-		if (favoriteMotionGen.get(button) !== gen) return;
-		button.classList.remove(cls);
-	};
-	button.addEventListener("animationend", done);
+
+	const prior = favoriteMotion.get(button);
+	if (prior) for (const anim of prior) anim.cancel();
+
+	const ease = "cubic-bezier(0.23, 1, 0.32, 1)";
+	const svg = button.querySelector("svg");
+	// List star keeps a 0.5px optical nudge in CSS; preserve it on the glyph.
+	const glyphBase = button.classList.contains("mh-star")
+		? "translateY(0.5px) "
+		: "";
+
+	const anims: Animation[] = [];
+	if (filled) {
+		anims.push(
+			button.animate(
+				[
+					{ transform: "scale(1)" },
+					{ transform: "scale(1.06)", offset: 0.4 },
+					{ transform: "scale(1)" },
+				],
+				{ duration: 180, easing: ease },
+			),
+		);
+		if (svg) {
+			anims.push(
+				svg.animate(
+					[
+						{ transform: `${glyphBase}scale(0.94)` },
+						{ transform: `${glyphBase}scale(1.08)`, offset: 0.45 },
+						{ transform: `${glyphBase}scale(1)` },
+					],
+					{ duration: 180, easing: ease },
+				),
+			);
+		}
+	} else {
+		anims.push(
+			button.animate(
+				[
+					{ transform: "scale(1)" },
+					{ transform: "scale(0.94)", offset: 0.45 },
+					{ transform: "scale(1)" },
+				],
+				{ duration: 140, easing: ease },
+			),
+		);
+		if (svg) {
+			anims.push(
+				svg.animate(
+					[
+						{ transform: `${glyphBase}scale(1)` },
+						{ transform: `${glyphBase}scale(0.94)`, offset: 0.4 },
+						{ transform: `${glyphBase}scale(1)` },
+					],
+					{ duration: 140, easing: ease },
+				),
+			);
+		}
+	}
+	favoriteMotion.set(button, anims);
 }
 
 function attachStarToggle(
@@ -878,10 +958,18 @@ const STAR_CSS = `
     transform: translateY(0.5px);
     transition: fill 120ms ease;
   }
+  /* Hover scale only on fine pointers — touch sticky-hover is worse than none. */
+  @media (hover: hover) and (pointer: fine) {
+    .mh-star:hover {
+      color: #f59e0b;
+      border-color: rgba(245,158,11,0.5);
+      transform: scale(1.06);
+    }
+    .mh-star.is-filled:hover { color: #d97706; border-color: rgba(217,119,6,0.7); }
+  }
   .mh-star:hover {
     color: #f59e0b;
     border-color: rgba(245,158,11,0.5);
-    transform: scale(1.06);
   }
   .mh-star:active { transform: scale(0.96); }
   .mh-star:focus-visible {
@@ -894,46 +982,10 @@ const STAR_CSS = `
   }
   .mh-star.is-filled svg { fill: currentColor; }
   .mh-star.is-filled:hover { color: #d97706; border-color: rgba(217,119,6,0.7); }
-  /* Click-only catch / release — see playFavoriteToggleMotion. */
-  .mh-star.is-toggling-on {
-    animation: mh-fav-pop 320ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .mh-star.is-toggling-on svg {
-    animation: mh-fav-star-on 320ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .mh-star.is-toggling-off {
-    animation: mh-fav-release 220ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .mh-star.is-toggling-off svg {
-    animation: mh-fav-star-off 220ms ease;
-  }
-  @keyframes mh-fav-pop {
-    0% { transform: scale(1); }
-    40% { transform: scale(1.14); }
-    100% { transform: scale(1); }
-  }
-  @keyframes mh-fav-star-on {
-    0% { transform: translateY(0.5px) scale(0.72) rotate(-12deg); }
-    55% { transform: translateY(0.5px) scale(1.2) rotate(6deg); }
-    100% { transform: translateY(0.5px) scale(1) rotate(0deg); }
-  }
-  @keyframes mh-fav-release {
-    0% { transform: scale(1); }
-    45% { transform: scale(0.92); }
-    100% { transform: scale(1); }
-  }
-  @keyframes mh-fav-star-off {
-    0% { transform: translateY(0.5px) scale(1); }
-    40% { transform: translateY(0.5px) scale(0.82); }
-    100% { transform: translateY(0.5px) scale(1); }
-  }
+  /* Click catch/release is WAAPI in playFavoriteToggleMotion — no keyframes. */
   @media (prefers-reduced-motion: reduce) {
     .mh-star { transition: color 120ms ease, border-color 120ms ease; }
     .mh-star:hover, .mh-star:active { transform: none; }
-    .mh-star.is-toggling-on,
-    .mh-star.is-toggling-off,
-    .mh-star.is-toggling-on svg,
-    .mh-star.is-toggling-off svg { animation: none; }
   }
   /* Stage chip (issue #19 / A2): text only. Neutral slate so Dilamar and
      Ditolak never look the same via colour. Positioned under the star so it
@@ -996,10 +1048,20 @@ const DETAIL_CSS = `
     transform-origin: 50% 50%;
     transition: fill 120ms ease;
   }
+  @media (hover: hover) and (pointer: fine) {
+    .mh-favorite-detail:hover {
+      color: #f59e0b;
+      border-color: rgba(245,158,11,0.5);
+      transform: scale(1.05);
+    }
+    .mh-favorite-detail.is-filled:hover {
+      color: #d97706;
+      border-color: rgba(217,119,6,0.7);
+    }
+  }
   .mh-favorite-detail:hover {
     color: #f59e0b;
     border-color: rgba(245,158,11,0.5);
-    transform: scale(1.05);
   }
   .mh-favorite-detail:active { transform: scale(0.94); }
   .mh-favorite-detail:focus-visible {
@@ -1011,50 +1073,17 @@ const DETAIL_CSS = `
     border-color: rgba(245,158,11,0.6);
   }
   .mh-favorite-detail.is-filled svg { fill: currentColor; }
-  .mh-favorite-detail.is-filled:hover { color: #d97706; border-color: rgba(217,119,6,0.7); }
-  /* Click-only catch / release — storage sync must not bounce this. */
-  .mh-favorite-detail.is-toggling-on {
-    animation: mh-fav-pop 340ms cubic-bezier(0.16, 1, 0.3, 1);
+  .mh-favorite-detail.is-filled:hover {
+    color: #d97706;
+    border-color: rgba(217,119,6,0.7);
   }
-  .mh-favorite-detail.is-toggling-on svg {
-    animation: mh-fav-star-on 340ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .mh-favorite-detail.is-toggling-off {
-    animation: mh-fav-release 220ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .mh-favorite-detail.is-toggling-off svg {
-    animation: mh-fav-star-off 220ms ease;
-  }
-  @keyframes mh-fav-pop {
-    0% { transform: scale(1); }
-    40% { transform: scale(1.12); }
-    100% { transform: scale(1); }
-  }
-  @keyframes mh-fav-star-on {
-    0% { transform: scale(0.7) rotate(-14deg); }
-    55% { transform: scale(1.22) rotate(7deg); }
-    100% { transform: scale(1) rotate(0deg); }
-  }
-  @keyframes mh-fav-release {
-    0% { transform: scale(1); }
-    45% { transform: scale(0.9); }
-    100% { transform: scale(1); }
-  }
-  @keyframes mh-fav-star-off {
-    0% { transform: scale(1); }
-    40% { transform: scale(0.8); }
-    100% { transform: scale(1); }
-  }
+  /* Click catch/release is WAAPI in playFavoriteToggleMotion — no keyframes. */
   @media (prefers-reduced-motion: reduce) {
     .mh-favorite-detail {
       transition: color 120ms ease, background 120ms ease, border-color 120ms ease;
     }
     .mh-favorite-detail:hover,
     .mh-favorite-detail:active { transform: none; }
-    .mh-favorite-detail.is-toggling-on,
-    .mh-favorite-detail.is-toggling-off,
-    .mh-favorite-detail.is-toggling-on svg,
-    .mh-favorite-detail.is-toggling-off svg { animation: none; }
   }
 `;
 
@@ -1093,6 +1122,24 @@ const STAGE_CARD_CSS = `
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   :host([hidden]) { display: none; }
+  /* Save → card appears: short rise so the causal link is visible. */
+  :host(.is-entering) .mh-stage-card {
+    animation: mh-stage-enter 240ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  @keyframes mh-stage-enter {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes mh-stage-enter-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  /* PRM keeps opacity feedback; drops the translate. */
+  @media (prefers-reduced-motion: reduce) {
+    :host(.is-entering) .mh-stage-card {
+      animation: mh-stage-enter-fade 160ms ease;
+    }
+  }
   .mh-stage-card {
     display: flex;
     flex-direction: column;

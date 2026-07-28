@@ -208,7 +208,19 @@ const controlClass =
          described what the list below already shows; opened over MagangHub,
          the one thing the header has to establish is who is speaking. -->
     <h1 class="font-heading text-base font-semibold tracking-normal">SakuMagang</h1>
-    <Button variant="outline" size="xs" onclick={refreshAll} disabled={refreshDisabled}>
+    <Button
+      variant="outline"
+      size="xs"
+      onclick={refreshAll}
+      disabled={refreshDisabled}
+      aria-busy={refreshingAll}
+    >
+      {#if refreshingAll}
+        <span
+          class="mh-spin size-3 shrink-0 rounded-none border border-current border-r-transparent"
+          aria-hidden="true"
+        ></span>
+      {/if}
       {refreshingAll ? 'Memperbarui…' : 'Segarkan semua'}
     </Button>
   </div>
@@ -218,10 +230,12 @@ const controlClass =
        not a silent failure they'd read as lost favorites. Their data is
        untouched, so this stays subtle rather than alarming. -->
   {#if health === 'degraded'}
-    <Alert>
-      <AlertTitle>Extension mungkin butuh update</AlertTitle>
-      <AlertDescription>Tampilan MagangHub berubah — data favorit kamu tetap aman.</AlertDescription>
-    </Alert>
+    <div class="mh-rise-in">
+      <Alert>
+        <AlertTitle>Extension mungkin butuh update</AlertTitle>
+        <AlertDescription>Tampilan MagangHub berubah — data favorit kamu tetap aman.</AlertDescription>
+      </Alert>
+    </div>
   {/if}
 
   <!-- Issue #6: find and organize Favorites as the list grows. Both controls
@@ -256,9 +270,11 @@ const controlClass =
   {/if}
 
   {#if importMsg}
-    <Alert variant={importMsg.kind === 'warn' ? 'destructive' : 'default'}>
-      <AlertDescription>{importMsg.text}</AlertDescription>
-    </Alert>
+    <div class="mh-rise-in">
+      <Alert variant={importMsg.kind === 'warn' ? 'destructive' : 'default'}>
+        <AlertDescription>{importMsg.text}</AlertDescription>
+      </Alert>
+    </div>
   {/if}
 </header>
 
@@ -310,7 +326,12 @@ const controlClass =
               <span class="block truncate text-sm font-semibold">{item.organizer}</span>
               <span class="block truncate text-xs text-muted-foreground" data-group-summary>{summaryText(item.summary) || `${item.favorites.length} favorit`}</span>
             </span>
-            <span class="ml-2 shrink-0 text-xs text-muted-foreground" aria-hidden="true">{isCollapsed(item.organizer) ? '▸' : '▾'}</span>
+            <span
+              class="ml-2 shrink-0 text-xs text-muted-foreground transition-transform duration-150 ease-out"
+              class:rotate-0={!isCollapsed(item.organizer)}
+              class:-rotate-90={isCollapsed(item.organizer)}
+              aria-hidden="true"
+            >▾</span>
           </button>
           {#if !isCollapsed(item.organizer)}
             <div class="mt-1 space-y-2">
