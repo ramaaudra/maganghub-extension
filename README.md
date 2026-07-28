@@ -4,7 +4,7 @@
 
 # SakuMagang
 
-**Favorite lokal, Catatan, dan Status Lamar untuk [MagangHub](https://maganghub.kemnaker.go.id) — tanpa pernah menyentuh kredensial SiapKerja.**
+**Favorite lokal, Catatan, dan Status Lamar untuk [MagangHub](https://maganghub.kemnaker.go.id), tanpa pernah menyentuh kredensial SiapKerja.**
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Svelte](https://img.shields.io/badge/Svelte_5-FF3E00?style=flat-square&logo=svelte&logoColor=white)](https://svelte.dev)
@@ -19,14 +19,14 @@
 > [!IMPORTANT]
 > **Tidak resmi, tidak dipublikasikan di Web Store.** SakuMagang adalah proyek
 > pihak ketiga independen. **Tidak** berafiliasi, didukung, atau dibuat oleh
-> **Kemnaker** maupun program MagangHub. **Tidak ada listing Chrome Web Store** —
-> satu-satunya cara pasang adalah sideload. Nama sengaja tidak diawali
+> **Kemnaker** maupun program MagangHub. **Tidak ada listing Chrome Web Store.**
+> Satu-satunya cara pasang adalah sideload. Nama sengaja tidak diawali
 > "MagangHub …" (bisa terbaca seperti produk Kemnaker; lihat ADR-0009).
 
 Ekstensi browser yang menambahkan fitur shortlist dan pantauan yang tidak
 ada di MagangHub. Bintang Lowongan sambil browsing, tulis Catatan kenapa
 Lowongan itu disimpan, lacak Status Lamar secara manual, dan refresh Kuota/Pelamar
-secara live — semuanya local-first, tanpa kredensial.
+secara live. Semuanya local-first, tanpa kredensial.
 
 Proyek ini ada karena muncul situs "bantuan" pihak ketiga yang meminta password
 SiapKerja asli. Situs itu menyerahkan kredensial pemerintah ke server tidak resmi.
@@ -34,21 +34,21 @@ Ekstensi ini adalah alternatif aman **by construction**, bukan sekadar janji.
 
 ## Fitur
 
-- **Bintang Lowongan** dari halaman daftar atau detail — disimpan lokal sebagai Favorite
-- **Catatan** — catatan teks bebas per Favorite (alasan menyimpan); juga tampil di tooltip bintang
-- **Status Lamar** — pelacak tahap manual: Belum dilamar → Dilamar → Interview → Diterima / Ditolak  
+- **Bintang Lowongan** dari halaman daftar atau detail, disimpan lokal sebagai Favorite
+- **Catatan**: catatan teks bebas per Favorite (alasan menyimpan); juga tampil di tooltip bintang
+- **Status Lamar**: pelacak tahap manual: Belum dilamar → Dilamar → Interview → Diterima / Ditolak  
   Selalu diisi pengguna; ekstensi tidak pernah mendeteksi otomatis status lamaran. Bisa diedit lewat kartu tahap di halaman detail dan chip di kartu daftar
-- **Status Lowongan** — refresh Kuota/Pelamar live dari halaman detail publik, satu Favorite atau semua (dibatasi throttle, lewat offscreen document). Perubahan ditandai badge di popup
+- **Status Lowongan**: refresh Kuota/Pelamar live dari halaman detail publik, satu Favorite atau semua (dibatasi throttle, lewat offscreen document). Perubahan ditandai badge di popup
 - **Warna urgensi** pada kartu daftar berdasarkan sisa kursi / tekanan Kuota
-- **Daftar Favorite di popup** — cari, urutkan (termasuk Status Lamar lalu sisa kursi), kelompokkan per Penyelenggara (bisa dilipat)
+- **Daftar Favorite di popup**: cari, urutkan (termasuk Status Lamar lalu sisa kursi), kelompokkan per Penyelenggara (bisa dilipat)
 - **Ekspor / impor** Favorite sebagai JSON, dengan migrasi skema
-- **Indikator kesehatan injeksi** — saat markup MagangHub berubah dan injeksi gagal, popup memberi tahu, bukan gagal diam-diam
+- **Indikator kesehatan injeksi**: saat markup MagangHub berubah dan injeksi gagal, popup memberi tahu, bukan gagal diam-diam
 
 ## Instalasi
 
 Tidak ada build Web Store. Sideload lewat **rilis siap pakai** atau **build dari sumber**.
 
-### Opsi A — Rilis siap pakai (disarankan)
+### Opsi A: Rilis siap pakai (disarankan)
 
 1. Buka [GitHub Release](https://github.com/ramaaudra/maganghub-extension/releases/latest) terbaru
 2. Unduh `sakumagang-<version>-chrome.zip` (atau aset zip Chrome yang terlampir)
@@ -60,7 +60,7 @@ Tidak ada build Web Store. Sideload lewat **rilis siap pakai** atau **build dari
 
 Untuk update: unduh zip yang lebih baru, ganti isi folder ekstrak, lalu klik **Reload** pada kartu ekstensi.
 
-### Opsi B — Build dari sumber
+### Opsi B: Build dari sumber
 
 #### Prasyarat
 
@@ -90,7 +90,7 @@ Untuk update: tarik sumber terbaru, jalankan ulang `npm run build`, lalu **Reloa
 
 ```sh
 npm install
-npm run dev          # WXT dev — membuka Chrome dengan ekstensi termuat, hot-reload
+npm run dev          # WXT dev: membuka Chrome dengan ekstensi termuat, hot-reload
 npm run typecheck    # tsc + svelte-check
 npm run test:unit    # vitest
 npm run test:e2e     # wxt build && playwright (fixture HTML, bukan MagangHub live)
@@ -122,8 +122,8 @@ Ini bisa diverifikasi dari prompt permission saat instalasi:
 **Yang sengaja tidak diminta:** `cookies`, `identity`, `<all_urls>`, backend, analytics.
 
 Helper pencuri kredensial tidak bisa jujur meniru postur ini. Mendeteksi otomatis
-"sudah dilamar" berarti harus membaca sesi login — permukaan serangan yang justru
-dihindari produk ini — itulah kenapa **Status Lamar sengaja manual**.
+"sudah dilamar" berarti harus membaca sesi login (permukaan serangan yang justru
+dihindari produk ini). Itulah kenapa **Status Lamar sengaja manual**.
 Dasar keputusan lengkap: [`docs/adr/0001`](docs/adr/).
 
 ## Arsitektur
@@ -149,11 +149,11 @@ src/
 
 Keputusan utama ada di `docs/adr/`:
 
-- **0001** — tidak pernah menyentuh kredensial SiapKerja
-- **0002** — snapshot Favorite imutabel + liveStatus yang bisa berubah
-- **0004** — closed Shadow DOM untuk UI yang diinjeksi
-- **0005** — offscreen document untuk refresh HTML publik
-- **0009** — nama produk adalah SakuMagang
+- **0001**: tidak pernah menyentuh kredensial SiapKerja
+- **0002**: snapshot Favorite imutabel + liveStatus yang bisa berubah
+- **0004**: closed Shadow DOM untuk UI yang diinjeksi
+- **0005**: offscreen document untuk refresh HTML publik
+- **0009**: nama produk adalah SakuMagang
 
 ## Dokumentasi
 
@@ -179,4 +179,4 @@ Belum. Semua local-first di `chrome.storage.local`. Jalur cadangan: ekspor/impor
 Injeksi di halaman menurun diam-diam. Popup menampilkan peringatan kesehatan ("extension mungkin butuh update") alih-alih gagal tanpa kabar selamanya.
 
 **Bisakah Status Lamar update otomatis saat saya melamar?**  
-Tidak — by design. Mendeteksi status lamaran membutuhkan pembacaan sesi login. Atur tahap sendiri; kontrolnya dibuat cepat dan jelas.
+Tidak, by design. Mendeteksi status lamaran membutuhkan pembacaan sesi login. Atur tahap sendiri; kontrolnya dibuat cepat dan jelas.
