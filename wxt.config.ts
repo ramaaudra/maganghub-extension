@@ -18,4 +18,8 @@ export default defineConfig({
 	vite: () => ({
 		plugins: [tailwindcss()],
 	}),
+	webExt: {
+		chromiumArgs: ["https://maganghub.kemnaker.go.id/"],
+		firefoxArgs: ["https://maganghub.kemnaker.go.id/"],
+	},
 });
