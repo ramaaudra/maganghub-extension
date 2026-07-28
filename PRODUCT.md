@@ -61,7 +61,7 @@ MagangHub's markup is not under our control. When a selector stops matching, the
 
 ## Brand Commitments
 
-The popup deliberately matches MagangHub's own shadcn/Tailwind aesthetic so it reads as native to the site rather than as a foreign overlay (ADR-0004). The injected detail toggle mirrors the measured geometry of MagangHub's "Bagikan" button — 40×40, 14px radius, 1px `#e1e7ef` border, white background — because a differently shaped button in a two-button cluster reads as bolted on.
+The popup carries its own identity — a "Field-Notebook" look (one calm blue accent, sharp corners, Geist, flat depth) defined by the shadcn-svelte preset "sera" and normative in `DESIGN.md` — so it reads as a plainly different, trustworthy instrument beside the site, not as a mimicry of it (ADR-0008 supersedes ADR-0004's original "match MagangHub's aesthetic" commitment). The injected detail toggle is a separate matter and still mirrors the measured geometry of MagangHub's "Bagikan" button — 40×40, 14px radius, 1px `#e1e7ef` border, white background (ADR-0004, unchanged) — because a differently shaped button in a two-button cluster reads as bolted on, and the content script ships no framework runtime.
 
 Voice: plain Indonesian, direct, no alarm. The health warning and the trust explainer both state facts a user can act on without dramatizing them.
 
@@ -70,7 +70,7 @@ Vocabulary is fixed and non-negotiable across code, docs, and UI: **Lowongan**, 
 ## Evidence on Hand
 
 - `CONTEXT.md` — the domain glossary; the authority on terminology.
-- `docs/adr/0001`–`0006` — the six architectural decisions, each with its rejected alternative recorded.
+- `docs/adr/0001`–`0008` — the eight architectural decisions, each with its rejected alternative recorded. ADR-0008 supersedes the popup-aesthetic portion of ADR-0004; the content-script split in ADR-0004 stands.
 - GitHub issue #1 — the MVP PRD with 50 user stories; issues #2–#10 are its implementation slices.
 - `e2e/pages/` — recorded HTML fixtures of real MagangHub pages, captured via the Camoufox automation server. These are the ground truth for MagangHub's actual markup and are what the Playwright suite runs against.
 - Open-source repository: `https://github.com/ramaaudra/maganghub-extension` — the auditability claim rests on this being public.

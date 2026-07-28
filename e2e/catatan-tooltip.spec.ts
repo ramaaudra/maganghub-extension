@@ -14,8 +14,11 @@ import { openPopup } from "./pages/popup";
  * The filled star's native `title` composes
  * `catatan ? \`${label} — ${catatan}\` : label`. Asserted on the shadow host's
  * interactive surface via a light-DOM data attribute mirror (`data-star-title`)
- * so e2e never pierces the closed shadow — same pattern as `data-stage` /
- * `data-urgency`.
+ * so e2e never pierces the closed shadow — same pattern as `data-stage`.
+ *
+ * The star's `title` is now the button's alone. The removed urgency band used
+ * to write a competing `title` on the light-DOM host, so a saved card had two
+ * tooltips racing on one control.
  */
 
 const NOTE = "dekat rumah, batch 2";
@@ -36,8 +39,8 @@ test("a filled star with a Catatan shows the note in its title", async ({
 
 	const popup = await openPopup(context, extensionId);
 	const card = popup.locator(`[data-favorite-uuid="${FIRST_UUID}"]`);
-	await card.getByPlaceholder("Tambahkan catatan...").fill(NOTE);
-	await card.getByPlaceholder("Tambahkan catatan...").blur();
+	await card.getByPlaceholder("Kenapa lowongan ini?").fill(NOTE);
+	await card.getByPlaceholder("Kenapa lowongan ini?").blur();
 	await expect(card.getByText("Tersimpan")).toBeVisible();
 
 	// Storage sync paints the composed title onto the list star.
@@ -48,8 +51,8 @@ test("a filled star with a Catatan shows the note in its title", async ({
 	);
 
 	// Clearing Catatan reverts to the bare on-label.
-	await card.getByPlaceholder("Tambahkan catatan...").fill("");
-	await card.getByPlaceholder("Tambahkan catatan...").blur();
+	await card.getByPlaceholder("Kenapa lowongan ini?").fill("");
+	await card.getByPlaceholder("Kenapa lowongan ini?").blur();
 	await expect(host).toHaveAttribute("data-star-title", "Hapus dari favorit");
 
 	// Unsaving drops the title mirror entirely (list stars stay title-less off).
@@ -79,8 +82,8 @@ test("editing Catatan in the popup updates the star title across tabs", async ({
 
 	const popup = await openPopup(context, extensionId);
 	const card = popup.locator(`[data-favorite-uuid="${FIRST_UUID}"]`);
-	await card.getByPlaceholder("Tambahkan catatan...").fill(NOTE);
-	await card.getByPlaceholder("Tambahkan catatan...").blur();
+	await card.getByPlaceholder("Kenapa lowongan ini?").fill(NOTE);
+	await card.getByPlaceholder("Kenapa lowongan ini?").blur();
 
 	for (const host of [listHost, listHost2]) {
 		await expect(host).toHaveAttribute(
@@ -90,8 +93,8 @@ test("editing Catatan in the popup updates the star title across tabs", async ({
 	}
 
 	const updated = "ganti alasan";
-	await card.getByPlaceholder("Tambahkan catatan...").fill(updated);
-	await card.getByPlaceholder("Tambahkan catatan...").blur();
+	await card.getByPlaceholder("Kenapa lowongan ini?").fill(updated);
+	await card.getByPlaceholder("Kenapa lowongan ini?").blur();
 	for (const host of [listHost, listHost2]) {
 		await expect(host).toHaveAttribute(
 			"data-star-title",
@@ -111,8 +114,8 @@ test("the detail toggle composes Catatan into its title too", async ({
 
 	const popup = await openPopup(context, extensionId);
 	const card = popup.locator(`[data-favorite-uuid="${FIRST_UUID}"]`);
-	await card.getByPlaceholder("Tambahkan catatan...").fill(NOTE);
-	await card.getByPlaceholder("Tambahkan catatan...").blur();
+	await card.getByPlaceholder("Kenapa lowongan ini?").fill(NOTE);
+	await card.getByPlaceholder("Kenapa lowongan ini?").blur();
 	await expect(card.getByText("Tersimpan")).toBeVisible();
 	await popup.close();
 

@@ -376,9 +376,9 @@ test("editing Catatan and toggling Status Lamar persists across popup reopen", a
 	const card = popup.locator(`[data-favorite-uuid="${uuid}"]`);
 
 	await card
-		.getByPlaceholder("Tambahkan catatan...")
+		.getByPlaceholder("Kenapa lowongan ini?")
 		.fill("alasan aku simpan ini");
-	await card.getByPlaceholder("Tambahkan catatan...").blur();
+	await card.getByPlaceholder("Kenapa lowongan ini?").blur();
 	await expect(card.getByText("Tersimpan")).toBeVisible();
 
 	// Status Lamar is a stage selector (v4). Default is "Belum dilamar" (no stage);
@@ -398,7 +398,7 @@ test("editing Catatan and toggling Status Lamar persists across popup reopen", a
 	popup = await openPopup(context, extensionId);
 	const reopenedCard = popup.locator(`[data-favorite-uuid="${uuid}"]`);
 	await expect(
-		reopenedCard.getByPlaceholder("Tambahkan catatan..."),
+		reopenedCard.getByPlaceholder("Kenapa lowongan ini?"),
 	).toHaveValue("alasan aku simpan ini");
 	await expect(reopenedCard.getByLabel("Status Lamar")).toHaveValue("dilamar");
 	await expect(

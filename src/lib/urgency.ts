@@ -5,6 +5,18 @@ import { FILLING_THRESHOLD, parseCount } from "./parse";
 /**
  * Pre-attentive urgency band for a Lowongan card (issue #16).
  *
+ * CURRENTLY UNREFERENCED BY `src/`. The list-card ring this fed was removed:
+ * it rendered as a second concentric border around the star, and MagangHub now
+ * ships its own "Peluang …(NN%)" pill on the card, which states the same thing
+ * with an actual percentage instead of three colour bands. A 1-Kuota/0-Pelamar
+ * listing tripped `remaining <= 1` here and painted "Hampir penuh" beside that
+ * pill reading 100% — our signal contradicting theirs.
+ *
+ * Kept, not deleted: it is pure, tested, and the natural input if a future
+ * popup-side sort or filter wants the same banding (backlog A1/B2). Nothing
+ * imports it, so it is tree-shaken out of every bundle. Delete it outright if
+ * that never lands — do not re-attach it to the star.
+ *
  * Computed from the card's own Kuota/Pelamar pills — the numbers MagangHub
  * already shows. Three bands on `remaining = kuota − pelamar`:
  *

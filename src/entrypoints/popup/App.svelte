@@ -7,6 +7,14 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/lib/components/ui/card";
+import { Button } from "@/lib/components/ui/button";
+import { Input } from "@/lib/components/ui/input";
+import { Alert, AlertDescription, AlertTitle } from "@/lib/components/ui/alert";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/lib/components/ui/collapsible";
 import { type SortKey, searchFavorites, sortFavorites } from "@/lib/filter";
 import { groupFavorites, summaryText } from "@/lib/group";
 import { type HealthStatus, readHealth } from "@/lib/health";
@@ -14,7 +22,6 @@ import { type ExportFile, exportFavorites, importFavorites } from "@/lib/io";
 import type { RefreshRequest, RefreshResponse } from "@/lib/refresh";
 import { listFavorites } from "@/lib/storage";
 import type { Favorite } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import FavoriteCard from "./FavoriteCard.svelte";
 
 let favorites = $state<Favorite[]>([]);
@@ -25,6 +32,8 @@ let refreshingAll = $state(false);
 /** Import result banner: null = hidden, otherwise shown until cleared. */
 let importMsg = $state<{ kind: "ok" | "warn"; text: string } | null>(null);
 let importTimer: ReturnType<typeof setTimeout> | undefined;
+/** Hidden file input ref so the "Impor" button can open the file dialog. */
+let fileInput: HTMLInputElement | null = null;
 
 /** Injection health, reported by the content script (issue #8). */
 let health = $state<HealthStatus>("ok");
@@ -127,6 +136,11 @@ function isCollapsed(organizer: string): boolean {
 /** The user has favorites, but the current query matches none of them. */
 const noMatches = $derived(favorites.length > 0 && visible.length === 0);
 
+/** Visible Favorites that have never been refreshed — one header coach, not N card lines. */
+const uncheckedVisible = $derived(
+	visible.filter((f) => !f.liveStatus.lastChecked).length,
+);
+
 // ─── Export / Import (issue #9) ────────────────────────────────────────────
 // Export serializes all favorites to a JSON Blob and downloads it. Import
 // reads a chosen file, validates+migrates via the registry, and merges with
@@ -182,46 +196,18 @@ async function onImportFile(event: Event): Promise<void> {
 onDestroy(() => {
 	clearTimeout(importTimer);
 });
+
+/** Shared underline control height — search and sort speak one language. */
+const controlClass =
+	"h-8 rounded-none border-0 border-b border-border bg-transparent px-0 text-xs text-foreground outline-none transition-[border-color] hover:border-b-foreground/40 focus-visible:border-b-ring";
 </script>
 
-<header class="border-b px-4 py-3">
+<header class="space-y-2 border-b px-4 py-3">
   <div class="flex items-center justify-between gap-2">
-    <div>
-      <h1 class="text-base font-semibold">Favorit Lowongan</h1>
-      <p class="text-xs text-muted-foreground">Tersimpan lokal di browser ini</p>
-    </div>
-    <button
-      type="button"
-      class="shrink-0 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-      onclick={refreshAll}
-      disabled={refreshDisabled}
-    >
+    <h1 class="font-heading text-base font-semibold tracking-normal">Favorit Lowongan</h1>
+    <Button variant="outline" size="xs" onclick={refreshAll} disabled={refreshDisabled}>
       {refreshingAll ? 'Memperbarui…' : 'Segarkan semua'}
-    </button>
-  </div>
-
-  <!-- Issue #9: backup/restore (no-sync story). Export downloads a JSON
-       envelope; import reads a file and merges via the migration registry. -->
-  <div class="mt-2 flex flex-wrap items-center gap-2">
-    <button
-      type="button"
-      class="rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-      onclick={onExport}
-      disabled={favorites.length === 0}
-    >
-      Ekspor
-    </button>
-    <label
-      class="cursor-pointer rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted"
-    >
-      Impor
-      <input
-        type="file"
-        accept="application/json,.json"
-        class="sr-only"
-        onchange={onImportFile}
-      />
-    </label>
+    </Button>
   </div>
 
   <!-- Issue #8: MagangHub changed its markup and we could not inject. Say so
@@ -229,81 +215,60 @@ onDestroy(() => {
        not a silent failure they'd read as lost favorites. Their data is
        untouched, so this stays subtle rather than alarming. -->
   {#if health === 'degraded'}
-    <p
-      class="mt-2 rounded-md bg-amber-100 px-2.5 py-1.5 text-xs text-amber-800"
-      role="status"
-    >
-      Extension mungkin butuh update — tampilan MagangHub berubah.
-    </p>
+    <Alert>
+      <AlertTitle>Extension mungkin butuh update</AlertTitle>
+      <AlertDescription>Tampilan MagangHub berubah — data favorit kamu tetap aman.</AlertDescription>
+    </Alert>
   {/if}
 
   <!-- Issue #6: find and organize Favorites as the list grows. Both controls
-       are view-only — they never touch storage. -->
-  <div class="mt-2 flex items-center gap-2">
-    <input
+       are view-only — they never touch storage. The select stays a native
+       <select> so e2e can drive it with selectOption; styled to match sera. -->
+  <div class="flex items-center gap-2">
+    <Input
       type="search"
-      class="min-w-0 flex-1 rounded-md border px-2.5 py-1 text-xs"
+      class={controlClass + ' min-w-0 flex-1 text-sm'}
       placeholder="Cari favorit..."
       aria-label="Cari favorit"
       bind:value={query}
     />
-    <label class="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-      <span>Urutkan</span>
-      <select
-        class="rounded-md border px-1.5 py-1 text-xs"
-        aria-label="Urutkan"
-        bind:value={sortKey}
-      >
-        <option value="savedAt">Terbaru disimpan</option>
-        <option value="stageSeats">Status Lamar, sisa kursi</option>
-        <option value="organizer">Penyelenggara</option>
-        <option value="location">Lokasi</option>
-      </select>
-    </label>
+    <select
+      class={controlClass + ' max-w-[9.5rem] shrink-0'}
+      aria-label="Urutkan"
+      bind:value={sortKey}
+    >
+      <option value="savedAt">Terbaru disimpan</option>
+      <option value="stageSeats">Status Lamar, sisa kursi</option>
+      <option value="organizer">Penyelenggara</option>
+      <option value="location">Lokasi</option>
+    </select>
   </div>
 
-  {#if importMsg}
-    <p
-      class={cn(
-        'mt-2 rounded-md px-2.5 py-1.5 text-xs',
-        importMsg.kind === 'warn'
-          ? 'bg-amber-100 text-amber-800'
-          : 'bg-emerald-100 text-emerald-800',
-      )}
-    >
-      {importMsg.text}
+  {#if uncheckedVisible > 0 && !loading && !noMatches}
+    <p class="text-xs text-muted-foreground" role="status" data-unchecked-coach>
+      {uncheckedVisible === 1
+        ? '1 favorit belum dicek Status Lowongan.'
+        : `${uncheckedVisible} favorit belum dicek Status Lowongan.`} Tekan Segarkan semua untuk Kuota &amp; Pelamar terkini.
     </p>
   {/if}
 
-  <!-- Issue #7 trust layer (ADR-0001): make the credential-free promise
-       visible, not just asserted in the manifest. -->
-  <p class="mt-2 text-xs text-muted-foreground">
-    Favorit tersimpan hanya di browser kamu; extension ini tidak pernah minta password SiapKerja.
-  </p>
-  <details class="mt-1">
-    <summary
-      class="cursor-pointer select-none text-xs font-medium text-primary underline-offset-2 hover:underline"
-    >Mengapa aman?</summary>
-    <p class="mt-1 text-xs leading-relaxed text-muted-foreground">
-      Situs bantuan pihak ketiga yang minta login SiapKerja bisa mencatat
-      password kamu. Extension ini hanya menyimpan Lowongan yang kamu bintangi
-      di browser ini — tanpa akun, tanpa server, tanpa telemetri. Kalau mau
-      melamar, klik "Buka di MagangHub" di setiap favorit dan lamar sendiri di
-      situs resmi.
-    </p>
-  </details>
+  {#if importMsg}
+    <Alert variant={importMsg.kind === 'warn' ? 'destructive' : 'default'}>
+      <AlertDescription>{importMsg.text}</AlertDescription>
+    </Alert>
+  {/if}
 </header>
 
 <main class="space-y-2 p-3">
   {#if loading}
     <div class="space-y-2">
-      <div class="h-16 rounded-md bg-muted"></div>
-      <div class="h-16 rounded-md bg-muted"></div>
+      <div class="h-16 rounded-none bg-muted"></div>
+      <div class="h-16 rounded-none bg-muted"></div>
     </div>
   {:else if favorites.length === 0}
     <Card>
       <CardHeader>
-        <div class="mx-auto mb-1 flex h-10 w-10 items-center justify-center rounded-full bg-muted text-lg">★</div>
+        <div class="mx-auto mb-1 flex h-10 w-10 items-center justify-center rounded-none bg-muted text-lg" aria-hidden="true">★</div>
         <CardTitle class="text-center">Belum ada favorit</CardTitle>
         <CardDescription class="text-center">
           Bintangi Lowongan di MagangHub untuk menyimpannya di sini.
@@ -333,7 +298,7 @@ onDestroy(() => {
         <section class="mh-group" data-group-organizer={item.organizer}>
           <button
             type="button"
-            class="flex w-full items-center justify-between rounded-md border bg-muted/40 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
+            class="flex w-full items-center justify-between rounded-none border border-border bg-muted/40 px-2.5 py-1.5 text-left transition-colors hover:bg-muted"
             aria-expanded={!isCollapsed(item.organizer)}
             data-group-toggle
             onclick={() => toggleGroup(item.organizer)}
@@ -360,3 +325,54 @@ onDestroy(() => {
     {/each}
   {/if}
 </main>
+
+<!-- Backup + trust live below the list so first paint is shortlist + controls.
+     Issue #7 / #9: credential-free promise stays visible; export/import remain
+     real buttons for e2e and power users without owning the header. -->
+<footer class="space-y-2 border-t px-4 py-3">
+  <div class="flex flex-wrap items-center gap-2">
+    <Button
+      variant="outline"
+      size="xs"
+      onclick={onExport}
+      disabled={favorites.length === 0}
+      title="Unduh cadangan JSON favorit di browser ini"
+    >
+      Ekspor cadangan
+    </Button>
+    <Button
+      variant="outline"
+      size="xs"
+      onclick={() => fileInput?.click()}
+      title="Pulihkan favorit dari file JSON cadangan"
+    >
+      Impor
+    </Button>
+    <input
+      bind:this={fileInput}
+      type="file"
+      accept="application/json,.json"
+      class="sr-only"
+      aria-label="Impor file favorit"
+      onchange={onImportFile}
+    />
+  </div>
+
+  <p class="text-xs text-muted-foreground">
+    Favorit tersimpan hanya di browser kamu; extension ini tidak pernah minta password SiapKerja.
+  </p>
+  <Collapsible>
+    <CollapsibleTrigger class="text-xs font-medium text-primary underline-offset-2 hover:underline">
+      Mengapa aman?
+    </CollapsibleTrigger>
+    <CollapsibleContent>
+      <p class="mt-1 text-xs leading-relaxed text-muted-foreground">
+        Situs bantuan pihak ketiga yang minta login SiapKerja bisa mencatat
+        password kamu. Extension ini hanya menyimpan Lowongan yang kamu bintangi
+        di browser ini — tanpa akun, tanpa server, tanpa telemetri. Kalau mau
+        melamar, klik "Buka di MagangHub" di setiap favorit dan lamar sendiri di
+        situs resmi.
+      </p>
+    </CollapsibleContent>
+  </Collapsible>
+</footer>

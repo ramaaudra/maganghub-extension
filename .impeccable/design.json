@@ -1,0 +1,277 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2025-07-27T23:40:00Z",
+  "title": "Design System: MagangHub Extension — Popup",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Field Blue",
+        "canonical": "oklch(0.5 0.134 242.749)",
+        "tonalRamp": [
+          "oklch(0.2 0.134 242.749)",
+          "oklch(0.3 0.134 242.749)",
+          "oklch(0.4 0.134 242.749)",
+          "oklch(0.5 0.134 242.749)",
+          "oklch(0.6 0.134 242.749)",
+          "oklch(0.7 0.1 242.749)",
+          "oklch(0.8 0.07 242.749)",
+          "oklch(0.9 0.04 242.749)"
+        ]
+      },
+      "primary-dark": {
+        "role": "primary",
+        "displayName": "Field Blue (dark)",
+        "canonical": "oklch(0.443 0.11 240.79)"
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(0.145 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.25 0 0)",
+          "oklch(0.35 0 0)",
+          "oklch(0.45 0 0)",
+          "oklch(0.556 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.85 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "muted-foreground": {
+        "role": "neutral",
+        "displayName": "Slate",
+        "canonical": "oklch(0.556 0 0)"
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.25 0 0)",
+          "oklch(0.4 0 0)",
+          "oklch(0.55 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.8 0 0)",
+          "oklch(0.92 0 0)",
+          "oklch(1 0 0)"
+        ]
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "Paper (card)",
+        "canonical": "oklch(1 0 0)"
+      },
+      "popover": {
+        "role": "neutral",
+        "displayName": "Paper (popover)",
+        "canonical": "oklch(1 0 0)"
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(0.922 0 0)"
+      },
+      "input": {
+        "role": "neutral",
+        "displayName": "Hairline (input)",
+        "canonical": "oklch(0.922 0 0)"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Field",
+        "canonical": "oklch(0.97 0 0)"
+      },
+      "accent": {
+        "role": "neutral",
+        "displayName": "Field (accent)",
+        "canonical": "oklch(0.97 0 0)"
+      },
+      "accent-foreground": {
+        "role": "neutral",
+        "displayName": "Ink (accent)",
+        "canonical": "oklch(0.205 0 0)"
+      },
+      "card-foreground": {
+        "role": "neutral",
+        "displayName": "Ink (card)",
+        "canonical": "oklch(0.145 0 0)"
+      },
+      "popover-foreground": {
+        "role": "neutral",
+        "displayName": "Ink (popover)",
+        "canonical": "oklch(0.145 0 0)"
+      },
+      "secondary": {
+        "role": "neutral",
+        "displayName": "Warm Paper",
+        "canonical": "oklch(0.967 0.001 286.375)"
+      },
+      "secondary-foreground": {
+        "role": "neutral",
+        "displayName": "Warm Ink",
+        "canonical": "oklch(0.21 0.006 285.885)"
+      },
+      "ring": {
+        "role": "neutral",
+        "displayName": "Ring",
+        "canonical": "oklch(0.708 0 0)"
+      },
+      "destructive": {
+        "role": "tertiary",
+        "displayName": "Failure Red",
+        "canonical": "oklch(0.577 0.245 27.325)",
+        "tonalRamp": [
+          "oklch(0.2 0.245 27.325)",
+          "oklch(0.3 0.245 27.325)",
+          "oklch(0.4 0.245 27.325)",
+          "oklch(0.5 0.245 27.325)",
+          "oklch(0.577 0.245 27.325)",
+          "oklch(0.68 0.2 27.325)",
+          "oklch(0.8 0.13 27.325)",
+          "oklch(0.9 0.07 27.325)"
+        ]
+      },
+      "chart-1": { "role": "tertiary", "displayName": "Chart 1", "canonical": "oklch(0.897 0.196 126.665)" },
+      "chart-2": { "role": "tertiary", "displayName": "Chart 2", "canonical": "oklch(0.768 0.233 130.85)" },
+      "chart-3": { "role": "tertiary", "displayName": "Chart 3", "canonical": "oklch(0.648 0.2 131.684)" },
+      "chart-4": { "role": "tertiary", "displayName": "Chart 4", "canonical": "oklch(0.532 0.157 131.589)" },
+      "chart-5": { "role": "tertiary", "displayName": "Chart 5", "canonical": "oklch(0.453 0.124 130.933)" },
+      "sidebar": { "role": "neutral", "displayName": "Sidebar", "canonical": "oklch(0.985 0 0)" },
+      "sidebar-foreground": { "role": "neutral", "displayName": "Sidebar Ink", "canonical": "oklch(0.145 0 0)" },
+      "sidebar-primary": { "role": "primary", "displayName": "Sidebar Primary", "canonical": "oklch(0.588 0.158 241.966)" },
+      "sidebar-border": { "role": "neutral", "displayName": "Sidebar Border", "canonical": "oklch(0.922 0 0)" },
+      "sidebar-ring": { "role": "neutral", "displayName": "Sidebar Ring", "canonical": "oklch(0.708 0 0)" }
+    },
+    "typographyMeta": {
+      "title": { "displayName": "Title", "purpose": "Popup header and CardTitle. The 16px ceiling." },
+      "body": { "displayName": "Body", "purpose": "Favorite title, organizer, location, Catatan textarea." },
+      "label": { "displayName": "Label", "purpose": "Buttons, status/stage chips, select labels." },
+      "caption": { "displayName": "Caption", "purpose": "Subtitle, meta lines, placeholder, flash notices — always muted-foreground." }
+    },
+    "shadows": [
+      { "name": "card-lift", "value": "0 1px 2px rgba(0,0,0,0.05)", "purpose": "The only elevation. Card only, constant — never on hover, never larger." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default for state transitions (button hover bg, chip swaps)." },
+      { "name": "duration-fast", "value": "150ms", "purpose": "transition-colors duration on outline buttons and toggles." }
+    ],
+    "breakpoints": [
+      { "name": "popup-fixed", "value": "360px", "purpose": "The popup is a fixed 360px panel, not a responsive page. No breakpoints; layout must fit 360px always." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "A Favorite's container. Sharp corners, 1px hairline, the one constant shadow-sm.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Nama Lowongan</div><div class=\"ds-card-meta\">Penyelenggara · Lokasi</div></div>",
+      "css": ".ds-card { background: var(--color-card); color: var(--color-card-foreground); border: 1px solid var(--color-border); border-radius: 0; padding: 16px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-family: 'Geist Variable', sans-serif; } .ds-card-title { font-weight: 500; font-size: 14px; line-height: 1.5; } .ds-card-meta { font-size: 14px; color: var(--color-muted-foreground); }"
+    },
+    {
+      "name": "Card — active stage",
+      "kind": "card",
+      "refersTo": "card-active-stage",
+      "description": "A Favorite whose Status Lamar is Dilamar or Interview. Faint blue tint + blue-tinted border singles out the Lowongan the user is still acting on.",
+      "html": "<div class=\"ds-card ds-card-active\"><div class=\"ds-card-title\">Nama Lowongan</div></div>",
+      "css": ".ds-card-active { border-color: color-mix(in oklch, var(--color-primary) 40%, transparent); background: color-mix(in oklch, var(--color-primary) 5%, var(--color-card)); }"
+    },
+    {
+      "name": "Outline button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "The only button in the popup. Border + transparent; hover fills muted. No filled primary exists — manual action must not look like authority.",
+      "html": "<button class=\"ds-btn-outline\">Segarkan</button>",
+      "css": ".ds-btn-outline { background: transparent; color: var(--color-foreground); border: 1px solid var(--color-border); border-radius: 0; padding: 4px 10px; font: 500 12px/1.3 'Geist Variable', sans-serif; transition: background-color 150ms cubic-bezier(0.4,0,0.2,1); cursor: pointer; } .ds-btn-outline:hover { background: var(--color-muted); } .ds-btn-outline:focus-visible { outline: 2px solid color-mix(in oklch, var(--color-ring) 50%, transparent); outline-offset: 1px; } .ds-btn-outline:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Status chip — open",
+      "kind": "chip",
+      "refersTo": "status-chip",
+      "description": "Pill-shaped, read-only. Buka = emerald. The pill shape is the state-signal affordance; never use it on a control.",
+      "html": "<span class=\"ds-chip ds-chip-open\">Buka</span>",
+      "css": ".ds-chip { border-radius: 0; border: 0; background: transparent; padding: 0; font: 600 10px/1.3 'Geist Variable', sans-serif; text-transform: uppercase; letter-spacing: 0.1em; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; } .ds-chip::before { content: \"\"; width: 6px; height: 6px; border-radius: 9999px; background: currentColor; flex: 0 0 auto; } .ds-chip-open { color: oklch(0.596 0.118 149); }"
+    },
+    {
+      "name": "Status chip — filling / closed",
+      "kind": "chip",
+      "refersTo": "status-chip",
+      "description": "Mengisi = amber, Tutup = rose. Same pill, same sizing; only the semantic pair changes.",
+      "html": "<span class=\"ds-chip ds-chip-filling\">Mengisi</span> <span class=\"ds-chip ds-chip-closed\">Tutup</span>",
+      "css": ".ds-chip-filling { color: oklch(0.666 0.146 65); } .ds-chip-closed { color: oklch(0.586 0.196 13); }"
+    },
+    {
+      "name": "Stage chip — dilamar (primary)",
+      "kind": "chip",
+      "refersTo": "status-chip",
+      "description": "Status Lamar = Dilamar uses the Field Blue pair (primary/10 over primary text). The one place blue becomes a chip.",
+      "html": "<span class=\"ds-chip ds-chip-dilamar\">Dilamar</span>",
+      "css": ".ds-chip-dilamar { color: var(--color-primary); }"
+    },
+    {
+      "name": "Search input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "1px hairline, transparent, sharp corners. Focus is an outline, not a glow or border shift.",
+      "html": "<input type=\"search\" class=\"ds-input-search\" placeholder=\"Cari favorit...\" aria-label=\"Cari favorit\" />",
+      "css": ".ds-input-search { background: transparent; color: var(--color-foreground); border: 1px solid var(--color-border); border-radius: 0; padding: 4px 8px; font: 400 12px/1.4 'Geist Variable', sans-serif; min-width: 0; } .ds-input-search::placeholder { color: var(--color-muted-foreground); } .ds-input-search:focus-visible { outline: 2px solid color-mix(in oklch, var(--color-ring) 50%, transparent); outline-offset: 1px; }"
+    },
+    {
+      "name": "Link primary",
+      "kind": "button",
+      "refersTo": "link-primary",
+      "description": "The exit to MagangHub. Blue, underlined on hover, sharp. Never an in-popup navigation.",
+      "html": "<a class=\"ds-link-primary\" href=\"#\">Buka di MagangHub</a>",
+      "css": ".ds-link-primary { color: var(--color-primary); border-radius: 0; padding: 4px 8px; font: 500 12px/1.3 'Geist Variable', sans-serif; text-decoration: underline; text-underline-offset: 2px; } .ds-link-primary:hover { text-decoration: underline; } .ds-link-primary:focus-visible { outline: 2px solid color-mix(in oklch, var(--color-ring) 50%, transparent); outline-offset: 1px; }"
+    },
+    {
+      "name": "Group toggle",
+      "kind": "custom",
+      "refersTo": "group-toggle",
+      "description": "Full-width bar collapsing Favorites by Penyelenggara. The only section header in the popup.",
+      "html": "<button class=\"ds-group-toggle\" aria-expanded=\"true\"><span class=\"ds-group-name\">PT Contoh</span><span class=\"ds-group-glyph\">▾</span></button>",
+      "css": ".ds-group-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: color-mix(in oklch, var(--color-muted) 40%, transparent); border: 1px solid var(--color-border); border-radius: 0; padding: 6px 10px; cursor: pointer; text-align: left; font-family: 'Geist Variable', sans-serif; transition: background-color 150ms cubic-bezier(0.4,0,0.2,1); } .ds-group-toggle:hover { background: var(--color-muted); } .ds-group-name { font-weight: 600; font-size: 14px; line-height: 1.3; color: var(--color-foreground); } .ds-group-glyph { font-size: 12px; color: var(--color-muted-foreground); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Field Notebook",
+    "overview": "The popup reads like a field notebook: sharp-cornered, plain-faced, dependable. Geist's geometric sans sets a Swiss, instrument-like tone; the single calm blue (oklch 0.5 0.134 242.749) is the only chromatic voice and it is used sparingly — to mark the Lowongan a user is still acting on, the link back to MagangHub, and focus. Everything else is ink on paper: near-black foreground on pure white, with a light-gray border and a muted field carrying secondary surfaces. Depth is conveyed by 1px borders and the muted fill, not by shadow; the Card's faint shadow-sm is the only elevation and it never grows.\n\nThe form language is one form: the sharp rectangle (radius 0rem). Cards, buttons, inputs, selects, textareas, group toggles, and status chips are all square-cornered. The only curved form is the tiny dot that leads each status chip, carrying the chip's semantic color at 10px because the sera Badge itself is a borderless, fill-less uppercase text label. Depth is conveyed by 1px borders and the muted fill, not by shadow; the Card's faint shadow-sm is the only elevation and it never grows.\n\nThe system diverges from ADR-0004's original 'match MagangHub's own shadcn/Tailwind aesthetic' commitment: the preset establishes a distinct Field-Notebook identity (blue accent, sharp corners, Geist) rather than a neutral mirror of MagangHub. The injected content-script toggles still mirror MagangHub's 'Bagikan' geometry per ADR-0004 and are out of scope for this system.",
+    "keyCharacteristics": [
+      "Sharp rectangles for every surface and control; status chips are sharp uppercase micro-labels with a tiny colored dot.",
+      "One accent (calm blue) used on ≤10% of any screen — active state, link, focus ring.",
+      "Flat by default; the single shadow-sm lives on the Card and never escalates.",
+      "Geist Variable for every role; hierarchy is size + weight, never a second typeface.",
+      "360px fixed popup; tight 8px rhythm; information-dense but calm.",
+      "Plain Indonesian copy; fixed vocabulary (Lowongan, Penyelenggara, Batch, Kuota, Pelamar, Favorite, Catatan, Status Lamar, Status Lowongan)."
+    ],
+    "rules": [
+      { "name": "The One Blue Rule", "body": "Field Blue is used on ≤10% of any screen. Its rarity is the point — it marks the one Lowongan a user is acting on, the exit link, and focus. A blue button or blue header is a failure of restraint.", "section": "colors" },
+      { "name": "The Status-Color Quarantine", "body": "bg-emerald-100/text-emerald-700, bg-amber-100/text-amber-700, bg-rose-100/text-rose-700 are permitted only inside status chips and change-notice banners. They are state signals, never decoration, never a card background, never a button.", "section": "colors" },
+      { "name": "The Destructive Reservation", "body": "--destructive is for genuine failure only — Refresh gagal, import errors. Never use it for a reversible 'delete' affordance, and never as an accent.", "section": "colors" },
+      { "name": "The No-Display Rule", "body": "The popup has no display/headline scale. 16px is the ceiling; if a screen needs a bigger headline, the screen is wrong for a 360px panel, not the type scale.", "section": "typography" },
+      { "name": "The Single-Family Rule", "body": "Geist Variable is the only family. Introducing a second typeface breaks the instrument voice; use weight and size for hierarchy instead.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. The only shadow is the Card's shadow-sm, and it is constant — never a hover shadow, never a popover shadow. If a new surface needs to feel raised, use a border or bg-muted, not a larger shadow.", "section": "elevation" },
+      { "name": "The Sharp-Everywhere Rule", "body": "Every surface and control is square-cornered (radius 0). The only rounded-full in the system is the chip's leading dot, and only because a colored dot is the cleanest way to carry semantic color inside a fill-less label. Never put rounded-full on a button, input, card, or the chip itself.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do keep every surface and control square-cornered (--radius: 0rem); the only rounded-full is the status chip's leading dot.",
+      "Do use Field Blue (oklch(0.5 0.134 242.749)) only for the active-stage tint, the dilamar chip, the 'Buka di MagangHub' link, and focus — ≤10% of any screen.",
+      "Do convey depth with 1px --border and bg-muted; use shadow-sm only on Cards and never larger.",
+      "Do write UI copy in plain Indonesian using the fixed vocabulary from CONTEXT.md.",
+      "Do keep the popup at 360px; reach for an 8px rhythm (gap-2, space-y-2, p-3) before adding new spacing values.",
+      "Do degrade loudly to the user, silently to the page: role=\"status\" banners for health/import states, never console.error in MagangHub's page."
+    ],
+    "donts": [
+      "Don't introduce a filled primary button — Status Lamar is manual by design; a primary fill would imply authority the extension deliberately lacks. Outline buttons only.",
+      "Don't ship Svelte, shadcn-svelte, or this design system into the content script (ADR-0004). Injected UI is plain DOM in a closed Shadow DOM and mirrors MagangHub's 'Bagikan' geometry, not these tokens.\n- Don't import the Button/buttonVariants module into FavoriteCard — combined with its $effect.pre + bind:value Catatan pattern it triggers a Svelte 5 reactivity bug that breaks save-on-blur. Use native <button> with inline sera classes there; the Button component is fine everywhere else.\n- Don't replace the native Urutkan / Status Lamar <select> with the bits-ui Select — e2e relies on selectOption, which needs a real <select>. Style them sera-underline instead.",
+      "Don't use emerald/amber/rose outside status chips and the change-notice / health banners — they are state signals, not a palette.",
+      "Don't add a second typeface or a display size; Geist Variable at 12–16px is the whole hierarchy.",
+      "Don't use --destructive for anything but genuine failure (Refresh gagal, import error).",
+      "Don't claim a Chrome Web Store listing, users, ratings, press, or Kemnaker affiliation, or fabricate an icon/logo — none exist.",
+      "Don't treat this system as a mirror of MagangHub's aesthetic; the preset establishes a distinct Field-Notebook identity. If the project re-commits to ADR-0004's 'feel native to MagangHub' goal, this DESIGN.md and the preset must be revisited together."
+    ]
+  }
+}

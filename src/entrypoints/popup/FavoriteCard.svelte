@@ -2,6 +2,7 @@
 import { onDestroy } from "svelte";
 import { formatChangeNotice } from "@/lib/change";
 import { Card, CardContent } from "@/lib/components/ui/card";
+import { Badge } from "@/lib/components/ui/badge";
 import { resolveDetailUrl } from "@/lib/refresh";
 import { STAGE_LABEL, STAGE_SELECT_OPTIONS } from "@/lib/stage";
 import { setCatatan, setStatusLamar } from "@/lib/storage";
@@ -25,11 +26,14 @@ let {
 // `favorite`, not just the first render.
 let catatanDraft = $state("");
 let savedFlash = $state(false);
+let catatanFocused = $state(false);
 let saveFlashTimer: ReturnType<typeof setTimeout> | undefined;
 
 $effect.pre(() => {
 	catatanDraft = favorite.catatan;
 });
+
+const catatanDirty = $derived(catatanDraft !== favorite.catatan);
 
 async function saveCatatan(): Promise<void> {
 	if (catatanDraft === favorite.catatan) return;
@@ -54,11 +58,18 @@ async function onStatusLamarChange(event: Event): Promise<void> {
 const statusLamarValue = $derived(favorite.statusLamar ?? "");
 const stage = $derived(favorite.statusLamar);
 const live = $derived(favorite.liveStatus);
+const snap = $derived(favorite.savedSnapshot);
 const lastCheckedLabel = $derived(terakhirDicek(live.lastChecked));
 // A failed refresh: status unknown AND we have a lastError recorded.
 const refreshFailed = $derived(live.status === "unknown" && !!live.lastError);
 // B1: one-line change notice when kuota/pelamar/status moved since last sample.
 const changeNotice = $derived(formatChangeNotice(live));
+const hasBeenChecked = $derived(!!live.lastChecked);
+/** Snapshot seat strings captured at star time (display strings, ADR-0002). */
+const snapKuota = $derived(snap.kuota?.trim() || undefined);
+const snapPelamar = $derived(snap.pelamar?.trim() || undefined);
+const hasSnapSeats = $derived(snapKuota !== undefined || snapPelamar !== undefined);
+const showSignalStrip = $derived(hasBeenChecked || hasSnapSeats);
 
 const STATUS_LABEL: Record<StatusLowongan, string> = {
 	open: "Buka",
@@ -67,21 +78,24 @@ const STATUS_LABEL: Record<StatusLowongan, string> = {
 	unknown: "Tidak diketahui",
 };
 
+/** Sera Badge is an uppercase text label with no fill; colour carries the
+ *  semantic. A tiny leading dot makes the colour legible at 10px without
+ *  reintroducing the pill shape the preset deliberately removes. */
 const STATUS_CLASS: Record<StatusLowongan, string> = {
-	open: "bg-emerald-100 text-emerald-700",
-	filling: "bg-amber-100 text-amber-700",
-	closed: "bg-rose-100 text-rose-700",
-	unknown: "bg-muted text-muted-foreground",
+	open: "text-emerald-600",
+	filling: "text-amber-600",
+	closed: "text-rose-600",
+	unknown: "text-muted-foreground",
 };
 
 /** Colour per stage (D2/D7). Words come from `STAGE_LABEL` in stage.ts so the
  *  on-card chip (A2) stays in lockstep. No stage → no chip. */
 
 const STAGE_CLASS: Record<StatusLamar, string> = {
-	dilamar: "bg-primary/10 text-primary",
-	interview: "bg-blue-100 text-blue-700",
-	diterima: "bg-emerald-100 text-emerald-700",
-	ditolak: "bg-rose-100 text-rose-700",
+	dilamar: "text-primary",
+	interview: "text-blue-600",
+	diterima: "text-emerald-600",
+	ditolak: "text-rose-600",
 };
 
 /**
@@ -107,55 +121,81 @@ onDestroy(() => {
 </script>
 
 <Card
-  class={cn('py-4 gap-2', stage && ACTIVE_STAGES.has(stage) && 'border-primary/40 bg-primary/5')}
+  class={cn(
+	  'gap-1.5 py-3',
+	  stage && ACTIVE_STAGES.has(stage) && 'border border-primary/40 bg-primary/5 ring-primary/40',
+  )}
   data-favorite-uuid={favorite.uuid}
 >
-  <CardContent class="space-y-2">
+  <CardContent class="space-y-1.5 px-4">
+    <!-- Title + chips: Status Lamar (pipeline) above Status Lowongan (listing) -->
     <div class="flex items-start justify-between gap-2">
       <div class="min-w-0">
-        <p class="font-medium leading-snug" data-favorite-title>{favorite.savedSnapshot.title || favorite.uuid}</p>
-        <p class="mt-0.5 text-sm text-muted-foreground">{favorite.savedSnapshot.organizer}</p>
-        {#if favorite.savedSnapshot.location}
-          <p class="mt-0.5 text-sm text-muted-foreground">{favorite.savedSnapshot.location}</p>
-        {/if}
+        <p class="text-sm font-medium leading-snug text-balance" data-favorite-title>
+          {favorite.savedSnapshot.title || favorite.uuid}
+        </p>
+        <p class="mt-0.5 truncate text-xs text-muted-foreground">
+          {favorite.savedSnapshot.organizer}{#if favorite.savedSnapshot.location}<span aria-hidden="true"> · </span>{favorite.savedSnapshot.location}{/if}
+        </p>
       </div>
-      <div class="flex shrink-0 flex-col items-end gap-1">
+      <div class="flex shrink-0 flex-col items-end gap-0.5">
         {#if stage}
-          <span class={cn('rounded-full px-2 py-0.5 text-xs font-medium', STAGE_CLASS[stage])}>
+          <!-- title (not aria-label "Status Lamar:…") so e2e getByLabel('Status Lamar')
+               still uniquely targets the select control. -->
+          <Badge class={STAGE_CLASS[stage]} title="Status Lamar: {STAGE_LABEL[stage]}">
+            <span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span>
             {STAGE_LABEL[stage]}
-          </span>
+          </Badge>
         {/if}
-        {#if live.lastChecked}
-          <span
-            class={cn(
-              'rounded-full px-2 py-0.5 text-xs font-medium',
-              refreshFailed ? 'bg-rose-100 text-rose-700' : STATUS_CLASS[live.status],
-            )}
+        {#if hasBeenChecked}
+          <Badge
+            class={cn(refreshFailed ? 'text-rose-600' : STATUS_CLASS[live.status])}
+            title="Status Lowongan: {refreshFailed ? 'Refresh gagal' : STATUS_LABEL[live.status]}"
           >
+            <span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span>
             {refreshFailed ? 'Refresh gagal' : STATUS_LABEL[live.status]}
-          </span>
+          </Badge>
+        {:else}
+          <Badge class="text-muted-foreground" title="Status Lowongan: Belum dicek">
+            <span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span>
+            Belum dicek
+          </Badge>
         {/if}
       </div>
     </div>
 
-    {#if live.lastChecked}
-      <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-        <span>{lastCheckedLabel}</span>
-        {#if live.batch}
-          <span>{live.batch}</span>
-        {/if}
-        {#if live.kuota !== undefined}
-          <span>Kuota {live.kuota}</span>
-        {/if}
-        {#if live.pelamar !== undefined}
-          <span>Pelamar {live.pelamar}</span>
+    <!-- Signal strip: live seats after check; snapshot seats while cold (hybrid) -->
+    {#if showSignalStrip}
+      <div
+        class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground"
+        data-signal-strip
+      >
+        {#if hasBeenChecked}
+          <span>{lastCheckedLabel}</span>
+          {#if live.batch}
+            <span>{live.batch}</span>
+          {/if}
+          {#if live.kuota !== undefined}
+            <span class="font-medium tabular-nums text-foreground">Kuota {live.kuota}</span>
+          {/if}
+          {#if live.pelamar !== undefined}
+            <span class="font-medium tabular-nums text-foreground">Pelamar {live.pelamar}</span>
+          {/if}
+        {:else}
+          <span class="text-muted-foreground">Saat disimpan</span>
+          {#if snapKuota}
+            <span class="tabular-nums">Kuota {snapKuota}</span>
+          {/if}
+          {#if snapPelamar}
+            <span class="tabular-nums">Pelamar {snapPelamar}</span>
+          {/if}
         {/if}
       </div>
     {/if}
 
     {#if changeNotice}
       <p
-        class="rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-800"
+        class="text-xs text-amber-700"
         data-change-notice
         role="status"
       >
@@ -163,34 +203,38 @@ onDestroy(() => {
       </p>
     {/if}
 
+    <!-- Status Lamar full-width — never squeezed between actions -->
+    <label class="flex min-w-0 items-baseline gap-2 text-xs">
+      <span class="shrink-0 text-muted-foreground">Status Lamar</span>
+      <select
+        class="min-w-0 flex-1 rounded-none border-b border-border bg-transparent px-0 py-0.5 text-xs text-foreground outline-none transition-[border-color] hover:border-b-foreground/40 focus-visible:border-b-ring"
+        value={statusLamarValue}
+        onchange={onStatusLamarChange}
+        aria-label="Status Lamar"
+      >
+        {#each STAGE_SELECT_OPTIONS as [value, label]}
+          <option {value}>{label}</option>
+        {/each}
+      </select>
+    </label>
+
+    <!-- Actions: refresh left, open MagangHub right -->
     <div class="flex items-center gap-2">
       <button
         type="button"
-        class="rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+        class="inline-flex h-7 shrink-0 items-center justify-center whitespace-nowrap rounded-none border border-border bg-transparent px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-muted outline-none disabled:pointer-events-none disabled:opacity-50 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
         onclick={onrefresh}
         disabled={refreshing}
         aria-label="Segarkan Status Lowongan"
       >
         {refreshing ? 'Memperbarui…' : 'Segarkan'}
       </button>
-      <label class="flex items-center gap-2 text-sm">
-        <span class="text-muted-foreground">Status Lamar</span>
-        <select
-          class="rounded-md border px-1.5 py-1 text-xs"
-          value={statusLamarValue}
-          onchange={onStatusLamarChange}
-        >
-          {#each STAGE_SELECT_OPTIONS as [value, label]}
-            <option {value}>{label}</option>
-          {/each}
-        </select>
-      </label>
       {#if favorite.detailUrl}
         <a
+          class="ml-auto shrink-0 text-xs font-medium text-primary underline-offset-2 hover:underline"
           href={resolveDetailUrl(favorite.detailUrl)}
           target="_blank"
           rel="noopener noreferrer"
-          class="ml-auto rounded-md px-2 py-1 text-xs font-medium text-primary underline-offset-2 hover:underline"
           aria-label="Buka di MagangHub"
         >
           Buka di MagangHub
@@ -199,15 +243,27 @@ onDestroy(() => {
     </div>
 
     <div>
+      <label class="sr-only" for="catatan-{favorite.uuid}">Catatan</label>
       <textarea
-        class="w-full resize-none rounded-md border px-2 py-1.5 text-sm"
-        rows="2"
-        placeholder="Tambahkan catatan..."
+        id="catatan-{favorite.uuid}"
+        class={cn(
+          'w-full resize-none rounded-none border-b border-border bg-transparent px-0 text-sm text-foreground outline-none transition-[border-color,min-height] placeholder:text-muted-foreground focus-visible:border-b-ring',
+          catatanFocused || catatanDraft ? 'min-h-16 py-1.5' : 'min-h-7 py-1',
+        )}
+        placeholder="Kenapa lowongan ini?"
+        rows={catatanFocused || catatanDraft ? 3 : 1}
         bind:value={catatanDraft}
-        onblur={saveCatatan}
+        onfocus={() => (catatanFocused = true)}
+        onblur={() => {
+          catatanFocused = false;
+          void saveCatatan();
+        }}
       ></textarea>
       {#if savedFlash}
-        <p class="mt-0.5 text-xs text-muted-foreground">Tersimpan</p>
+        <p class="mt-0.5 text-xs text-muted-foreground" role="status" data-catatan-status="saved">Tersimpan</p>
+      {:else if catatanDirty}
+        <!-- Wording avoids substring "Tersimpan" so e2e getByText('Tersimpan') stays unique. -->
+        <p class="mt-0.5 text-xs text-muted-foreground" role="status" data-catatan-status="dirty">Lepas fokusus untuk menyimpan</p>
       {/if}
     </div>
   </CardContent>

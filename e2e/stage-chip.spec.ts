@@ -13,8 +13,9 @@ import { openPopup } from "./pages/popup";
  *
  * The chip is a light-DOM child of the star host (`[data-stage-chip]`), so e2e
  * can assert text + aria without piercing the closed shadow. The host carries
- * `data-stage` as a band-style mirror of the same state. Colour is neutral —
- * A1 owns the colour channel (`data-urgency`) and must stay independent.
+ * `data-stage` as a band-style mirror of the same state. Colour is neutral, so
+ * Dilamar and Ditolak are told apart by text (D7) — the star's own amber is
+ * reserved for saved state and nothing else.
  */
 
 test("a starred card with a stage shows a chip; no stage shows none", async ({
@@ -44,8 +45,8 @@ test("a starred card with a stage shows a chip; no stage shows none", async ({
 	await expect(chip).toHaveText("Dilamar");
 	await expect(chip).toHaveAttribute("aria-label", "Status Lamar: Dilamar");
 
-	// A1 colour channel is independent — calm band from fixture card 1 (5/1).
-	await expect(host).toHaveAttribute("data-urgency", "calm");
+	// The chip never brings a colour band back onto the star (see urgency.spec).
+	await expect(host).not.toHaveAttribute("data-urgency", /.+/);
 
 	// Clear stage → chip goes away; star stays filled.
 	await card.getByLabel("Status Lamar").selectOption("");
@@ -130,6 +131,6 @@ test("Lowongan Serupa cards show the stage chip too", async ({
 
 	await expect(serupa).toHaveAttribute("data-stage", "diterima");
 	await expect(serupa.locator("[data-stage-chip]")).toHaveText("Diterima");
-	// Urgency colour still independent of the stage chip.
-	await expect(serupa).toHaveAttribute("data-urgency", "calm");
+	// Serupa cards stay band-free too.
+	await expect(serupa).not.toHaveAttribute("data-urgency", /.+/);
 });
