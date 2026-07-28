@@ -4,7 +4,7 @@
 
 # SakuMagang
 
-**Local Favorites, Catatan, and Status Lamar for [MagangHub](https://maganghub.kemnaker.go.id) — without ever touching SiapKerja credentials.**
+**Favorite lokal, Catatan, dan Status Lamar untuk [MagangHub](https://maganghub.kemnaker.go.id) — tanpa pernah menyentuh kredensial SiapKerja.**
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Svelte](https://img.shields.io/badge/Svelte_5-FF3E00?style=flat-square&logo=svelte&logoColor=white)](https://svelte.dev)
@@ -12,171 +12,171 @@
 [![Node.js](https://img.shields.io/badge/Node.js->=20-3c873a?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
-[Features](#features) · [Install](#install) · [Develop](#develop) · [Safety](#why-it-is-safe) · [Architecture](#architecture) · [Docs](#docs)
+[Fitur](#fitur) · [Instalasi](#instalasi) · [Pengembangan](#pengembangan) · [Keamanan](#mengapa-ini-aman) · [Arsitektur](#arsitektur) · [Dokumentasi](#dokumentasi)
 
 </div>
 
 > [!IMPORTANT]
-> **Unofficial, not published.** SakuMagang is an independent third-party project.
-> It is **not** affiliated with, endorsed by, or produced by **Kemnaker** or the
-> MagangHub program. There is **no Chrome Web Store listing** — sideload is the
-> only install path. The name deliberately does not lead with "MagangHub …"
-> (that would read as a Kemnaker product; see ADR-0009).
+> **Tidak resmi, tidak dipublikasikan di Web Store.** SakuMagang adalah proyek
+> pihak ketiga independen. **Tidak** berafiliasi, didukung, atau dibuat oleh
+> **Kemnaker** maupun program MagangHub. **Tidak ada listing Chrome Web Store** —
+> satu-satunya cara pasang adalah sideload. Nama sengaja tidak diawali
+> "MagangHub …" (bisa terbaca seperti produk Kemnaker; lihat ADR-0009).
 
-A browser extension that adds the shortlisting and monitoring features MagangHub
-lacks. Star Lowongan while browsing, keep a Catatan on why you saved each one,
-track Status Lamar by hand, and refresh live Kuota/Pelamar — all local-first,
-all credential-free.
+Ekstensi browser yang menambahkan fitur shortlist dan pantauan yang tidak
+ada di MagangHub. Bintang Lowongan sambil browsing, tulis Catatan kenapa
+Lowongan itu disimpan, lacak Status Lamar secara manual, dan refresh Kuota/Pelamar
+secara live — semuanya local-first, tanpa kredensial.
 
-It exists because third-party "helper" sites appeared that ask for real SiapKerja
-passwords. Those sites hand government credentials to unofficial servers. This
-extension is the safe alternative **by construction**, not by promise.
+Proyek ini ada karena muncul situs "bantuan" pihak ketiga yang meminta password
+SiapKerja asli. Situs itu menyerahkan kredensial pemerintah ke server tidak resmi.
+Ekstensi ini adalah alternatif aman **by construction**, bukan sekadar janji.
 
-## Features
+## Fitur
 
-- **Star Lowongan** from the list or detail page — saved locally as a Favorite
-- **Catatan** — free-text note per Favorite (why you saved it); also shown on the star tooltip
-- **Status Lamar** — manual stage tracker: Belum dilamar → Dilamar → Interview → Diterima / Ditolak  
-  Always user-set; the extension never auto-detects applied state. Editable on the detail page stage card and as a chip on list cards
-- **Status Lowongan** — refresh live Kuota/Pelamar from the public detail page, one Favorite or all (throttled, offscreen document). Popup surfaces changes with a badge
-- **Urgency colour** on list cards from remaining seats / Kuota pressure
-- **Popup Favorites list** — search, sort (including Status Lamar then remaining seats), collapsible per-Penyelenggara grouping
-- **Export / import** Favorites as JSON, with schema migration
-- **Injection health indicator** — when MagangHub's markup changes and injection fails, the popup says so instead of failing silently
+- **Bintang Lowongan** dari halaman daftar atau detail — disimpan lokal sebagai Favorite
+- **Catatan** — catatan teks bebas per Favorite (alasan menyimpan); juga tampil di tooltip bintang
+- **Status Lamar** — pelacak tahap manual: Belum dilamar → Dilamar → Interview → Diterima / Ditolak  
+  Selalu diisi pengguna; ekstensi tidak pernah mendeteksi otomatis status lamaran. Bisa diedit lewat kartu tahap di halaman detail dan chip di kartu daftar
+- **Status Lowongan** — refresh Kuota/Pelamar live dari halaman detail publik, satu Favorite atau semua (dibatasi throttle, lewat offscreen document). Perubahan ditandai badge di popup
+- **Warna urgensi** pada kartu daftar berdasarkan sisa kursi / tekanan Kuota
+- **Daftar Favorite di popup** — cari, urutkan (termasuk Status Lamar lalu sisa kursi), kelompokkan per Penyelenggara (bisa dilipat)
+- **Ekspor / impor** Favorite sebagai JSON, dengan migrasi skema
+- **Indikator kesehatan injeksi** — saat markup MagangHub berubah dan injeksi gagal, popup memberi tahu, bukan gagal diam-diam
 
-## Install
+## Instalasi
 
-There is no Web Store build. Sideload either a **prebuilt release** or a **local source build**.
+Tidak ada build Web Store. Sideload lewat **rilis siap pakai** atau **build dari sumber**.
 
-### Option A — Prebuilt release (recommended)
+### Opsi A — Rilis siap pakai (disarankan)
 
-1. Open the latest [GitHub Release](https://github.com/ramaaudra/maganghub-extension/releases/latest)
-2. Download `sakumagang-<version>-chrome.zip` (or the attached chrome zip asset)
-3. Unzip it somewhere permanent (Chrome loads from that folder; do not delete it after install)
-4. Open `chrome://extensions`
-5. Enable **Developer mode** (top-right)
-6. Click **Load unpacked** and select the **unzipped folder** (the one that contains `manifest.json`)
-7. Visit [`https://maganghub.kemnaker.go.id/magang-nasional/lowongan`](https://maganghub.kemnaker.go.id/magang-nasional/lowongan) and star a Lowongan, or open the popup to manage Favorites
+1. Buka [GitHub Release](https://github.com/ramaaudra/maganghub-extension/releases/latest) terbaru
+2. Unduh `sakumagang-<version>-chrome.zip` (atau aset zip Chrome yang terlampir)
+3. Ekstrak ke folder permanen (Chrome memuat dari folder itu; jangan dihapus setelah pasang)
+4. Buka `chrome://extensions`
+5. Aktifkan **Developer mode** (pojok kanan atas)
+6. Klik **Load unpacked** dan pilih **folder hasil ekstrak** (yang berisi `manifest.json`)
+7. Kunjungi [`https://maganghub.kemnaker.go.id/magang-nasional/lowongan`](https://maganghub.kemnaker.go.id/magang-nasional/lowongan) lalu bintang Lowongan, atau buka popup untuk mengelola Favorite
 
-To update: download the newer zip, replace the unzipped folder contents, then click **Reload** on the extension card.
+Untuk update: unduh zip yang lebih baru, ganti isi folder ekstrak, lalu klik **Reload** pada kartu ekstensi.
 
-### Option B — Build from source
+### Opsi B — Build dari sumber
 
-#### Prerequisites
+#### Prasyarat
 
 - [Node.js](https://nodejs.org) LTS (20+)
-- Chromium-based browser (Chrome primary)
+- Browser berbasis Chromium (Chrome sebagai target utama)
 
-#### Steps
+#### Langkah
 
 ```sh
 npm install
-npm run build          # unpacked output → .output/chrome-mv3
-# optional packaged zip:
+npm run build          # output unpacked → .output/chrome-mv3
+# zip opsional:
 npm run zip            # → .output/maganghub-extension-<version>-chrome.zip
 ```
 
-1. Open `chrome://extensions`
-2. Enable **Developer mode** (top-right)
-3. Click **Load unpacked** and select `.output/chrome-mv3`
-4. Visit MagangHub Lowongan and star one, or open the popup
+1. Buka `chrome://extensions`
+2. Aktifkan **Developer mode** (pojok kanan atas)
+3. Klik **Load unpacked** dan pilih `.output/chrome-mv3`
+4. Buka halaman Lowongan MagangHub lalu bintang satu Lowongan, atau buka popup
 
-To update: pull latest source, re-run `npm run build`, then **Reload** the extension card.
+Untuk update: tarik sumber terbaru, jalankan ulang `npm run build`, lalu **Reload** kartu ekstensi.
 
 > [!NOTE]
-> A Firefox build target exists (`npm run build:firefox` / `npm run zip:firefox`) but is **not** a confirmed shipping channel.
+> Target build Firefox tersedia (`npm run build:firefox` / `npm run zip:firefox`) tetapi **bukan** kanal rilis yang dikonfirmasi.
 
-## Develop
+## Pengembangan
 
 ```sh
 npm install
-npm run dev          # WXT dev — launches Chrome with the extension loaded, hot-reload
+npm run dev          # WXT dev — membuka Chrome dengan ekstensi termuat, hot-reload
 npm run typecheck    # tsc + svelte-check
 npm run test:unit    # vitest
-npm run test:e2e     # wxt build && playwright (HTML fixtures, not live MagangHub)
+npm run test:e2e     # wxt build && playwright (fixture HTML, bukan MagangHub live)
 npm run lint         # biome lint
 npm run format       # biome format
 ```
 
-| Surface | Stack |
+| Permukaan | Stack |
 |---|---|
 | Popup | Svelte 5 + Tailwind + shadcn-svelte |
-| Content script | Plain DOM inside closed Shadow DOM (no framework runtime on MagangHub) |
-| Background / refresh | MV3 service worker + offscreen document |
+| Content script | DOM biasa di dalam closed Shadow DOM (tanpa runtime framework di MagangHub) |
+| Background / refresh | Service worker MV3 + offscreen document |
 
-E2E runs against recorded MagangHub HTML fixtures under `e2e/`, not the live site.
+E2E dijalankan terhadap fixture HTML MagangHub yang direkam di `e2e/`, bukan situs live.
 
-## Why it is safe
+## Mengapa ini aman
 
-SakuMagang never reads, stores, or transmits the SiapKerja password or the
-MagangHub login session. There is no account, no server, and no telemetry.
+SakuMagang tidak pernah membaca, menyimpan, atau mengirim password SiapKerja
+maupun sesi login MagangHub. Tidak ada akun, tidak ada server, tidak ada telemetry.
 
-You can verify this from the permission prompt at install time:
+Ini bisa diverifikasi dari prompt permission saat instalasi:
 
-| Permission | Purpose |
+| Permission | Kegunaan |
 |---|---|
-| `storage` | Save Favorites in `chrome.storage.local` |
-| `offscreen` | Parse public detail HTML for Status Lowongan refresh |
-| `https://maganghub.kemnaker.go.id/*` | Read the public listing/detail pages you already view |
+| `storage` | Menyimpan Favorite di `chrome.storage.local` |
+| `offscreen` | Mem-parse HTML detail publik untuk refresh Status Lowongan |
+| `https://maganghub.kemnaker.go.id/*` | Membaca halaman daftar/detail publik yang memang kamu buka |
 
-**Notably absent:** no `cookies`, no `identity`, no `<all_urls>`, no backend, no analytics.
+**Yang sengaja tidak diminta:** `cookies`, `identity`, `<all_urls>`, backend, analytics.
 
-A credential-harvesting helper cannot truthfully copy this posture. Auto-detecting
-"already applied" would require reading the login session — the exact attack
-surface this product avoids — which is why **Status Lamar is deliberately manual**.
-Full rationale: [`docs/adr/0001`](docs/adr/).
+Helper pencuri kredensial tidak bisa jujur meniru postur ini. Mendeteksi otomatis
+"sudah dilamar" berarti harus membaca sesi login — permukaan serangan yang justru
+dihindari produk ini — itulah kenapa **Status Lamar sengaja manual**.
+Dasar keputusan lengkap: [`docs/adr/0001`](docs/adr/).
 
-## Architecture
+## Arsitektur
 
-Three surfaces:
+Tiga permukaan:
 
-| Surface | Role |
+| Permukaan | Peran |
 |---|---|
-| **List page** (`/magang-nasional/lowongan`) | Star toggle on every Lowongan card; re-injects on SPA DOM mutations |
-| **Detail page** (`/magang-nasional/lowongan/<slug>-<uuid>`) | Favorite toggle beside MagangHub's "Bagikan" share control |
-| **Popup** (360px fixed) | Owned Favorites UI: list, Catatan, Status Lamar, refresh, search/sort, export/import |
+| **Halaman daftar** (`/magang-nasional/lowongan`) | Toggle bintang di setiap kartu Lowongan; injeksi ulang saat DOM SPA berubah |
+| **Halaman detail** (`/magang-nasional/lowongan/<slug>-<uuid>`) | Toggle Favorite di samping kontrol "Bagikan" MagangHub |
+| **Popup** (lebar tetap 360px) | UI Favorite milik sendiri: daftar, Catatan, Status Lamar, refresh, cari/urut, ekspor/impor |
 
 ```
 src/
 ├── entrypoints/
-│   ├── background.ts           # service worker, messaging, offscreen lifecycle
-│   ├── maganghub.content.ts    # list + detail injection (closed Shadow DOM)
-│   └── popup/                  # Svelte popup app
-├── lib/                        # favorites storage, refresh, parse, schema migration
-├── offscreen/                  # credential-free fetch + DOMParser for refresh
-└── public/icon/                # toolbar monogram (Field Blue "S")
+│   ├── background.ts           # service worker, messaging, lifecycle offscreen
+│   ├── maganghub.content.ts    # injeksi list + detail (closed Shadow DOM)
+│   └── popup/                  # aplikasi popup Svelte
+├── lib/                        # storage favorite, refresh, parse, migrasi skema
+├── offscreen/                  # fetch tanpa kredensial + DOMParser untuk refresh
+└── public/icon/                # monogram toolbar (Field Blue "S")
 ```
 
-Key decisions live in `docs/adr/`:
+Keputusan utama ada di `docs/adr/`:
 
-- **0001** — never touch SiapKerja credentials
-- **0002** — immutable Favorite snapshot + mutable liveStatus
-- **0004** — closed Shadow DOM for injected UI
-- **0005** — offscreen document for public HTML refresh
-- **0009** — product name is SakuMagang
+- **0001** — tidak pernah menyentuh kredensial SiapKerja
+- **0002** — snapshot Favorite imutabel + liveStatus yang bisa berubah
+- **0004** — closed Shadow DOM untuk UI yang diinjeksi
+- **0005** — offscreen document untuk refresh HTML publik
+- **0009** — nama produk adalah SakuMagang
 
-## Docs
+## Dokumentasi
 
-| Doc | What it is |
+| Dokumen | Isi |
 |---|---|
-| [`CONTEXT.md`](CONTEXT.md) | Domain glossary (Lowongan, Favorite, Status Lamar, …) |
-| [`PRODUCT.md`](PRODUCT.md) | Product posture, principles, constraints |
-| [`DESIGN.md`](DESIGN.md) | Visual system for the popup |
+| [`CONTEXT.md`](CONTEXT.md) | Glosarium domain (Lowongan, Favorite, Status Lamar, …) |
+| [`PRODUCT.md`](PRODUCT.md) | Postur produk, prinsip, batasan |
+| [`DESIGN.md`](DESIGN.md) | Sistem visual popup |
 | [`docs/adr/`](docs/adr/) | Architecture Decision Records |
-| [`AGENTS.md`](AGENTS.md) | Agent/contributor working agreements |
+| [`AGENTS.md`](AGENTS.md) | Kesepakatan kerja agent/kontributor |
 
-Source: [github.com/ramaaudra/maganghub-extension](https://github.com/ramaaudra/maganghub-extension)
+Sumber: [github.com/ramaaudra/maganghub-extension](https://github.com/ramaaudra/maganghub-extension)
 
 ## FAQ
 
-**Does this log me into MagangHub?**  
-No. It never touches your SiapKerja session. Star and refresh work whether or not you are logged in.
+**Apakah ini men-login-kan saya ke MagangHub?**  
+Tidak. Sesi SiapKerja tidak pernah disentuh. Bintang dan refresh tetap jalan meski kamu belum login.
 
-**Will my Favorites sync across devices?**  
-Not today. Everything is local-first in `chrome.storage.local`. Export/import is the backup path. Cross-device sync would need a backend; the never-touch-credentials line stays permanent either way.
+**Apakah Favorite tersinkron antar perangkat?**  
+Belum. Semua local-first di `chrome.storage.local`. Jalur cadangan: ekspor/impor. Sinkron antar perangkat butuh backend; garis "tidak menyentuh kredensial" tetap permanen.
 
-**What happens when MagangHub changes its markup?**  
-Injection degrades silently on the page. The popup surfaces a health warning ("extension mungkin butuh update") instead of failing quietly forever.
+**Apa yang terjadi jika MagangHub mengubah markup-nya?**  
+Injeksi di halaman menurun diam-diam. Popup menampilkan peringatan kesehatan ("extension mungkin butuh update") alih-alih gagal tanpa kabar selamanya.
 
-**Can Status Lamar auto-update when I apply?**  
-No — by design. Detecting application state would require reading the login session. Set the stage yourself; the control is meant to be fast and obvious.
+**Bisakah Status Lamar update otomatis saat saya melamar?**  
+Tidak — by design. Mendeteksi status lamaran membutuhkan pembacaan sesi login. Atur tahap sendiri; kontrolnya dibuat cepat dan jelas.
