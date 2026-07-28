@@ -1,82 +1,82 @@
 import {
 	expect,
-	LIST_URL,
 	FIRST_DETAIL_URL as DETAIL_URL,
+	LIST_URL,
 	serveFixture,
 	test,
 } from "./fixtures";
 
 /**
- * Urgency colour signal on list (and Serupa) cards — issue #16 / A1.
+ * The list-card star carries ONE ring, and it means saved / not saved.
  *
- * The band is computed from the card's own Kuota/Pelamar pills and painted
- * inside the star's closed shadow. The host carries `data-urgency` so e2e can
- * assert the band without piercing Shadow DOM. Fixture numbers (see the header
- * comment in lowongan-list.html):
- *   card 1 — 5/1  → calm
- *   card 2 — 5/4  → hampir_penuh
- *   card 3 — 2/40 → lewat_kuota
+ * This file used to assert the opposite: an urgency colour band (issue #16 /
+ * A1) painted as a second ring at `inset: -3px` around the star. It shipped as
+ * a visible double border on every card, and it duplicated — sometimes
+ * contradicted — MagangHub's own "Peluang …(NN%)" pill, which states the same
+ * competition signal with a real percentage. The band was removed; these tests
+ * now guard that it stays removed, because "add a ring to the star" is exactly
+ * the change that would quietly reintroduce the defect.
+ *
+ * `src/lib/urgency.ts` still exists and `test/urgency.test.ts` still covers its
+ * band math — it is simply no longer wired to the star.
  */
 
-test("list cards paint calm / hampir_penuh / lewat_kuota from their Kuota/Pelamar pills", async ({
-	page,
-}) => {
+test("list cards carry no urgency band on the star", async ({ page }) => {
 	await serveFixture(page);
 	await page.goto(LIST_URL);
 
 	const hosts = page.locator(".mh-lowongan-card .mh-favorite-host");
 	await expect(hosts).toHaveCount(3);
 
-	await expect(hosts.nth(0)).toHaveAttribute("data-urgency", "calm");
-	await expect(hosts.nth(0)).toHaveAttribute("title", "Masih ada kursi");
-	await expect(hosts.nth(0)).toHaveAttribute("aria-label", "Masih ada kursi");
-
-	await expect(hosts.nth(1)).toHaveAttribute("data-urgency", "hampir_penuh");
-	await expect(hosts.nth(1)).toHaveAttribute("title", "Hampir penuh");
-
-	await expect(hosts.nth(2)).toHaveAttribute("data-urgency", "lewat_kuota");
-	await expect(hosts.nth(2)).toHaveAttribute("title", "Lewat kuota");
+	// Fixture cards are 5/1 (calm), 5/4 (hampir_penuh) and 2/40 (lewat_kuota) —
+	// one card per band under the old rules, so if any band still painted, one
+	// of these three would carry it.
+	for (const nth of [0, 1, 2]) {
+		await expect(hosts.nth(nth)).not.toHaveAttribute("data-urgency", /.+/);
+		// The band's AT text equivalent rode the host's title/aria-label.
+		await expect(hosts.nth(nth)).not.toHaveAttribute("title", /.+/);
+		await expect(hosts.nth(nth)).not.toHaveAttribute("aria-label", /.+/);
+	}
 });
 
-test("Lowongan Serupa cards get the same urgency signal", async ({ page }) => {
-	await serveFixture(page);
-	await page.goto(DETAIL_URL);
-
-	// Two Serupa cards: calm (5/1) and lewat_kuota (2/40).
-	const serupaHosts = page.locator(".mh-lowongan-card .mh-favorite-host");
-	await expect(serupaHosts).toHaveCount(2);
-	await expect(serupaHosts.nth(0)).toHaveAttribute("data-urgency", "calm");
-	await expect(serupaHosts.nth(1)).toHaveAttribute(
-		"data-urgency",
-		"lewat_kuota",
-	);
-});
-
-test("a card without parseable Kuota/Pelamar shows no urgency signal", async ({
+/**
+ * The ring count itself is NOT asserted here, and cannot be: the star's shadow
+ * root is closed (ADR-0004), so `elementFromPoint` retargets to the host and no
+ * page-side script can enumerate the button or its computed border. That
+ * opacity is the security property the ADR is buying, not a gap to work around
+ * — reaching for an open root to make this testable would trade the isolation
+ * for a test. The band's observable trace (`data-urgency`, and the host `title`
+ * / `aria-label` it wrote) is asserted above instead, and the single-ring
+ * invariant lives in `STAR_CSS`, where it is one declaration to read.
+ */
+test("the star's saved state stays on the star, not the host", async ({
 	page,
 }) => {
-	// The SPA fixture injects a bare card with no badges after a filter click;
-	// reuse that shape inline so this case doesn't depend on SPA behaviour.
 	await serveFixture(page);
 	await page.goto(LIST_URL);
 
-	// Strip the badges from the first card and force a re-scan by removing the
-	// injection marker + host, then appending a clone without badges. The
-	// MutationObserver re-injects; without numbers the host has no data-urgency.
-	await page.evaluate(() => {
-		const card = document.querySelector<HTMLElement>(".mh-lowongan-card");
-		if (!card) return;
-		for (const pill of card.querySelectorAll("div.rounded-full")) {
-			const text = (pill.textContent ?? "").toLowerCase();
-			if (text.includes("kuota") || text.includes("pelamar")) pill.remove();
-		}
-		// Drop the existing star so the next scan re-injects against the bare card.
-		card.removeAttribute("data-mh-star");
-		card.querySelector(".mh-favorite-host")?.remove();
-	});
-
-	// Wait for re-injection.
 	const host = page.locator(".mh-lowongan-card .mh-favorite-host").first();
 	await expect(host).toBeVisible();
-	await expect(host).not.toHaveAttribute("data-urgency", /.+/);
+	await expect(host).toHaveAttribute("data-filled", "false");
+
+	await host.click();
+	await expect(host).toHaveAttribute("data-filled", "true");
+	// Saving writes the star's own tooltip and nothing onto the host — the band
+	// used to own a competing host `title`.
+	await expect(host).toHaveAttribute("data-star-title", "Hapus dari favorit");
+	await expect(host).not.toHaveAttribute("title", /.+/);
+
+	await host.click();
+	await expect(host).toHaveAttribute("data-filled", "false");
+	await expect(host).not.toHaveAttribute("data-star-title");
+});
+
+test("Lowongan Serupa cards carry no urgency band either", async ({ page }) => {
+	await serveFixture(page);
+	await page.goto(DETAIL_URL);
+
+	const serupaHosts = page.locator(".mh-lowongan-card .mh-favorite-host");
+	await expect(serupaHosts).toHaveCount(2);
+	await expect(serupaHosts.nth(0)).not.toHaveAttribute("data-urgency", /.+/);
+	await expect(serupaHosts.nth(1)).not.toHaveAttribute("data-urgency", /.+/);
 });

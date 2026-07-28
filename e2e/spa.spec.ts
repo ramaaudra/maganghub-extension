@@ -228,3 +228,113 @@ test("a star that replaces a swapped-out card still tracks storage", async ({
 	await page.reload();
 	await expect(page.locator(STAR_HOST).first()).toHaveCount(1);
 });
+
+test("stars re-inject when MagangHub strips the host but leaves the card marker", async ({
+	page,
+}) => {
+	// MagangHub is React/Next. Our star host is foreign DOM. A re-render can
+	// remove the host child while the card element itself (and our
+	// `data-mh-star` marker on it) survives. If inject only checks the marker,
+	// the card is permanently starless until a full navigation rebuilds it.
+	await serveFixture(page);
+	await page.goto(LIST_URL);
+	await expect(page.locator(STAR_HOST)).toHaveCount(3);
+
+	// Strip hosts the way a hostile re-render does: host gone, marker stays.
+	await page.evaluate(() => {
+		for (const card of document.querySelectorAll(".mh-lowongan-card")) {
+			card.querySelectorAll(".mh-favorite-host").forEach((h) => h.remove());
+		}
+		// Nudge the MutationObserver (host removal already does; extra filler
+		// covers a race where the observer batch is coalesced).
+		const grid = document.querySelector(".grid");
+		if (grid) {
+			const filler = document.createElement("div");
+			filler.dataset.probe = "1";
+			grid.append(filler);
+		}
+	});
+
+	// After the debounced rescan, every card must carry a star again.
+	await expect(page.locator(STAR_HOST)).toHaveCount(3);
+	const perCard = await page.evaluate(() =>
+		[...document.querySelectorAll(".mh-lowongan-card")].map((card) => ({
+			marked: card.hasAttribute("data-mh-star"),
+			hosts: card.querySelectorAll(".mh-favorite-host").length,
+		})),
+	);
+	expect(perCard).toEqual([
+		{ marked: true, hosts: 1 },
+		{ marked: true, hosts: 1 },
+		{ marked: true, hosts: 1 },
+	]);
+
+	// Re-injected star must still toggle — not a dead shell.
+	const first = page.locator(STAR_HOST).first();
+	await first.click();
+	await expect(first).toHaveAttribute("data-filled", "true");
+});
+
+test("stars inject after SPA navigation from a non-Lowongan page into the list", async ({
+	page,
+}) => {
+	// MagangHub is Next.js. Clicking "Lowongan" from Beranda is a client-side
+	// route change — no document load, so a content script whose `matches` only
+	// covers `/magang-nasional/lowongan*` never runs. The user sees Peluang pills
+	// (server-rendered by MagangHub) but no stars, until a hard refresh reloads
+	// the document under the Lowongan URL and Chrome finally injects us.
+	//
+	// We match the whole origin and gate injection by path. This test lands on a
+	// non-Lowongan URL first (script attaches, injects nothing), then swaps into
+	// the list the way the SPA does, and asserts stars appear without a reload.
+	await serveFixture(page);
+	await page.goto("https://maganghub.kemnaker.go.id/");
+	await expect(page.locator(STAR_HOST)).toHaveCount(0);
+
+	await swapRoute(
+		page,
+		`<div class="grid grid-cols-1 md:grid-cols-2 gap-5">${
+			cardHtml("a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d", "Magang Data Analyst") +
+			cardHtml(
+				"b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+				"Magang Software Engineer",
+			)
+		}</div>`,
+		LIST_URL,
+	);
+
+	await expect(page.locator(STAR_HOST)).toHaveCount(2);
+	await page.locator(STAR_HOST).first().click();
+	await expect(page.locator(STAR_HOST).first()).toHaveAttribute(
+		"data-filled",
+		"true",
+	);
+});
+
+test("detail toggle re-injects when the share cluster keeps the marker but loses the host", async ({
+	page,
+}) => {
+	await serveFixture(page);
+	await page.goto(DETAIL_URL);
+	await expect(page.locator(".mh-favorite-detail-host")).toHaveCount(1);
+
+	await page.evaluate(() => {
+		for (const host of document.querySelectorAll(".mh-favorite-detail-host")) {
+			host.remove();
+		}
+		// Marker `data-mh-favorite` stays on the share cluster parent.
+		const cluster = document.querySelector(
+			'div:has(> button[aria-label="Bagikan"])',
+		);
+		if (cluster && !cluster.hasAttribute("data-mh-favorite")) {
+			throw new Error("expected DETAIL_INJECTED_ATTR to remain after host strip");
+		}
+	});
+
+	await expect(page.locator(".mh-favorite-detail-host")).toHaveCount(1);
+	await page.locator(".mh-favorite-detail-host").click();
+	await expect(page.locator(".mh-favorite-detail-host")).toHaveAttribute(
+		"data-filled",
+		"true",
+	);
+});

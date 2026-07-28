@@ -45,26 +45,28 @@ import {
 } from "@/lib/stage";
 import { composeStarTitle } from "@/lib/star-title";
 import type { Favorite, StatusLamar } from "@/lib/types";
-import {
-	type UrgencyBand,
-	urgencyBandFromCard,
-	urgencyLabel,
-} from "@/lib/urgency";
 
 /**
  * Content script for MagangHub Lowongan pages.
  *
- * A single `matches` covers both the list page (`/magang-nasional/lowongan`) and
- * detail pages (`/magang-nasional/lowongan/<slug>-<uuid>`); `main()` branches on
- * whether the path carries a UUID. Both surfaces inject a favorite toggle as
- * plain DOM inside a CLOSED Shadow DOM (ADR-0004: no framework runtime shipped
- * to the page; styles isolated from MagangHub's Tailwind). Clicking either
- * toggle persists the same Favorite record to chrome.storage.local keyed by the
- * Lowongan UUID, and a storage.onChanged listener keeps every injected toggle
- * in sync with the canonical storage state (issue #3: detail ↔ list state sync).
+ * `matches` is the whole MagangHub origin, not just `/magang-nasional/lowongan*`.
+ * MagangHub is a Next.js SPA: clicking "Lowongan" from Beranda / Penyelenggara /
+ * FAQ is a client-side route change, not a document load. Chrome only injects a
+ * content script on a real navigation that matches — so a script scoped to the
+ * Lowongan path never runs when the user arrives via in-app nav, and stars stay
+ * missing until a hard reload. Matching the origin lets `main()` attach once;
+ * `isLowonganSurface` then gates injection so we do nothing on Beranda etc.
+ *
+ * On a Lowongan surface, `main()` branches on whether the path carries a UUID
+ * (list vs detail). Both surfaces inject a favorite toggle as plain DOM inside
+ * a CLOSED Shadow DOM (ADR-0004: no framework runtime shipped to the page;
+ * styles isolated from MagangHub's Tailwind). Clicking either toggle persists
+ * the same Favorite record to chrome.storage.local keyed by the Lowongan UUID,
+ * and a storage.onChanged listener keeps every injected toggle in sync with the
+ * canonical storage state (issue #3: detail ↔ list state sync).
  */
 export default defineContentScript({
-	matches: ["https://maganghub.kemnaker.go.id/magang-nasional/lowongan*"],
+	matches: ["https://maganghub.kemnaker.go.id/*"],
 	main() {
 		// Guarded like every later scan: a MagangHub redesign must never surface
 		// as a console error in the user's page (issue #8).
@@ -73,6 +75,19 @@ export default defineContentScript({
 		setupStorageSync();
 	},
 });
+
+/**
+ * True on the list (`/magang-nasional/lowongan`) and any detail page under it.
+ * Everything else on the origin (Beranda, Penyelenggara, FAQ, login redirects)
+ * is out of scope — the content script is loaded there only so SPA navigation
+ * *into* Lowongan can still inject.
+ */
+function isLowonganSurface(pathname: string): boolean {
+	return (
+		pathname === "/magang-nasional/lowongan" ||
+		pathname.startsWith("/magang-nasional/lowongan/")
+	);
+}
 
 /** `scan()` that can never throw into the page. */
 function safeScan(): void {
@@ -92,6 +107,10 @@ function safeScan(): void {
  */
 function scan(): void {
 	pruneDetachedUpdaters();
+	// Origin-wide match + path gate (see defineContentScript matches). On Beranda
+	// etc. we stay silent: no inject, no health write. Health is a statement about
+	// the Lowongan surface the user is looking at, not about MagangHub in general.
+	if (!isLowonganSurface(location.pathname)) return;
 	const pathUuid = extractUuidFromHref(location.pathname);
 	const health = pathUuid ? scanDetail(pathUuid) : scanList();
 
@@ -287,7 +306,12 @@ function injectStars(): void {
 }
 
 function injectStarIntoCard(card: HTMLElement): void {
-	if (card.hasAttribute(STAR_INJECTED_ATTR)) return;
+	// Marker alone is not enough: MagangHub (React) can strip our foreign host
+	// child while leaving the card element — and our `data-mh-star` on it —
+	// intact. Treating the marker as proof of a live star then permanently
+	// skips re-injection. Only a connected host child means "already done".
+	if (card.querySelector(`.${STAR_HOST_CLASS}`)) return;
+	card.removeAttribute(STAR_INJECTED_ATTR);
 
 	const anchor =
 		card.closest<HTMLAnchorElement>("a[href]") ??
@@ -302,8 +326,11 @@ function injectStarIntoCard(card: HTMLElement): void {
 	host.className = STAR_HOST_CLASS;
 	host.setAttribute("data-filled", "false");
 	host.style.setProperty("position", "absolute");
-	host.style.setProperty("top", "8px");
-	host.style.setProperty("right", "8px");
+	// 12px insets, not 8px: MagangHub's card uses a 12px (`rounded-xl`) corner
+	// radius, and a control tucked inside that arc needs to clear it or it reads
+	// as crowding the corner rather than sitting in it.
+	host.style.setProperty("top", "12px");
+	host.style.setProperty("right", "12px");
 	host.style.setProperty("z-index", "5");
 	// The star is absolutely positioned, so the card has to be a containing
 	// block. Check the COMPUTED position, not the inline one: reading
@@ -314,8 +341,7 @@ function injectStarIntoCard(card: HTMLElement): void {
 		card.style.setProperty("position", "relative");
 	}
 	const shadow = host.attachShadow({ mode: "closed" });
-	const { button, urgency, chip } = buildStarChrome(shadow);
-	applyUrgency(host, urgency, urgencyBandFromCard(card));
+	const { button, chip } = buildStarChrome(shadow);
 	card.append(host);
 
 	const state: StarState = { interacted: false };
@@ -331,20 +357,21 @@ function injectStarIntoCard(card: HTMLElement): void {
 }
 
 /**
- * Star button + urgency ring + stage chip inside one closed shadow
- * (issues #16 / #19).
+ * Star button + stage chip inside one closed shadow (issue #19).
  *
- * The ring is colour-only (pre-attentive). Title/aria-label for the band live
- * on the light-DOM host (see `applyUrgency`); `data-urgency` on the host lets
- * e2e assert the band without piercing the closed shadow.
+ * The star carries exactly one ring, and that ring means one thing: saved or
+ * not saved. It used to carry two — its own 1px border plus a second, 2px
+ * urgency band at `inset: -3px` — which rendered as a visible double border on
+ * every card and spent amber on two unrelated meanings at once. MagangHub now
+ * ships its own "Peluang" pill with a real percentage on the card, so the band
+ * was also duplicating a signal the page states better (see `STAR_CSS`).
  *
  * The stage chip is a real light-DOM element (slotted) so AT and e2e can
  * reach it without piercing Shadow DOM — same pattern as the detail stage
- * card's select. Colour channel is left to A1; the chip is text-only (D7).
+ * card's select. The chip is text-only (D7).
  */
 function buildStarChrome(shadow: ShadowRoot): {
 	button: HTMLButtonElement;
-	urgency: HTMLElement;
 	chip: HTMLElement;
 } {
 	const style = document.createElement("style");
@@ -354,47 +381,18 @@ function buildStarChrome(shadow: ShadowRoot): {
 	button.className = "mh-star";
 	button.setAttribute("aria-label", "Tandai sebagai favorit");
 	button.setAttribute("aria-pressed", "false");
-	button.textContent = "★";
-	const urgency = document.createElement("span");
-	urgency.className = "mh-urgency";
-	urgency.hidden = true;
+	// Same lucide `star` the detail toggle uses. A `★` text glyph sat on a text
+	// baseline, which is why it never optically centred in a round button; the
+	// SVG centres on its own box and matches the icon weight of the card.
+	button.innerHTML = STAR_ICON_SVG;
 	// Chip lives in light DOM via <slot>, so Playwright/AT see it on the host.
 	const chip = document.createElement("span");
 	chip.className = "mh-stage-chip";
 	chip.hidden = true;
 	chip.setAttribute("data-stage-chip", "true");
 	const slot = document.createElement("slot");
-	shadow.append(style, urgency, button, slot);
-	return { button, urgency, chip };
-}
-
-/**
- * Paint the urgency ring for a band, or hide it when numbers don't parse.
- *
- * The ring is purely visual (`pointer-events: none` so it never steals the
- * star click). The textual equivalent (WCAG 1.4.1) therefore lives on the
- * light-DOM host — same pattern as the stage card's attribution — where hover
- * and AT can both reach it. The star button keeps its own aria-label.
- */
-function applyUrgency(
-	host: HTMLElement,
-	urgency: HTMLElement,
-	band: UrgencyBand | undefined,
-): void {
-	if (!band) {
-		host.removeAttribute("data-urgency");
-		host.removeAttribute("title");
-		host.removeAttribute("aria-label");
-		urgency.hidden = true;
-		urgency.removeAttribute("data-band");
-		return;
-	}
-	const label = urgencyLabel(band);
-	host.setAttribute("data-urgency", band);
-	host.setAttribute("title", label);
-	host.setAttribute("aria-label", label);
-	urgency.hidden = false;
-	urgency.setAttribute("data-band", band);
+	shadow.append(style, button, slot);
+	return { button, chip };
 }
 
 /**
@@ -445,7 +443,11 @@ function applyStageChip(
 function injectDetailToggle(uuid: string): void {
 	const cluster = findShareCluster(document.body);
 	if (!cluster) return;
-	if (cluster.hasAttribute(DETAIL_INJECTED_ATTR)) return;
+	// Same orphan-marker trap as the list star: React may drop the host child
+	// while the share cluster (and `data-mh-favorite`) stays. Re-inject when the
+	// host is gone, even if the marker remains.
+	if (cluster.querySelector(`.${DETAIL_HOST_CLASS}`)) return;
+	cluster.removeAttribute(DETAIL_INJECTED_ATTR);
 	cluster.setAttribute(DETAIL_INJECTED_ATTR, uuid);
 
 	const host = document.createElement("div");
@@ -488,10 +490,17 @@ function buildDetailButton(shadow: ShadowRoot): HTMLButtonElement {
 }
 
 /**
- * Lucide `star`, inline. The neighbouring "Bagikan" button renders a lucide SVG
- * at stroke-width 2, so a `★` text glyph beside it would sit at a visibly
- * different weight and baseline. `fill` is driven by CSS: `none` when unsaved,
- * `currentColor` when saved.
+ * Lucide `star`, inline. Shared by both toggles.
+ *
+ * On the detail page the neighbouring "Bagikan" button renders a lucide SVG at
+ * stroke-width 2, so a `★` text glyph beside it would sit at a visibly
+ * different weight and baseline. The same held on the list card, which drew its
+ * own `★` glyph: MagangHub's card icons are lucide at stroke-width 2, and a
+ * font-rendered glyph among them read as a different alphabet — and never
+ * optically centred, because it sat on a text baseline rather than its own box.
+ * One icon for both surfaces is also one thing to keep consistent, not two.
+ *
+ * `fill` is driven by CSS: `none` when unsaved, `currentColor` when saved.
  */
 const STAR_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
 
@@ -554,7 +563,8 @@ function attachDetailToggle(
 function injectStageCard(uuid: string): void {
 	const sidebar = findStageSidebar(document.body);
 	if (!sidebar) return;
-	if (sidebar.hasAttribute(STAGE_INJECTED_ATTR)) return;
+	if (sidebar.querySelector(`.${STAGE_HOST_CLASS}`)) return;
+	sidebar.removeAttribute(STAGE_INJECTED_ATTR);
 	sidebar.setAttribute(STAGE_INJECTED_ATTR, uuid);
 
 	const host = document.createElement("div");
@@ -772,6 +782,20 @@ function attachStarToggle(
 	});
 }
 
+/**
+ * List-card star.
+ *
+ * ONE ring, ONE meaning. The button's own 1px border is the only ring on this
+ * control, and it says exactly one thing: saved or not saved. Anything that
+ * needs a second concentric ring here is a second meaning competing for the
+ * same 32px, which is what the removed urgency band was.
+ *
+ * Geometry is borrowed from the detail toggle (`DETAIL_CSS`) so the two read as
+ * one control at two sizes: same `#e1e7ef` border, same lucide star at the same
+ * stroke weight, same amber. Only the size and radius differ — 32px and fully
+ * round on the card, because it floats over MagangHub's content instead of
+ * sitting in a button row.
+ */
 const STAR_CSS = `
   :host {
     all: initial;
@@ -782,46 +806,57 @@ const STAR_CSS = `
   }
   .mh-star {
     all: initial;
-    position: relative;
+    box-sizing: border-box;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 32px;
     height: 32px;
     border-radius: 9999px;
-    border: 1px solid rgba(0,0,0,0.12);
-    background: rgba(255,255,255,0.9);
-    color: #cbd5e1;
-    font-size: 18px;
-    line-height: 1;
+    border: 1px solid rgb(225,231,239);
+    background: rgb(255,255,255);
+    color: rgb(148,163,184);
     cursor: pointer;
-    backdrop-filter: blur(4px);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-    transition: transform 80ms ease, color 80ms ease, background 80ms ease;
+    /* Offset + blur, so the star lifts off the card instead of wearing a halo.
+       The card underneath is white; without this the button dissolves into it. */
+    box-shadow: 0 1px 2px rgba(15,23,41,0.06), 0 1px 1px rgba(15,23,41,0.04);
+    transition: color 120ms ease, border-color 120ms ease, box-shadow 120ms ease,
+                transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
   }
-  .mh-star:hover { transform: scale(1.08); color: #f59e0b; }
-  .mh-star.is-filled { color: #f59e0b; background: rgba(255,255,255,1); }
-  .mh-star.is-filled:hover { color: #d97706; }
-  /* Urgency ring (issue #16): colour only — the Kuota/Pelamar pills already
-     carry the numbers. Three bands share one element; band drives colour via
-     data-band so MagangHub's Tailwind cannot restyle it (closed shadow). */
-  .mh-urgency {
-    position: absolute;
-    inset: -3px;
-    border-radius: 9999px;
-    border: 2px solid transparent;
-    pointer-events: none;
-    box-sizing: border-box;
+  .mh-star svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    /* The star glyph's optical centre sits above its bounding-box centre — the
+       two lower points are longer than the top one. Nudge it back down. */
+    transform: translateY(0.5px);
   }
-  .mh-urgency[data-band="calm"] { border-color: #22c55e; }
-  .mh-urgency[data-band="hampir_penuh"] { border-color: #f59e0b; }
-  .mh-urgency[data-band="lewat_kuota"] { border-color: #ef4444; }
-  /* Stage chip (issue #19 / A2): text only — colour channel belongs to A1.
-     Neutral slate so Dilamar and Ditolak never look the same via colour.
-     Positioned under the star so it doesn't cover MagangHub's title. */
+  .mh-star:hover {
+    color: #f59e0b;
+    border-color: rgba(245,158,11,0.5);
+    transform: scale(1.06);
+  }
+  .mh-star:active { transform: scale(0.96); }
+  .mh-star:focus-visible {
+    outline: 2px solid #f59e0b;
+    outline-offset: 2px;
+  }
+  .mh-star.is-filled {
+    color: #f59e0b;
+    border-color: rgba(245,158,11,0.6);
+  }
+  .mh-star.is-filled svg { fill: currentColor; }
+  .mh-star.is-filled:hover { color: #d97706; border-color: rgba(217,119,6,0.7); }
+  @media (prefers-reduced-motion: reduce) {
+    .mh-star { transition: color 120ms ease, border-color 120ms ease; }
+    .mh-star:hover, .mh-star:active { transform: none; }
+  }
+  /* Stage chip (issue #19 / A2): text only. Neutral slate so Dilamar and
+     Ditolak never look the same via colour. Positioned under the star so it
+     doesn't cover MagangHub's title. */
   ::slotted(.mh-stage-chip) {
     position: absolute;
-    top: 34px;
+    top: 38px;
     right: 0;
     display: inline-block;
     max-width: 88px;
