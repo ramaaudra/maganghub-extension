@@ -204,7 +204,10 @@ const controlClass =
 
 <header class="space-y-2 border-b px-4 py-3">
   <div class="flex items-center justify-between gap-2">
-    <h1 class="font-heading text-base font-semibold tracking-normal">Favorit Lowongan</h1>
+    <!-- ADR-0009: the name, not a label for the list. "Favorit Lowongan"
+         described what the list below already shows; opened over MagangHub,
+         the one thing the header has to establish is who is speaking. -->
+    <h1 class="font-heading text-base font-semibold tracking-normal">SakuMagang</h1>
     <Button variant="outline" size="xs" onclick={refreshAll} disabled={refreshDisabled}>
       {refreshingAll ? 'Memperbarui…' : 'Segarkan semua'}
     </Button>

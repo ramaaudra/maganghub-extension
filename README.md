@@ -1,13 +1,14 @@
-# MagangHub Extension
+# SakuMagang
 
 A Chrome extension that augments the official [MagangHub](https://maganghub.kemnaker.go.id) internship listings with local favorites, Catatan, a manual Status Lamar stage tracker, and refreshable Status Lowongan — without ever touching the user's SiapKerja credentials.
 
 > **Status: unofficial, not published.** This is an independent, third-party
 > project. It is **not** affiliated with, endorsed by, or produced by
-> **Kemnaker** or the MagangHub program. "MagangHub Extension" is a
-> working title, not a final name. There is **no Chrome Web Store listing** —
-> sideload/dev-load is the only install path. Nothing here may link to a store
-> page or imply a trusted-source install.
+> **Kemnaker** or the MagangHub program. The name is deliberately **not**
+> "MagangHub …" — that would read as a product Kemnaker made (ADR-0009).
+> There is **no Chrome Web Store listing** — sideload/dev-load is the only
+> install path. Nothing here may link to a store page or imply a
+> trusted-source install.
 
 ## What it does
 

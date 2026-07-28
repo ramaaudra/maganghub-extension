@@ -1,8 +1,12 @@
-# MagangHub Extension
+# SakuMagang
 
 A Chrome extension that augments the official MagangHub internship listings with features the official site lacks — starting with local favorites — without ever touching the user's SiapKerja credentials.
 
 ## Language
+
+**SakuMagang**:
+The name of this extension (ADR-0009). Standalone — it names the tool, not the platform. Write it as one word, both capitals. MagangHub is named only in the description and prose, where it reads as the site we support rather than the party who made this.
+_Avoid_: "MagangHub Extension" (implies a Kemnaker product), "Saku Magang" / "sakuMagang" (spaced form reads as the *uang saku* stipend; camelCase is an identifier style, not a name)
 
 **SiapKerja**:
 The Indonesian government's official identity/authentication system used by MagangHub for login. The source of credentials this extension deliberately never touches.

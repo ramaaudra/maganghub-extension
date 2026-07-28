@@ -24,6 +24,8 @@ Success is a user who shortlists Lowongan confidently, never types a SiapKerja p
 
 ## Positioning
 
+The product is named **SakuMagang** (ADR-0009) — standalone, and deliberately not "MagangHub …". A name that leads with the platform reads as a product Kemnaker made, which is the exact claim the trust posture forbids and the exact impression the credential-harvesting helper sites trade on. MagangHub is named in the description, where it identifies the site we support.
+
 Safe by construction, not by promise. The extension never reads, stores, or transmits the SiapKerja password or the MagangHub login session (ADR-0001), and the permission set is auditable proof: `storage` + `offscreen` + one host permission for `maganghub.kemnaker.go.id`. No `cookies`, no `identity`, no `<all_urls>`, no backend, no telemetry.
 
 A credential-harvesting helper site cannot truthfully copy this. Neither can a well-meaning competitor that reads the login session to auto-detect applied state — that capability is the exact attack surface this product exists to avoid, which is why Status Lamar is deliberately manual.
@@ -55,17 +57,19 @@ MagangHub's markup is not under our control. When a selector stops matching, the
 - Chrome is the primary target; a Firefox build target exists (`wxt -b firefox`) but is not a confirmed shipping commitment.
 
 **Undecided — do not assume settled:**
-- **Product name.** "MagangHub Extension" is a working title. Not final.
-- **Identity assets.** No icon, logo, or store artwork exists in the repo. All still to be designed.
+- **Store artwork.** No screenshots, promo tiles, or listing copy exist. The toolbar icon does (see Brand Commitments); everything a Web Store listing would need does not.
 - **Firefox as a supported channel.** Build script exists; the commitment does not.
+- **Repo and package identity.** The GitHub repo and `package.json` are still `maganghub-extension`. Left deliberately: renaming the repo breaks the public URL this product cites as its auditability proof, and the package name is never user-visible. Package name ≠ product name.
 
 ## Brand Commitments
+
+The name is **SakuMagang**, one word, both capitals — carried by the manifest `name`, the popup `<h1>`, and the toolbar icon: a white Geist "S" on a full-bleed Field Blue square with sharp corners, rendered from the DESIGN.md tokens by `scripts/render-icon.mjs` (ADR-0009). The popup header shows the name alone; it does not also label the list, because the list already labels itself.
 
 The popup carries its own identity — a "Field-Notebook" look (one calm blue accent, sharp corners, Geist, flat depth) defined by the shadcn-svelte preset "sera" and normative in `DESIGN.md` — so it reads as a plainly different, trustworthy instrument beside the site, not as a mimicry of it (ADR-0008 supersedes ADR-0004's original "match MagangHub's aesthetic" commitment). The injected detail toggle is a separate matter and still mirrors the measured geometry of MagangHub's "Bagikan" button — 40×40, 14px radius, 1px `#e1e7ef` border, white background (ADR-0004, unchanged) — because a differently shaped button in a two-button cluster reads as bolted on, and the content script ships no framework runtime.
 
 Voice: plain Indonesian, direct, no alarm. The health warning and the trust explainer both state facts a user can act on without dramatizing them.
 
-Vocabulary is fixed and non-negotiable across code, docs, and UI: **Lowongan**, **Penyelenggara**, **Batch**, **Kuota**, **Pelamar**, **Favorite**, **Catatan**, **Status Lamar**, **Status Lowongan**, **SiapKerja**, **MagangHub**. See `CONTEXT.md` for each term and its banned alternatives.
+Vocabulary is fixed and non-negotiable across code, docs, and UI: **SakuMagang**, **Lowongan**, **Penyelenggara**, **Batch**, **Kuota**, **Pelamar**, **Favorite**, **Catatan**, **Status Lamar**, **Status Lowongan**, **SiapKerja**, **MagangHub**. See `CONTEXT.md` for each term and its banned alternatives.
 
 ## Evidence on Hand
 
@@ -79,7 +83,7 @@ Vocabulary is fixed and non-negotiable across code, docs, and UI: **Lowongan**, 
 - **No Chrome Web Store listing.** Confirmed not published. No surface may claim it is installable from the Web Store, link to a store page, or imply a trusted-source install. Sideload/dev-load is the only current install path.
 - **No users, install counts, ratings, reviews, or testimonials.** Zero. Do not invent social proof.
 - **No press, endorsement, or affiliation with Kemnaker.** The extension is unofficial and third-party; implying otherwise would be false and would undermine the trust posture it is built on.
-- **No icon, logo, wordmark, screenshots, or store artwork.**
+- **No screenshots or store artwork.** A toolbar icon exists (the "S" monogram, ADR-0009); nothing else does — no promo tiles, no listing screenshots, no illustrated logo lockup.
 - **No telemetry or analytics**, by design — so no usage data exists to cite.
 
 ## Product Principles

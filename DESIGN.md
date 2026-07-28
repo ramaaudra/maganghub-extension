@@ -1,5 +1,5 @@
 ---
-name: MagangHub Extension — Popup
+name: SakuMagang — Popup
 description: Field-notebook UI for a credential-free MagangHub favorites tool; sharp corners, Geist sans, one calm blue.
 colors:
   background: "oklch(1 0 0)"
@@ -102,7 +102,7 @@ components:
     padding: "6px 10px"
 ---
 
-# Design System: MagangHub Extension — Popup
+# Design System: SakuMagang — Popup
 
 ## Overview
 
