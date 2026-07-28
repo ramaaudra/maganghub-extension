@@ -6,7 +6,7 @@ import {
 	serveFixture,
 	test,
 } from "./fixtures";
-import { openPopup } from "./pages/popup";
+import { openCard, openPopup } from "./pages/popup";
 
 /**
  * On-card stage chip (issue #19 / A2).
@@ -34,7 +34,7 @@ test("a starred card with a stage shows a chip; no stage shows none", async ({
 	await expect(host.locator("[data-stage-chip]")).toHaveCount(0);
 
 	const popup = await openPopup(context, extensionId);
-	const card = popup.locator(`[data-favorite-uuid="${FIRST_UUID}"]`);
+	const card = await openCard(popup, FIRST_UUID);
 	await card.getByLabel("Status Lamar").selectOption("dilamar");
 	await expect(card.getByLabel("Status Lamar")).toHaveValue("dilamar");
 
@@ -76,7 +76,7 @@ test("changing the stage in the popup updates the chip across tabs", async ({
 	await expect(listHost2).toHaveAttribute("data-filled", "true");
 
 	const popup = await openPopup(context, extensionId);
-	const card = popup.locator(`[data-favorite-uuid="${FIRST_UUID}"]`);
+	const card = await openCard(popup, FIRST_UUID);
 	await card.getByLabel("Status Lamar").selectOption("interview");
 
 	for (const host of [listHost, listHost2]) {
@@ -125,7 +125,7 @@ test("Lowongan Serupa cards show the stage chip too", async ({
 	);
 
 	const popup = await openPopup(context, extensionId);
-	const card = popup.locator(`[data-favorite-uuid="${serupaUuid}"]`);
+	const card = await openCard(popup, serupaUuid);
 	await expect(card).toBeVisible();
 	await card.getByLabel("Status Lamar").selectOption("diterima");
 

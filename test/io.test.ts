@@ -29,6 +29,7 @@ const baseFavorite = (uuid: string, title: string): Favorite => ({
 	statusLamar: undefined,
 	liveStatus: { status: "unknown", lastChecked: null },
 	savedAt: "2026-01-01T00:00:00Z",
+	archivedAt: null,
 });
 
 const v1Record = (uuid: string): FavoriteV1 => ({
@@ -216,6 +217,51 @@ describe("importFavorites", () => {
 
 		const after = await getFavorite(local.uuid);
 		expect(after?.statusLamar).toBe("interview"); // local stage wins
+	});
+
+	it("merge: an imported archive fills a local active record (archivedAt null → timestamp)", async () => {
+		const local = baseFavorite(
+			"69b8c9d0-e1f2-4a3b-4c5d-6e7f8091a2b8",
+			"Local Active",
+		);
+		await setFavorite(local); // archivedAt: null by default
+
+		const importedCopy = baseFavorite(local.uuid, "Local Active");
+		importedCopy.archivedAt = "2026-02-03T00:00:00Z";
+		const file: ExportFile = {
+			schemaVersion: SCHEMA_VERSION,
+			exportedAt: "2025-01-01T00:00:00Z",
+			count: 1,
+			favorites: [importedCopy],
+		};
+
+		await importFavorites(file);
+
+		const after = await getFavorite(local.uuid);
+		expect(after?.archivedAt).toBe("2026-02-03T00:00:00Z"); // local was active → archive action imported
+	});
+
+	it("merge: an import never un-archives a locally-archived record", async () => {
+		const local = baseFavorite(
+			"79b8c9d0-e1f2-4a3b-4c5d-6e7f8091a2b9",
+			"Local Archived",
+		);
+		local.archivedAt = "2026-02-01T00:00:00Z";
+		await setFavorite(local);
+
+		const importedCopy = baseFavorite(local.uuid, "Local Archived");
+		importedCopy.archivedAt = null; // import claims active
+		const file: ExportFile = {
+			schemaVersion: SCHEMA_VERSION,
+			exportedAt: "2025-01-01T00:00:00Z",
+			count: 1,
+			favorites: [importedCopy],
+		};
+
+		await importFavorites(file);
+
+		const after = await getFavorite(local.uuid);
+		expect(after?.archivedAt).toBe("2026-02-01T00:00:00Z"); // local archive wins
 	});
 
 	it("imports a v3 file: applied migrates to dilamar, not_applied to no stage", async () => {

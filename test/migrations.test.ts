@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { FavoriteV1, FavoriteV2, FavoriteV3 } from "@/lib/migrations";
+import type {
+	FavoriteV1,
+	FavoriteV2,
+	FavoriteV3,
+	FavoriteV4,
+} from "@/lib/migrations";
 import { migrateFavorite } from "@/lib/migrations";
 import type { Favorite } from "@/lib/types";
 import { initialLiveStatus, SCHEMA_VERSION } from "@/lib/types";
@@ -85,6 +90,7 @@ describe("migrateFavorite", () => {
 				lastChecked: "2026-01-05T00:00:00Z",
 			},
 			savedAt: "2026-01-02T00:00:00Z",
+			archivedAt: null,
 		};
 
 		expect(migrateFavorite(current)).toEqual(current);
@@ -143,8 +149,38 @@ describe("migrateFavorite", () => {
 			statusLamar: "diterima",
 			liveStatus: initialLiveStatus(),
 			savedAt: "2026-01-01T00:00:00Z",
+			archivedAt: null,
 		};
 
 		expect(migrateFavorite(v4)).toEqual(v4);
+	});
+
+	it("migrates a v4 record to v5: adds archivedAt = null (active)", () => {
+		const v4: FavoriteV4 = {
+			schemaVersion: 4,
+			uuid: "a4b5c6d7-e8f9-4a0b-1c2d-3e4f5a6b7c8d",
+			detailUrl:
+				"/magang-nasional/lowongan/x-a4b5c6d7-e8f9-4a0b-1c2d-3e4f5a6b7c8d",
+			savedSnapshot: {
+				title: "Magang V4",
+				organizer: "PT Contoh",
+				location: "Bandung",
+				capturedAt: "2026-01-01T00:00:00Z",
+			},
+			catatan: "",
+			statusLamar: "dilamar",
+			liveStatus: initialLiveStatus(),
+			savedAt: "2026-01-01T00:00:00Z",
+		};
+
+		const migrated = migrateFavorite(v4);
+
+		expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+		expect(migrated.archivedAt).toBeNull();
+		// No existing field is touched — the step is purely additive.
+		expect(migrated.uuid).toBe(v4.uuid);
+		expect(migrated.statusLamar).toBe("dilamar");
+		expect(migrated.savedSnapshot).toEqual(v4.savedSnapshot);
+		expect(migrated.savedAt).toBe(v4.savedAt);
 	});
 });

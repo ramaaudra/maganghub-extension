@@ -31,7 +31,7 @@ test("export produces a downloadable JSON file with schemaVersion, exportedAt, a
 	for await (const chunk of stream) chunks.push(chunk as Buffer);
 	const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
 
-	expect(body.schemaVersion).toBe(4);
+	expect(body.schemaVersion).toBe(5);
 	expect(typeof body.exportedAt).toBe("string");
 	expect(body.exportedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 	expect(body.count).toBe(1);
@@ -50,7 +50,7 @@ test("import of a v1 (old-schema) file migrates records up to the current schema
 	const popup = await openPopup(context, extensionId);
 
 	// A v1 export file (no catatan/statusLamar/liveStatus). On import it must
-	// migrate to v4 and appear in the popup with the v1 snapshot's title.
+	// migrate to v5 and appear in the popup with the v1 snapshot's title.
 	const v1File = {
 		schemaVersion: 1,
 		exportedAt: "2025-01-01T00:00:00Z",

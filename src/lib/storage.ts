@@ -1,4 +1,9 @@
-import type { FavoriteV1, FavoriteV2, FavoriteV3 } from "./migrations";
+import type {
+	FavoriteV1,
+	FavoriteV2,
+	FavoriteV3,
+	FavoriteV4,
+} from "./migrations";
 import { migrateFavorite } from "./migrations";
 import type { Favorite, LiveStatus, StatusLamar } from "./types";
 import { initialLiveStatus, SCHEMA_VERSION } from "./types";
@@ -26,6 +31,7 @@ export async function getFavorite(uuid: string): Promise<Favorite | undefined> {
 		| FavoriteV1
 		| FavoriteV2
 		| FavoriteV3
+		| FavoriteV4
 		| undefined;
 	return stored ? migrateFavorite(stored) : undefined;
 }
@@ -90,6 +96,40 @@ export async function setLiveStatus(
 	await setFavorite({ ...favorite, liveStatus });
 }
 
+/**
+ * Archive a Favorite: soft-hide it from the active list by stamping
+ * `archivedAt` with `now` (ADR-0010). The record stays in storage, the star on
+ * MagangHub's page stays filled, and the data (snapshot, Catatan, liveStatus)
+ * is untouched. Pass an explicit timestamp only for tests; production always
+ * stamps "now".
+ */
+export async function archiveFavorite(
+	uuid: string,
+	now: string = new Date().toISOString(),
+): Promise<void> {
+	const favorite = await getFavorite(uuid);
+	if (!favorite) return;
+	await setFavorite({ ...favorite, archivedAt: now });
+}
+
+/**
+ * Restore an archived Favorite to the active list: clear `archivedAt` to null
+ * and reset `liveStatus.changedAt` so a change observed before archiving does
+ * not pop a stale toolbar badge the moment the Favorite returns to the active
+ * list (ADR-0010). `previousSample` is kept — the historical context
+ * survives, only the unseen-change marker resets.
+ */
+export async function unarchiveFavorite(uuid: string): Promise<void> {
+	const favorite = await getFavorite(uuid);
+	if (!favorite) return;
+	const liveStatus: LiveStatus =
+		favorite.liveStatus.changedAt === undefined ||
+		favorite.liveStatus.changedAt === null
+			? favorite.liveStatus
+			: { ...favorite.liveStatus, changedAt: null };
+	await setFavorite({ ...favorite, archivedAt: null, liveStatus });
+}
+
 /** Build a Favorite from a bookmark action. */
 export function createFavorite(args: {
 	uuid: string;
@@ -105,6 +145,7 @@ export function createFavorite(args: {
 		statusLamar: undefined,
 		liveStatus: initialLiveStatus(),
 		savedAt: new Date().toISOString(),
+		archivedAt: null,
 	};
 }
 

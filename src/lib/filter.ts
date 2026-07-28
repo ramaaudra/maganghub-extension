@@ -29,8 +29,17 @@ function haystack(fav: Favorite): string {
  * The orders the popup offers. `savedAt` is newest-first; `organizer` and
  * `location` are A→Z; `stageSeats` (issue #21) orders by Status Lamar first
  * (active above terminal), then by remaining seats within the active block.
+ * `archivedAt` (ADR-0010) is newest-first by archive timestamp — the natural
+ * order for the popup's Arsip tab ("terbaru diarsip" on top). It is only
+ * offered in the Arsip tab; in the Aktif tab it would be `null` for every
+ * row.
  */
-export type SortKey = "savedAt" | "organizer" | "location" | "stageSeats";
+export type SortKey =
+	| "savedAt"
+	| "organizer"
+	| "location"
+	| "stageSeats"
+	| "archivedAt";
 
 /**
  * The terminal Status Lamar stages (D9's active block): a Favorite still in
@@ -115,7 +124,8 @@ function compareByStageSeats(a: Favorite, b: Favorite): number {
  * `organizer` and `location` are A→Z, compared with Indonesian locale collation
  * so accents and case sort the way a reader expects. `stageSeats` (issue #21)
  * orders by Status Lamar first (active above terminal), then by remaining
- * seats within the active block — see `compareByStageSeats`. All keys fall back
+ * seats within the active block — see `compareByStageSeats`. `archivedAt`
+ * (ADR-0010) is newest-first by archive timestamp. All other keys fall back
  * to newest-first on ties, so every sort is stable and meaningful.
  */
 export function sortFavorites(
@@ -125,6 +135,17 @@ export function sortFavorites(
 	const sorted = [...favorites];
 	if (key === "stageSeats") {
 		sorted.sort(compareByStageSeats);
+		return sorted;
+	}
+	if (key === "archivedAt") {
+		// Newest-first by archive timestamp. `null` should never appear in the
+		// Arsip tab list (the popup filters archivedAt !== null before sorting),
+		// but guard anyway: treat null as the oldest so it sorts to the bottom.
+		sorted.sort((a, b) => {
+			const ta = a.archivedAt ?? "";
+			const tb = b.archivedAt ?? "";
+			return tb.localeCompare(ta);
+		});
 		return sorted;
 	}
 	sorted.sort((a, b) => {

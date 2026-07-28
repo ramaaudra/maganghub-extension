@@ -30,6 +30,10 @@
 			"!**/.wxt",
 			"!**/test-results",
 			"!**/playwright-report",
+			"!**/.claude",
+			"!**/.opencode",
+			"!**/.pi",
+			"!**/.impeccable/critique",
 			"!**/test/fixtures"
 		]
 	}

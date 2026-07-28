@@ -26,6 +26,11 @@ export function countsAsUnseenChange(
 	favorite: Favorite,
 	lastOpenedAt: string | null | undefined,
 ): boolean {
+	// Archived Favorites are excluded from the badge (ADR-0010): the badge means
+	// "a Lowongan you're pursuing changed", and an archived Favorite is not
+	// pursued. Refresh skips archived records, so they never gain a new change;
+	// a change observed *before* archiving is also suppressed here.
+	if (favorite.archivedAt !== null) return false;
 	if (!formatChangeNotice(favorite.liveStatus)) return false;
 	const changedAt = favorite.liveStatus.changedAt;
 	if (!changedAt) return false;

@@ -1,7 +1,12 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "./fixtures";
-import { openPopup } from "./pages/popup";
+import {
+	expandCard,
+	favoriteCard,
+	openCard,
+	openPopup,
+} from "./pages/popup";
 
 // Issue #5 e2e: refresh Status Lowongan from fixture detail HTML.
 //
@@ -108,17 +113,30 @@ test("refresh all computes Status Lowongan from fixture detail HTML (open / clos
 
 	await popup.getByRole("button", { name: "Segarkan semua" }).click();
 
-	const openCard = popup.locator(`[data-favorite-uuid="${UUID_OPEN}"]`);
-	const closedCard = popup.locator(`[data-favorite-uuid="${UUID_CLOSED}"]`);
-	const fullCard = popup.locator(`[data-favorite-uuid="${UUID_KUOTA_FULL}"]`);
+	const openRow = favoriteCard(popup, UUID_OPEN);
+	const closedRow = favoriteCard(popup, UUID_CLOSED);
+	const fullRow = favoriteCard(popup, UUID_KUOTA_FULL);
 
-	await expect(openCard.getByText("Buka", { exact: true })).toBeVisible();
-	await expect(closedCard.getByText("Tutup", { exact: true })).toBeVisible();
-	await expect(fullCard.getByText("Tutup", { exact: true })).toBeVisible();
+	// The Status Lowongan chip is on the resting card — a refresh-all must be
+	// readable without opening anything, which is the whole point of the button.
+	await expect(openRow.getByText("Buka", { exact: true })).toBeVisible();
+	await expect(closedRow.getByText("Tutup", { exact: true })).toBeVisible();
+	await expect(fullRow.getByText("Tutup", { exact: true })).toBeVisible();
 
-	// Each refreshed favorite shows "terakhir dicek …".
-	await expect(openCard.getByText(/terakhir dicek/)).toBeVisible();
-	await expect(closedCard.getByText(/terakhir dicek/)).toBeVisible();
+	// Live seats replace the "saat disimpan" snapshot reading on the same line.
+	await expect(openRow.locator("[data-signal-strip]")).toContainText(
+		"12 dari 50",
+	);
+	await expect(openRow.locator("[data-signal-strip]")).not.toContainText(
+		"saat disimpan",
+	);
+
+	// "terakhir dicek …" is provenance for the numbers above it, so it reads in
+	// the expanded tray rather than competing with them on the resting row.
+	for (const row of [openRow, closedRow]) {
+		await expandCard(row);
+		await expect(row.getByText(/terakhir dicek/)).toBeVisible();
+	}
 });
 
 test("a single-favorite refresh shows the open status badge", async ({
@@ -137,7 +155,7 @@ test("a single-favorite refresh shows the open status badge", async ({
 		[UUID_OPEN]: { status: 200, body: openHtml() },
 	});
 
-	const card = popup.locator(`[data-favorite-uuid="${UUID_OPEN}"]`);
+	const card = await openCard(popup, UUID_OPEN);
 	await card.getByRole("button", { name: "Segarkan Status Lowongan" }).click();
 	await expect(card.getByText("Buka", { exact: true })).toBeVisible();
 	await expect(card.getByText(/terakhir dicek/)).toBeVisible();
@@ -157,7 +175,7 @@ test('a failed refresh (non-gone HTTP) shows "refresh gagal" with no data loss',
 		[UUID_OPEN]: { status: 503, body: "<html><body>503</body></html>" },
 	});
 
-	const card = popup.locator(`[data-favorite-uuid="${UUID_OPEN}"]`);
+	const card = await openCard(popup, UUID_OPEN);
 	await card.getByRole("button", { name: "Segarkan Status Lowongan" }).click();
 
 	// The refresh failed → "Refresh gagal" badge, and the snapshot is still shown.
@@ -181,7 +199,7 @@ test("a removed Lowongan (HTTP 404) shows Tutup", async ({
 		[UUID_CLOSED]: { status: 404, body: "<html><body>404</body></html>" },
 	});
 
-	const card = popup.locator(`[data-favorite-uuid="${UUID_CLOSED}"]`);
+	const card = await openCard(popup, UUID_CLOSED);
 	await card.getByRole("button", { name: "Segarkan Status Lowongan" }).click();
 
 	// A 404 means the listing is gone → closed (Tutup), not a failed refresh.

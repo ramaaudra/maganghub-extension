@@ -29,6 +29,7 @@ function makeFavorite(
 		statusLamar: undefined,
 		liveStatus,
 		savedAt: "2026-01-01T00:00:00Z",
+		archivedAt: null,
 	};
 }
 
@@ -144,5 +145,31 @@ describe("popup last-opened storage + toolbar badge", () => {
 
 		await syncToolbarBadge([changed], "2026-01-06T00:00:00Z");
 		expect(setBadgeText).toHaveBeenLastCalledWith({ text: "" });
+	});
+
+	it("does not count an archived Favorite even when it has an unseen change", () => {
+		const activeChanged = makeFavorite("u1", {
+			status: "open",
+			kuota: 5,
+			pelamar: 4,
+			lastChecked: "2026-01-05T12:00:00Z",
+			previousSample: {
+				at: "2026-01-01T00:00:00Z",
+				status: "open",
+				kuota: 5,
+				pelamar: 2,
+			},
+			changedAt: "2026-01-05T12:00:00Z",
+		});
+		const archived = {
+			...activeChanged,
+			uuid: "u-archived",
+			archivedAt: "2026-01-09T00:00:00Z",
+		};
+		// Same change that would count for an active Favorite, but archived.
+		expect(countsAsUnseenChange(archived, "2026-01-04T00:00:00Z")).toBe(false);
+		expect(
+			countUnseenChanges([activeChanged, archived], "2026-01-04T00:00:00Z"),
+		).toBe(1);
 	});
 });

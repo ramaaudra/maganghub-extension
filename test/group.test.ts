@@ -38,6 +38,7 @@ const fav = (over: {
 	statusLamar: over.stage,
 	liveStatus: { status: "unknown", lastChecked: null },
 	savedAt: over.savedAt ?? "2026-01-01T00:00:00Z",
+	archivedAt: null,
 });
 
 const U = {

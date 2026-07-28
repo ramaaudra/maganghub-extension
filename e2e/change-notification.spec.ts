@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "./fixtures";
-import { openPopup } from "./pages/popup";
+import { favoriteCard, openCard, openPopup } from "./pages/popup";
 
 // Issue #17 (B1): change notification + toolbar badge.
 // Two refreshes against differing fixture numbers must surface a one-line
@@ -85,7 +85,7 @@ test("two refreshes with differing numbers show a change notice", async ({
 	await expect(host).toHaveAttribute("data-filled", "true");
 
 	const popup = await openPopup(context, extensionId);
-	const card = popup.locator(`[data-favorite-uuid="${UUID_OPEN}"]`);
+	const card = await openCard(popup, UUID_OPEN);
 
 	// First refresh: baseline sample (kuota 50, pelamar 12 → sisa 38).
 	await stageFixtures(popup, {
@@ -121,7 +121,7 @@ test("toolbar badge appears after a change and clears on popup open", async ({
 
 	// Establish the baseline sample via the popup, then close it.
 	const popup1 = await openPopup(context, extensionId);
-	const card1 = popup1.locator(`[data-favorite-uuid="${UUID_OPEN}"]`);
+	const card1 = await openCard(popup1, UUID_OPEN);
 	await stageFixtures(popup1, {
 		[UUID_OPEN]: { status: 200, body: openHtml() },
 	});
@@ -165,7 +165,10 @@ test("toolbar badge appears after a change and clears on popup open", async ({
 	// Opening the popup clears the badge; the card notice stays.
 	const popup2 = await openPopup(context, extensionId);
 	await expect.poll(async () => getBadgeText(worker)).toBe("");
-	const card2 = popup2.locator(`[data-favorite-uuid="${UUID_OPEN}"]`);
+	// The change notice sits outside the disclosure on purpose: a seat that
+	// moved since the last check is news the user must not have to open a card
+	// to see. So this reads it on the resting card, unexpanded.
+	const card2 = favoriteCard(popup2, UUID_OPEN);
 	await expect(card2.locator("[data-change-notice]")).toHaveText(
 		"sisa 1 kursi, tadinya 38",
 	);

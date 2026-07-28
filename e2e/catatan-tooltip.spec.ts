@@ -6,7 +6,7 @@ import {
 	serveFixture,
 	test,
 } from "./fixtures";
-import { openPopup } from "./pages/popup";
+import { openCard, openPopup } from "./pages/popup";
 
 /**
  * Catatan tooltip on the star (issue #18 / A3).
@@ -19,6 +19,11 @@ import { openPopup } from "./pages/popup";
  * The star's `title` is now the button's alone. The removed urgency band used
  * to write a competing `title` on the light-DOM host, so a saved card had two
  * tooltips racing on one control.
+ *
+ * The Catatan textarea lives behind the popup card's disclosure, so each spec
+ * opens the card first (`openCard`). The tray stays open across the storage
+ * write a save triggers — `expanded` is component-local state and the card
+ * component is keyed by UUID, so a re-render does not collapse it.
  */
 
 const NOTE = "dekat rumah, batch 2";
@@ -38,7 +43,7 @@ test("a filled star with a Catatan shows the note in its title", async ({
 	await expect(host).toHaveAttribute("data-star-title", "Hapus dari favorit");
 
 	const popup = await openPopup(context, extensionId);
-	const card = popup.locator(`[data-favorite-uuid="${FIRST_UUID}"]`);
+	const card = await openCard(popup, FIRST_UUID);
 	await card.getByPlaceholder("Kenapa lowongan ini?").fill(NOTE);
 	await card.getByPlaceholder("Kenapa lowongan ini?").blur();
 	await expect(card.getByText("Tersimpan")).toBeVisible();
@@ -81,7 +86,7 @@ test("editing Catatan in the popup updates the star title across tabs", async ({
 	await expect(listHost2).toHaveAttribute("data-filled", "true");
 
 	const popup = await openPopup(context, extensionId);
-	const card = popup.locator(`[data-favorite-uuid="${FIRST_UUID}"]`);
+	const card = await openCard(popup, FIRST_UUID);
 	await card.getByPlaceholder("Kenapa lowongan ini?").fill(NOTE);
 	await card.getByPlaceholder("Kenapa lowongan ini?").blur();
 
@@ -113,7 +118,7 @@ test("the detail toggle composes Catatan into its title too", async ({
 	await page.locator(".mh-lowongan-card .mh-favorite-host").first().click();
 
 	const popup = await openPopup(context, extensionId);
-	const card = popup.locator(`[data-favorite-uuid="${FIRST_UUID}"]`);
+	const card = await openCard(popup, FIRST_UUID);
 	await card.getByPlaceholder("Kenapa lowongan ini?").fill(NOTE);
 	await card.getByPlaceholder("Kenapa lowongan ini?").blur();
 	await expect(card.getByText("Tersimpan")).toBeVisible();

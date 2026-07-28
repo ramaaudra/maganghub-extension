@@ -5,6 +5,13 @@ dist/
 test-results/
 playwright-report/
 .pi-subagents/
+.claude/
+.opencode/
+.pi/
+.impeccable/config.json
+.impeccable/config.local.json
+.impeccable/hook.cache.json
+.impeccable/critique/
 .DS_Store
 *.log
 .env

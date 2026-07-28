@@ -15,6 +15,7 @@ const fav = (over: {
 	organizer?: string;
 	location?: string;
 	savedAt?: string;
+	archivedAt?: string | null;
 }): Favorite => ({
 	schemaVersion: SCHEMA_VERSION,
 	uuid: over.uuid,
@@ -29,6 +30,7 @@ const fav = (over: {
 	statusLamar: undefined,
 	liveStatus: { status: "unknown", lastChecked: null },
 	savedAt: over.savedAt ?? "2026-01-01T00:00:00Z",
+	archivedAt: over.archivedAt ?? null,
 });
 
 const U = {
@@ -112,6 +114,18 @@ describe("sortFavorites", () => {
 		];
 
 		const result = sortFavorites(list, "savedAt");
+
+		expect(result.map((f) => f.uuid)).toEqual([U.b, U.c, U.a]);
+	});
+
+	it("sorts by archivedAt newest-first (terbaru diarsip on top)", () => {
+		const list = [
+			fav({ uuid: U.a, archivedAt: "2026-01-02T00:00:00Z" }),
+			fav({ uuid: U.b, archivedAt: "2026-03-01T00:00:00Z" }),
+			fav({ uuid: U.c, archivedAt: "2026-02-01T00:00:00Z" }),
+		];
+
+		const result = sortFavorites(list, "archivedAt");
 
 		expect(result.map((f) => f.uuid)).toEqual([U.b, U.c, U.a]);
 	});
@@ -231,6 +245,7 @@ const stageFav = (over: {
 		pelamar: over.pelamar,
 	},
 	savedAt: over.savedAt ?? "2026-01-01T00:00:00Z",
+	archivedAt: null,
 });
 
 const S = {

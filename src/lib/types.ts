@@ -8,7 +8,7 @@ export const UUID_REGEX =
 	/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 
 /** Favorite record schema version. Bumped on breaking shape changes. */
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 /**
  * Status Lamar — the user's self-reported application stage for a Lowongan.
@@ -119,7 +119,10 @@ export interface LowonganSnapshot {
  * #4) adds catatan + statusLamar. v3 (issue #5) adds a mutable `liveStatus`
  * (refresh updates it; the snapshot stays immutable — ADR-0002). v4 (issue
  * #15) widens `statusLamar` from a boolean flag to a stage enum (or no stage),
- * and adds an optional `previousSample` to `LiveStatus`.
+ * and adds an optional `previousSample` to `LiveStatus`. v5 (archive feature,
+ * ADR-0010) adds `archivedAt`: `null` = active, an ISO timestamp = archived
+ * (soft-hidden from the active list, restorable, data intact). Independent of
+ * `statusLamar` terminal stages and of the unstar hard-delete.
  */
 export interface Favorite {
 	schemaVersion: number;
@@ -135,4 +138,13 @@ export interface Favorite {
 	liveStatus: LiveStatus;
 	/** ISO timestamp of when the user starred the Lowongan. */
 	savedAt: string;
+	/**
+	 * Archive state, added in v5 (ADR-0010). `null` = active (shown in the
+	 * popup's Aktif tab); an ISO timestamp = archived (soft-hidden in the Arsip
+	 * tab, restorable, excluded from refresh and the toolbar badge). The star
+	 * on MagangHub's page stays filled while a record exists in storage, so
+	 * archiving is a popup-only view concern — the content script is unchanged.
+	 * The timestamp doubles as the archive view's default sort key.
+	 */
+	archivedAt: string | null;
 }

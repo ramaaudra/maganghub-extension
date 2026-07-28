@@ -42,3 +42,7 @@ _Avoid_: "applied status" (when implying auto-detection), "stage" without "Statu
 
 **Status Lowongan**:
 The live state of a Lowongan, computed by refreshing from the public detail page: **Open**, **Filling** (Pelamar ≥ ~80% of Kuota), or **Closed** (listing removed, Kuota full, or Batch closed), plus **unknown** when a refresh fails. Pelamar is exposed on the detail page, so Filling is reliable whenever both numbers parse (ADR-0006) — not merely best-effort. Exists in place of a deadline status, since a Lowongan has no calendar deadline.
+
+**Arsip**:
+A soft-hide state on a Favorite that removes it from the popup's Aktif list without deleting any stored data (ADR-0010). Persisted as `archivedAt: string | null` — `null` = active, an ISO timestamp = archived. The star on MagangHub's page stays filled while a Favorite is archived, because the record still exists in storage and archiving is a popup-only view concern (the content script is unchanged). Distinct from **unstar** (which hard-deletes the record from the page) and from terminal **Status Lamar** stages (which are labels that stay visible in the active list). Archived Favorites are skipped by refresh and excluded from the toolbar badge. **Arsipkan** is the action that archives; **Pulihkan** restores an archived Favorite to the Aktif list; **Hapus permanen** is the irreversible delete offered only in the Arsip tab, guarded by an inline confirm.
+_Avoid_: "sembunyikan" (vague — archive is the specific restorable hide), "delete" when Arsip is meant (delete is permanent; archive is not)

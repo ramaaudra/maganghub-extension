@@ -46,7 +46,7 @@ MagangHub's markup is not under our control. When a selector stops matching, the
 
 ## Capabilities and Constraints
 
-**Confirmed shipped:** star toggle on list cards; toggle on detail pages; cross-surface and cross-tab state sync via `chrome.storage.local`; popup Favorites list with empty state; Catatan editor; manual Status Lamar; per-Favorite and "refresh all" Status Lowongan refresh (throttled, offscreen document, public HTML only); search and sort; JSON export/import with schema migration and local-authoritative merge; injection health indicator; trust explainer.
+**Confirmed shipped:** star toggle on list cards; toggle on detail pages; cross-surface and cross-tab state sync via `chrome.storage.local`; popup Favorites list with empty state; Catatan editor; manual Status Lamar; per-Favorite and "refresh all" Status Lowongan refresh (throttled, offscreen document, public HTML only); search and sort; JSON export/import with schema migration and local-authoritative merge; injection health indicator; trust explainer; **Archive** — soft-hide Favorites from the active list (restorable, data intact), with Aktif/Arsip tabs, excluded from refresh and the toolbar badge (ADR-0010).
 
 **Technical constraints:**
 - MV3 extension built with WXT; Svelte + Tailwind + shadcn-svelte in the popup only; plain DOM in the content script (ADR-0004).

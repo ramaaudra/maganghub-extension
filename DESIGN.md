@@ -66,6 +66,16 @@ components:
     textColor: "{colors.card-foreground}"
     rounded: "{rounded.sharp}"
     padding: "16px"
+  card-resting-row:
+    backgroundColor: "{colors.card}"
+    textColor: "{colors.card-foreground}"
+    rounded: "{rounded.sharp}"
+    padding: "10px 16px"
+  card-tray:
+    backgroundColor: "transparent"
+    textColor: "{colors.card-foreground}"
+    rounded: "{rounded.sharp}"
+    padding: "10px 16px 12px"
   card-active-stage:
     backgroundColor: "oklch(0.5 0.134 242.749 / 0.05)"
     textColor: "{colors.card-foreground}"
@@ -96,10 +106,10 @@ components:
     rounded: "{rounded.sharp}"
     padding: "4px 8px"
   group-toggle:
-    backgroundColor: "oklch(0.97 0 0 / 0.4)"
+    backgroundColor: "transparent"
     textColor: "{colors.foreground}"
     rounded: "{rounded.sharp}"
-    padding: "6px 10px"
+    padding: "4px 4px 6px"
 ---
 
 # Design System: SakuMagang — Popup
@@ -165,9 +175,13 @@ A neutral ink-on-paper palette with one calm blue accent and a reserved destruct
 
 ## Layout
 
-The popup is a fixed **360px**-wide panel (ADR-0004), not a responsive page. The header sits on a bottom border (`border-b px-4 py-3`); the body is a single column with an **8px** vertical rhythm (`space-y-2`, `gap-2`, `p-3`). Density is high but calm: each Favorite is one Card, Cards stack with `space-y-2`, and the search/sort row and the export/import row are 8px-gap flex rows that wrap.
+The popup is a fixed **360px**-wide panel (ADR-0004), not a responsive page. The header sits on a bottom border (`border-b px-4 pt-3 pb-2`); the body is a single column with a **6px** vertical rhythm between Favorites (`space-y-1.5`, `p-3`). There are no grids, no sidebars, no multi-column layouts — the 360px width forbids them. Spacing scale in use: 2px (chip vertical), 4px (control vertical), 6px (list rhythm), 8px (control gap), 10px (control horizontal), 12px (body padding), 16px (header / card horizontal padding).
 
-Favorites collapse into per-**Penyelenggara** groups when one organizer holds more than three; the group toggle is a full-width bordered `bg-muted/40` bar with the organizer name (`text-sm font-semibold`) over a one-line summary (`text-xs text-muted-foreground`). There are no grids, no sidebars, no multi-column layouts in the popup — the 360px width forbids them. Spacing scale in use: 2px (chip vertical), 4px (control vertical), 8px (rhythm), 10px (control horizontal), 12px (body padding), 16px (header padding / card padding).
+**The Read-at-Rest Rule.** A Favorite card is *reading* at rest and *controls* on demand. The resting card is exactly three lines — title + Status Lamar chip, Penyelenggara · Lokasi, then the decision line (seats, Catatan mark, Status Lowongan chip, chevron) — at ~76px, so roughly six fit the 360×600 viewport. Every control (Status Lamar select, Catatan, Segarkan, Arsipkan, Pulihkan, Hapus permanen, Buka di MagangHub) lives in a disclosure tray opened by clicking the card, which is itself the button. Two exceptions surface outside the tray because they are news rather than chrome: the **change notice** (a seat that moved since the last check) and the two **chips**. Before this rule the card stacked six always-visible bands at ~180px, so two cards filled the panel and a shortlist could not be compared — which is the one thing a shortlist is for.
+
+The header is two control rows plus a search field: identity + *Segarkan semua*, then tabs + *Urutkan* sharing one baseline border, then full-width search. Advisories (health, unchecked count, import result) are single lines, never paragraphs.
+
+Favorites collapse into per-**Penyelenggara** groups when one organizer holds more than three. The group header is a *label, not a container*: a chevron, the organizer name (`text-xs font-semibold`), and the stage summary (`text-xs text-muted-foreground`) on one row over a bottom rule — no fill, no box. Only cards carry borders, so a screen of grouped Favorites shows one frame style instead of two competing ones.
 
 Dark mode is tokenized (`.dark` class) but the popup does not currently toggle it; the tokens exist so a future setting can switch without rework.
 
@@ -204,7 +218,10 @@ One form: the sharp rectangle (radius `0rem`, the preset's `--radius: 0rem`). Ca
 - **Background:** `--card` (Paper); active-stage Favorites tint to `bg-primary/5` with `border border-primary/40` (and matching `ring-primary/40` so the card’s default hairline ring does not fight the brand edge).
 - **Shadow:** `shadow-sm` (the only elevation); constant, never on hover.
 - **Border:** 1px `--border`.
-- **Padding:** `py-4` (FavoriteCard) / `py-6` (default Card), `gap-2` internal.
+- **Padding:** `py-0 gap-0` on the FavoriteCard shell — the resting row (`px-4 py-2.5`) and the tray (`px-4 pt-2.5 pb-3`) own their own padding, so a collapsed card has no dead space under it. Default Card keeps `py-6`.
+- **Resting row:** the whole row is a `<button>` carrying `aria-expanded` + an `aria-label` naming the Lowongan, with `hover:bg-muted/40` and an inset focus ring. A separate small chevron target would waste the 360px width and invite mis-clicks. Cursor stays `default`: it is a disclosure, not a link.
+- **Tray:** separated by `border-t border-border/70` — a hairline, not a gap, so the expanded card still reads as one object. Enters with `.mh-rise-in` (200ms), the same motion the change notice and alerts use.
+- **Seat line:** `tabular-nums`, `whitespace-nowrap`, weight from `seatPressure` — `text-muted-foreground` while calm, `font-medium text-foreground` once tight or full. Colour is never the carrier here; the Status Lowongan chip owns that.
 
 ### Inputs / Fields
 - **Style:** underline — `border-b` only, transparent background, sharp corners (sera convention: `border-b-input focus-visible:border-b-ring`). Used for the search field (sera `Input`), the Catatan textarea (native `<textarea>` styled with the same underline classes), and the two selects.
@@ -215,13 +232,16 @@ One form: the sharp rectangle (radius `0rem`, the preset's `--radius: 0rem`). Ca
 - The *Urutkan* and *Status Lamar* selects stay **native `<select>`** styled with the sera underline (`border-b border-border bg-transparent rounded-none`), not the bits-ui `Select` component. Reason: e2e drives them with Playwright's `selectOption`, which only works on real `<select>` elements; the bits-ui Select renders a button + portal listbox that `selectOption` cannot target. This is a deliberate testability constraint, not an aesthetic one — the underline styling matches sera.
 
 ### Why FavoriteCard uses native buttons
-- `FavoriteCard`'s *Segarkan* button and *Buka di MagangHub* link are **native `<button>`/`<a>` with inline sera classes**, not the `Button` component. Reason: importing the `Button`/`buttonVariants` module into a component that also runs `$effect.pre` to reset `catatanDraft` + `bind:value` on the Catatan textarea triggers a Svelte 5 reactivity bug that breaks the save-on-blur flow. `App.svelte` (no such effect) uses the `Button` component freely. See the Don'ts.
+- Every control in `FavoriteCard` — the resting-row disclosure, *Segarkan*, *Arsipkan*, *Pulihkan*, *Hapus permanen*, and the *Buka di MagangHub* link — is a **native `<button>`/`<a>`**, not the `Button` component. Reason: importing the `Button`/`buttonVariants` module into a component that also runs `$effect.pre` to reset `catatanDraft` + `bind:value` on the Catatan textarea triggers a Svelte 5 reactivity bug that breaks the save-on-blur flow. `App.svelte` (no such effect) uses the `Button` component freely. The tray's four buttons share one `actionClass` string so they cannot drift apart. See the Don'ts.
 
 ### Links
 - **Link Primary:** `text-primary underline-offset-2 hover:underline`, sharp rectangle, `text-xs font-medium`. Used for *Buka di MagangHub* — the exit back to the official site, never an in-popup navigation.
 
 ### Group toggle (signature)
-- A full-width bordered bar (`bg-muted/40`, 1px `--border`, sharp), `px-2.5 py-1.5`, with `aria-expanded` and a `▾/▸` glyph. Carries organizer name (`text-sm font-semibold`) over a one-line stage summary (`text-xs text-muted-foreground`). The only "section header" in the popup.
+- A full-width **label**, not a container: `border-b border-border`, no fill, `px-1 pt-1 pb-1.5`, with `aria-expanded` and a rotating `▾` glyph. Organizer name (`text-xs font-semibold`) at the start, stage summary (`text-xs text-muted-foreground`) at the end, on one row. The only "section header" in the popup. It was a filled bordered bar as tall as a card band; two container styles alternating down a 360px column read as clutter, so the header gave up its box and only cards kept borders.
+
+### Empty states
+- **Borderless.** Centered text on the panel (`px-4 py-10`): a `text-sm font-medium` line, then a `text-xs text-muted-foreground` line capped at ~15rem so it wraps to two lines, not five. A Card frame around a "nothing here" message draws a box that reads as a broken row. The no-Favorites state adds a `size-9` bordered `★` tile; the others carry no ornament.
 
 ### Trust explainer (signature)
 - A `<details>` with an underlined `text-primary` summary (*Mengapa aman?*) and muted body copy. The disclosure pattern keeps the credential-free promise available without forcing it into the first viewport — matches PRODUCT.md principle 1 (trust is a construction, surfaced on demand).
@@ -233,8 +253,10 @@ One form: the sharp rectangle (radius `0rem`, the preset's `--radius: 0rem`). Ca
 - **Do** use Field Blue (`oklch(0.5 0.134 242.749)`) only for the active-stage tint, the *dilamar* chip, the *Buka di MagangHub* link, and focus — ≤10% of any screen.
 - **Do** convey depth with 1px `--border` and `bg-muted`; use `shadow-sm` only on Cards and never larger.
 - **Do** write UI copy in plain Indonesian using the fixed vocabulary from `CONTEXT.md` (Lowongan, Penyelenggara, Batch, Kuota, Pelamar, Favorite, Catatan, Status Lamar, Status Lowongan, SiapKerja, MagangHub).
-- **Do** keep the popup at 360px; reach for an 8px rhythm (`gap-2`, `space-y-2`, `p-3`) before adding new spacing values.
+- **Do** keep the popup at 360px; reach for the 6px list rhythm (`space-y-1.5`) and 8px control gap (`gap-2`) before adding new spacing values.
 - **Do** degrade loudly to the user, silently to the page (PRODUCT.md principle 5): `role="status"` banners for health/import states, never `console.error` in MagangHub's page.
+- **Do** title-case all-caps snapshot text at display time (`titleCase`) — MagangHub publishes many titles and Penyelenggara names shouted, and the repair is view-only: `savedSnapshot` stays byte-identical (ADR-0002) and search still matches the raw string.
+- **Do** show a number where a number is possible: a never-refreshed Favorite falls back to its saved Kuota and Pelamar rather than instructing the user to press Segarkan. Provenance is stated once, in the tray.
 
 ### Don't:
 - **Don't** introduce a filled primary button — Status Lamar is manual by design (PRODUCT.md principle 2); a primary fill would imply authority the extension deliberately lacks. Outline buttons only.
@@ -244,5 +266,9 @@ One form: the sharp rectangle (radius `0rem`, the preset's `--radius: 0rem`). Ca
 - **Don't** use emerald/amber/rose outside status chips and the change-notice / health banners — they are state signals, not a palette.
 - **Don't** add a second typeface or a display size; Geist Variable at 12–16px is the whole hierarchy.
 - **Don't** use `--destructive` for anything but genuine failure (*Refresh gagal*, import error).
+- **Don't** promote a control out of the card's disclosure tray to "make it easier to reach" — the resting card is reading, and every band added back costs the shortlist a comparable row. Only news (the change notice) and status (the two chips) live outside it.
+- **Don't** state the same fact on both the resting row and the tray. "Belum dicek" as a chip and "saat disimpan" beside the seat count said one thing twice and wrapped the seat line onto two, which made cards uneven.
+- **Don't** render a `savedSnapshot.kuota`/`.pelamar` string under a hand-written label — those values already carry their own ("Kuota: 5"), which is what produced *"Kuota Kuota: 1"*. Go through `src/lib/seats.ts`, which owns the wording.
+- **Don't** reseed `catatanDraft` from an incoming record while the textarea has focus. Saving writes to storage, which fires `storage.onChanged`, which re-renders the card — an unguarded `$effect.pre` then discards whatever was typed since the save.
 - **Don't** claim a Chrome Web Store listing, users, ratings, press, or Kemnaker affiliation, or fabricate an icon/logo — none exist (PRODUCT.md absences).
 - **Don't** treat this system as a mirror of MagangHub's aesthetic; the preset establishes a distinct Field-Notebook identity. If the project re-commits to ADR-0004's "feel native to MagangHub" goal, this DESIGN.md and the preset must be revisited together.

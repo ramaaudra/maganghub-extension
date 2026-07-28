@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 import type { FavoriteV1 } from "@/lib/migrations";
 import {
+	archiveFavorite,
 	createFavorite,
 	FAVORITE_KEY_PREFIX,
 	getFavorite,
@@ -12,6 +13,7 @@ import {
 	setFavorite,
 	setLiveStatus,
 	setStatusLamar,
+	unarchiveFavorite,
 } from "@/lib/storage";
 import type { Favorite, LiveStatus } from "@/lib/types";
 import { initialLiveStatus, SCHEMA_VERSION } from "@/lib/types";
@@ -31,6 +33,7 @@ function makeFavorite(uuid: string, savedAt: string, title: string): Favorite {
 		statusLamar: undefined,
 		liveStatus: initialLiveStatus(),
 		savedAt,
+		archivedAt: null,
 	};
 }
 
@@ -288,5 +291,80 @@ describe("favorites storage", () => {
 		expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
 		expect(migrated.catatan).toBe("");
 		expect(migrated.statusLamar).toBeUndefined(); // v1→v2 not_applied → v3→v4 no stage
+	});
+});
+
+describe("archive / unarchive", () => {
+	beforeEach(() => {
+		fakeBrowser.reset();
+	});
+
+	it("stamps archivedAt with an ISO timestamp when archiving", async () => {
+		const fav = makeFavorite(
+			"a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1",
+			"2026-01-01T00:00:00Z",
+			"Magang A",
+		);
+		await setFavorite(fav);
+		await archiveFavorite(fav.uuid, "2026-02-03T04:05:06Z");
+
+		const stored = await getFavorite(fav.uuid);
+		expect(stored?.archivedAt).toBe("2026-02-03T04:05:06Z");
+		// Archiving touches only archivedAt — snapshot, catatan, liveStatus stay.
+		expect(stored?.savedSnapshot).toEqual(fav.savedSnapshot);
+		expect(stored?.catatan).toBe(fav.catatan);
+		expect(stored?.liveStatus).toEqual(fav.liveStatus);
+	});
+
+	it("clears archivedAt to null when unarchiving", async () => {
+		const fav = makeFavorite(
+			"b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2",
+			"2026-01-01T00:00:00Z",
+			"Magang B",
+		);
+		await setFavorite({ ...fav, archivedAt: "2026-02-03T00:00:00Z" });
+		await unarchiveFavorite(fav.uuid);
+
+		expect((await getFavorite(fav.uuid))?.archivedAt).toBeNull();
+	});
+
+	it("unarchive resets liveStatus.changedAt so a stale change does not re-raise the badge", async () => {
+		const fav = makeFavorite(
+			"c3c3c3c3-c3c3-4c3c-8c3c-c3c3c3c3c3c3",
+			"2026-01-01T00:00:00Z",
+			"Magang C",
+		);
+		await setFavorite({
+			...fav,
+			archivedAt: "2026-02-03T00:00:00Z",
+			liveStatus: {
+				status: "open",
+				kuota: 5,
+				pelamar: 4,
+				lastChecked: "2026-01-05T00:00:00Z",
+				previousSample: {
+					at: "2026-01-01T00:00:00Z",
+					status: "open",
+					kuota: 5,
+					pelamar: 2,
+				},
+				changedAt: "2026-01-05T00:00:00Z",
+			},
+		});
+
+		await unarchiveFavorite(fav.uuid);
+
+		const stored = await getFavorite(fav.uuid);
+		expect(stored?.archivedAt).toBeNull();
+		expect(stored?.liveStatus.changedAt).toBeNull();
+		// previousSample is historical context — it survives the unarchive.
+		expect(stored?.liveStatus.previousSample).toBeDefined();
+	});
+
+	it("archive is a no-op on an unknown UUID", async () => {
+		await archiveFavorite("11111111-1111-4111-8111-111111111111");
+		expect(
+			await getFavorite("11111111-1111-4111-8111-111111111111"),
+		).toBeUndefined();
 	});
 });

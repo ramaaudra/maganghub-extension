@@ -1,5 +1,5 @@
 import { expect, LIST_URL, serveFixture, test } from "./fixtures";
-import { openPopup } from "./pages/popup";
+import { openCard, openPopup } from "./pages/popup";
 
 // Issue #7 e2e: the trust layer — make the credential-free safety story
 // visible in the popup, and give each Favorite an "open official detail"
@@ -66,7 +66,9 @@ test('each Favorite has an "open official detail" link to its MagangHub detail p
 		},
 	];
 	for (const c of cards) {
-		const card = popup.locator(`[data-favorite-uuid="${c.uuid}"]`);
+		// The exit link lives in the card's expanded tray with the other actions;
+		// the resting card is reading only. Every Favorite must still have its own.
+		const card = await openCard(popup, c.uuid);
 		const link = card.getByRole("link", { name: /Buka di MagangHub/i });
 		await expect(link).toBeVisible();
 		await expect(link).toHaveAttribute("href", c.href);

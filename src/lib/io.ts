@@ -9,7 +9,9 @@
  *    liveStatus are kept; imported `catatan` and `statusLamar` fill in ONLY
  *    when the local fields are empty (`""` / no stage). Imported `liveStatus`
  *    is always discarded — it is re-derived by refresh and is device-local
- *    (ADR-0002).
+ *    (ADR-0002). `archivedAt` (ADR-0010) follows the same fill shape: an
+ *    imported archive fills a local active record (`null` → timestamp), but
+ *    an import never un-archives a locally-archived record.
  *
  * A file whose `schemaVersion` is newer than current is rejected wholesale
  * with a warning: importing a future shape would silently drop fields we don't
@@ -17,7 +19,12 @@
  * and re-imports.
  */
 
-import type { FavoriteV1, FavoriteV2, FavoriteV3 } from "./migrations";
+import type {
+	FavoriteV1,
+	FavoriteV2,
+	FavoriteV3,
+	FavoriteV4,
+} from "./migrations";
 import { migrateFavorite } from "./migrations";
 import { getFavorite, listFavorites, setFavorite } from "./storage";
 import type { Favorite } from "./types";
@@ -34,7 +41,9 @@ export interface ExportFile {
 	 *  on import — a mismatch surfaces as a warning but does not block import. */
 	count: number;
 	/** The favorites. Each is migrated individually on import. */
-	favorites: Array<Favorite | FavoriteV1 | FavoriteV2 | FavoriteV3>;
+	favorites: Array<
+		Favorite | FavoriteV1 | FavoriteV2 | FavoriteV3 | FavoriteV4
+	>;
 }
 
 /** Outcome of an import, surfaced to the popup UI. */
@@ -104,17 +113,23 @@ export async function importFavorites(file: ExportFile): Promise<ImportResult> {
 
 			// Conflict: local wins. Fill catatan/statusLamar only when local is
 			// empty (no stage = `undefined`). Always keep the local liveStatus
-			// (drop the imported one).
+			// (drop the imported one). archivedAt (ADR-0010): an imported archive
+			// fills a local active record, but an import never un-archives a
+			// locally-archived one — same "fill only when local is empty" shape as
+			// catatan, where `archivedAt === null` is the empty state.
 			const fillCatatan = local.catatan === "" && migrated.catatan !== "";
 			const fillStatusLamar =
 				local.statusLamar === undefined && migrated.statusLamar !== undefined;
-			if (fillCatatan || fillStatusLamar) {
+			const fillArchivedAt =
+				local.archivedAt === null && migrated.archivedAt !== null;
+			if (fillCatatan || fillStatusLamar || fillArchivedAt) {
 				await setFavorite({
 					...local,
 					catatan: fillCatatan ? migrated.catatan : local.catatan,
 					statusLamar: fillStatusLamar
 						? migrated.statusLamar
 						: local.statusLamar,
+					archivedAt: fillArchivedAt ? migrated.archivedAt : local.archivedAt,
 				});
 				imported += 1;
 			}

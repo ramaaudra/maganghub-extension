@@ -45,6 +45,22 @@ export interface FavoriteV3 {
 	savedAt: string;
 }
 
+/**
+ * v4 shape (issue #15): `statusLamar` is the stage enum (or `undefined`), and
+ * `LiveStatus` may carry an optional `previousSample`. Pre-archive — the v5
+ * migration is what adds `archivedAt`.
+ */
+export interface FavoriteV4 {
+	schemaVersion: 4;
+	uuid: string;
+	detailUrl: string;
+	savedSnapshot: LowonganSnapshot;
+	catatan: string;
+	statusLamar: Favorite["statusLamar"];
+	liveStatus: LiveStatus;
+	savedAt: string;
+}
+
 /** v1 → v2: adds `catatan` (empty) and `statusLamar` (`not_applied`) defaults. */
 function migrateV1ToV2(record: FavoriteV1): FavoriteV2 {
 	return {
@@ -73,7 +89,7 @@ function migrateV2ToV3(record: FavoriteV2): FavoriteV3 {
  * stops at SCHEMA_VERSION), and a v3 record with `not_applied` maps to the
  * same `undefined` every time. See ADR-0007 for the domain decision.
  */
-function migrateV3ToV4(record: FavoriteV3): Favorite {
+function migrateV3ToV4(record: FavoriteV3): FavoriteV4 {
 	return {
 		...record,
 		schemaVersion: 4,
@@ -81,10 +97,25 @@ function migrateV3ToV4(record: FavoriteV3): Favorite {
 	};
 }
 
+/**
+ * v4 → v5: adds `archivedAt` initialised to `null` (active). The archive
+ * feature (ADR-0010) is a soft-hide: every pre-v5 record was active, so the
+ * migration sets `null` rather than guessing. Idempotent and additive like
+ * every other step — no existing field is touched, no data is lost.
+ */
+function migrateV4ToV5(record: FavoriteV4): Favorite {
+	return {
+		...record,
+		schemaVersion: 5,
+		archivedAt: null,
+	};
+}
+
 const MIGRATIONS: Record<number, (record: never) => Favorite> = {
 	1: migrateV1ToV2 as unknown as (record: never) => Favorite,
 	2: migrateV2ToV3 as unknown as (record: never) => Favorite,
 	3: migrateV3ToV4 as unknown as (record: never) => Favorite,
+	4: migrateV4ToV5 as unknown as (record: never) => Favorite,
 };
 
 /**
@@ -92,9 +123,10 @@ const MIGRATIONS: Record<number, (record: never) => Favorite> = {
  * No-op for a record already at `SCHEMA_VERSION`.
  */
 export function migrateFavorite(
-	record: FavoriteV1 | FavoriteV2 | FavoriteV3 | Favorite,
+	record: FavoriteV1 | FavoriteV2 | FavoriteV3 | FavoriteV4 | Favorite,
 ): Favorite {
-	let current: Favorite | FavoriteV1 | FavoriteV2 | FavoriteV3 = record;
+	let current: Favorite | FavoriteV1 | FavoriteV2 | FavoriteV3 | FavoriteV4 =
+		record;
 	while (current.schemaVersion < SCHEMA_VERSION) {
 		const step = MIGRATIONS[current.schemaVersion];
 		if (!step) {

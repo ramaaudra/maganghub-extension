@@ -6,7 +6,7 @@ import {
 	serveFixture,
 	test,
 } from "./fixtures";
-import { openPopup } from "./pages/popup";
+import { openCard, openPopup } from "./pages/popup";
 
 // DETAIL_URL (imported as FIRST_DETAIL_URL from the shared fixtures) uses the
 // same UUID as the first card in lowongan-list.html, so favoriting on the list
@@ -295,7 +295,7 @@ test("setting a stage on the detail card persists and syncs to the popup", async
 
 	// Popup reads the same Favorite record.
 	const popup = await openPopup(context, extensionId);
-	const card = popup.locator(`[data-favorite-uuid="${FIRST_UUID}"]`);
+	const card = await openCard(popup, FIRST_UUID);
 	await expect(card.getByLabel("Status Lamar")).toHaveValue("interview");
 	await expect(
 		card.locator("span").filter({ hasText: "Interview" }),
@@ -329,7 +329,7 @@ test("picking a stage on an unsaved Lowongan saves it first", async ({
 	await expect(stageHost.getByLabel("Status Lamar")).toHaveValue("dilamar");
 
 	const popup = await openPopup(context, extensionId);
-	const card = popup.locator(`[data-favorite-uuid="${FIRST_UUID}"]`);
+	const card = await openCard(popup, FIRST_UUID);
 	await expect(card.getByLabel("Status Lamar")).toHaveValue("dilamar");
 	await expect(popup.getByText("Magang Data Analyst")).toBeVisible();
 });
@@ -354,7 +354,7 @@ test("missing stage sidebar reports degraded and stages stay settable in the pop
 	await page.locator(".mh-favorite-detail-host").click();
 	const popup = await openPopup(context, extensionId);
 	await expect(popup.getByText(/butuh update/i)).toBeVisible();
-	const card = popup.locator(`[data-favorite-uuid="${FIRST_UUID}"]`);
+	const card = await openCard(popup, FIRST_UUID);
 	await card.getByLabel("Status Lamar").selectOption("ditolak");
 	await expect(card.getByLabel("Status Lamar")).toHaveValue("ditolak");
 	await expect(
@@ -373,7 +373,7 @@ test("editing Catatan and toggling Status Lamar persists across popup reopen", a
 
 	let popup = await openPopup(context, extensionId);
 	const uuid = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
-	const card = popup.locator(`[data-favorite-uuid="${uuid}"]`);
+	const card = await openCard(popup, uuid);
 
 	await card
 		.getByPlaceholder("Kenapa lowongan ini?")
@@ -396,7 +396,7 @@ test("editing Catatan and toggling Status Lamar persists across popup reopen", a
 
 	// Reopen: both must have persisted to storage.
 	popup = await openPopup(context, extensionId);
-	const reopenedCard = popup.locator(`[data-favorite-uuid="${uuid}"]`);
+	const reopenedCard = await openCard(popup, uuid);
 	await expect(
 		reopenedCard.getByPlaceholder("Kenapa lowongan ini?"),
 	).toHaveValue("alasan aku simpan ini");
@@ -411,7 +411,7 @@ test("editing Catatan and toggling Status Lamar persists across popup reopen", a
 	await popup.close();
 
 	popup = await openPopup(context, extensionId);
-	const clearedCard = popup.locator(`[data-favorite-uuid="${uuid}"]`);
+	const clearedCard = await openCard(popup, uuid);
 	await expect(clearedCard.getByLabel("Status Lamar")).toHaveValue("");
 	// No stage → no chip.
 	await expect(
