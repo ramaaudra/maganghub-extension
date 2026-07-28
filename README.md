@@ -35,39 +35,56 @@ extension is the safe alternative **by construction**, not by promise.
 ## Features
 
 - **Star Lowongan** from the list or detail page — saved locally as a Favorite
-- **Catatan** — free-text note per Favorite (why you saved it)
+- **Catatan** — free-text note per Favorite (why you saved it); also shown on the star tooltip
 - **Status Lamar** — manual stage tracker: Belum dilamar → Dilamar → Interview → Diterima / Ditolak  
-  Always user-set; the extension never auto-detects applied state
-- **Status Lowongan** — refresh live Kuota/Pelamar from the public detail page, one Favorite or all (throttled, offscreen document)
-- **Search and sort** the Favorites list in the popup
+  Always user-set; the extension never auto-detects applied state. Editable on the detail page stage card and as a chip on list cards
+- **Status Lowongan** — refresh live Kuota/Pelamar from the public detail page, one Favorite or all (throttled, offscreen document). Popup surfaces changes with a badge
+- **Urgency colour** on list cards from remaining seats / Kuota pressure
+- **Popup Favorites list** — search, sort (including Status Lamar then remaining seats), collapsible per-Penyelenggara grouping
 - **Export / import** Favorites as JSON, with schema migration
 - **Injection health indicator** — when MagangHub's markup changes and injection fails, the popup says so instead of failing silently
 
 ## Install
 
-There is no Web Store build. Sideload a local build:
+There is no Web Store build. Sideload either a **prebuilt release** or a **local source build**.
 
-### Prerequisites
+### Option A — Prebuilt release (recommended)
+
+1. Open the latest [GitHub Release](https://github.com/ramaaudra/maganghub-extension/releases/latest)
+2. Download `sakumagang-<version>-chrome.zip` (or the attached chrome zip asset)
+3. Unzip it somewhere permanent (Chrome loads from that folder; do not delete it after install)
+4. Open `chrome://extensions`
+5. Enable **Developer mode** (top-right)
+6. Click **Load unpacked** and select the **unzipped folder** (the one that contains `manifest.json`)
+7. Visit [`https://maganghub.kemnaker.go.id/magang-nasional/lowongan`](https://maganghub.kemnaker.go.id/magang-nasional/lowongan) and star a Lowongan, or open the popup to manage Favorites
+
+To update: download the newer zip, replace the unzipped folder contents, then click **Reload** on the extension card.
+
+### Option B — Build from source
+
+#### Prerequisites
 
 - [Node.js](https://nodejs.org) LTS (20+)
 - Chromium-based browser (Chrome primary)
 
-### Steps
+#### Steps
 
 ```sh
 npm install
-npm run build
+npm run build          # unpacked output → .output/chrome-mv3
+# optional packaged zip:
+npm run zip            # → .output/maganghub-extension-<version>-chrome.zip
 ```
 
 1. Open `chrome://extensions`
 2. Enable **Developer mode** (top-right)
 3. Click **Load unpacked** and select `.output/chrome-mv3`
-4. Visit [`https://maganghub.kemnaker.go.id/magang-nasional/lowongan`](https://maganghub.kemnaker.go.id/magang-nasional/lowongan) and star a Lowongan, or open the popup to manage Favorites
+4. Visit MagangHub Lowongan and star one, or open the popup
 
 To update: pull latest source, re-run `npm run build`, then **Reload** the extension card.
 
 > [!NOTE]
-> A Firefox build target exists (`npm run build:firefox`) but is **not** a confirmed shipping channel.
+> A Firefox build target exists (`npm run build:firefox` / `npm run zip:firefox`) but is **not** a confirmed shipping channel.
 
 ## Develop
 
