@@ -14,6 +14,7 @@ const fav = (over: {
 	title?: string;
 	organizer?: string;
 	location?: string;
+	catatan?: string;
 	savedAt?: string;
 	archivedAt?: string | null;
 }): Favorite => ({
@@ -26,7 +27,7 @@ const fav = (over: {
 		location: over.location ?? "Jakarta",
 		capturedAt: "2026-01-01T00:00:00Z",
 	},
-	catatan: "",
+	catatan: over.catatan ?? "",
 	statusLamar: undefined,
 	liveStatus: { status: "unknown", lastChecked: null },
 	savedAt: over.savedAt ?? "2026-01-01T00:00:00Z",
@@ -88,6 +89,23 @@ describe("searchFavorites", () => {
 		const list = [fav({ uuid: U.a, title: "Magang Data Analyst" })];
 
 		expect(searchFavorites(list, "  DATA  ").map((f) => f.uuid)).toEqual([U.a]);
+	});
+
+	it("matches Catatan as well as title, Penyelenggara, and location", () => {
+		// The Catatan is the one user-authored field; a note exists to be found
+		// again (audit W3).
+		const list = [
+			fav({ uuid: U.a, title: "Magang Data Analyst" }),
+			fav({
+				uuid: U.b,
+				title: "Magang Desainer",
+				catatan: "Butuh portofolio UX",
+			}),
+		];
+
+		const result = searchFavorites(list, "portofolio");
+
+		expect(result.map((f) => f.uuid)).toEqual([U.b]);
 	});
 
 	it("returns nothing when no Favorite matches", () => {
@@ -223,6 +241,9 @@ const stageFav = (over: {
 	status?: Favorite["liveStatus"]["status"];
 	kuota?: number;
 	pelamar?: number;
+	/** Snapshot badge strings captured at star time (audit W5). */
+	snapKuota?: string;
+	snapPelamar?: string;
 }): Favorite => ({
 	schemaVersion: SCHEMA_VERSION,
 	uuid: over.uuid,
@@ -231,6 +252,8 @@ const stageFav = (over: {
 		title: over.title ?? "Magang",
 		organizer: "PT Contoh",
 		location: "Jakarta",
+		kuota: over.snapKuota,
+		pelamar: over.snapPelamar,
 		capturedAt: "2026-01-01T00:00:00Z",
 	},
 	catatan: "",
@@ -565,6 +588,61 @@ describe("sortFavorites(stageSeats)", () => {
 		const result = sortFavorites(filtered, "stageSeats");
 
 		expect(result.map((f) => f.uuid)).toEqual([S.b, S.a]);
+	});
+
+	it("ranks a never-refreshed Favorite by its snapshot seat numbers (card and sort agree)", () => {
+		// The card renders "sisa 10 kursi · 40 dari 50" from the snapshot; the
+		// sort must not file the same Favorite under "unrefreshed" — both read
+		// the same source (audit W5).
+		const list = [
+			stageFav({
+				uuid: S.a,
+				title: "Cold With Snapshot",
+				snapKuota: "Kuota: 50",
+				snapPelamar: "Pelamar: 40",
+			}),
+			stageFav({ uuid: S.b, title: "Cold No Numbers" }),
+			stageFav({
+				uuid: S.c,
+				title: "Live Remaining 1",
+				kuota: 50,
+				pelamar: 49,
+			}),
+		];
+
+		const result = sortFavorites(list, "stageSeats");
+
+		// Live (1) < snapshot (10); the no-numbers Favorite sinks to unrefreshed.
+		expect(result.map((f) => f.uuid)).toEqual([S.c, S.a, S.b]);
+	});
+
+	it("prefers live numbers over the snapshot when both exist", () => {
+		const list = [
+			stageFav({
+				uuid: S.a,
+				title: "Live 49",
+				kuota: 50,
+				pelamar: 49,
+				snapKuota: "Kuota: 50",
+				snapPelamar: "Pelamar: 1",
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+			stageFav({
+				uuid: S.b,
+				title: "Live 40",
+				kuota: 50,
+				pelamar: 40,
+				snapKuota: "Kuota: 50",
+				snapPelamar: "Pelamar: 1",
+				savedAt: "2026-01-01T00:00:00Z",
+			}),
+		];
+
+		const result = sortFavorites(list, "stageSeats");
+
+		// Live remaining 1 vs 10 → ascending puts Live 49 first. The snapshot's
+		// "49 remaining" reading is ignored once live data exists.
+		expect(result.map((f) => f.uuid)).toEqual([S.a, S.b]);
 	});
 
 	it("does not mutate the input list", () => {

@@ -377,6 +377,171 @@ test("sorting by Status Lamar + sisa kursi orders by stage then seats", async ({
 	]);
 });
 
+// Audit W3: the Tahap filter isolates one Status Lamar — the real way to
+// answer "which favorites are Interview?". Seeds stages directly into storage
+// (the star flow sets no stage), covering the filter, its no-match state, and
+// clearing back to all stages.
+test("filtering by Tahap isolates one Status Lamar", async ({
+	context,
+	extensionId,
+}) => {
+	const popup = await openPopup(context, extensionId);
+	await popup.evaluate(async () => {
+		const records: Record<string, unknown> = {
+			"fav:11111111-1111-4111-8111-111111111111": {
+				schemaVersion: 4,
+				uuid: "11111111-1111-4111-8111-111111111111",
+				detailUrl:
+					"/magang-nasional/lowongan/magang-a-11111111-1111-4111-8111-111111111111",
+				savedSnapshot: {
+					title: "Alpha Interview",
+					organizer: "PT Satu",
+					location: "Jakarta",
+					capturedAt: "2026-01-01T00:00:00Z",
+				},
+				catatan: "",
+				statusLamar: "interview",
+				liveStatus: { status: "unknown", lastChecked: null },
+				savedAt: "2026-01-01T00:00:00Z",
+			},
+			"fav:22222222-2222-4222-8222-222222222222": {
+				schemaVersion: 4,
+				uuid: "22222222-2222-4222-8222-222222222222",
+				detailUrl:
+					"/magang-nasional/lowongan/magang-b-22222222-2222-4222-8222-222222222222",
+				savedSnapshot: {
+					title: "Beta Dilamar",
+					organizer: "PT Dua",
+					location: "Bandung",
+					capturedAt: "2026-01-01T00:00:00Z",
+				},
+				catatan: "",
+				statusLamar: "dilamar",
+				liveStatus: { status: "unknown", lastChecked: null },
+				savedAt: "2026-01-02T00:00:00Z",
+			},
+			"fav:33333333-3333-4333-8333-333333333333": {
+				schemaVersion: 4,
+				uuid: "33333333-3333-4333-8333-333333333333",
+				detailUrl:
+					"/magang-nasional/lowongan/magang-c-33333333-3333-4333-8333-333333333333",
+				savedSnapshot: {
+					title: "Gamma Ditolak",
+					organizer: "PT Tiga",
+					location: "Surabaya",
+					capturedAt: "2026-01-01T00:00:00Z",
+				},
+				catatan: "",
+				statusLamar: "ditolak",
+				liveStatus: { status: "unknown", lastChecked: null },
+				savedAt: "2026-01-03T00:00:00Z",
+			},
+		};
+		const api = (
+			globalThis as unknown as {
+				chrome: { storage: { local: { set(r: unknown): Promise<void> } } };
+			}
+		).chrome;
+		await api.storage.local.set(records);
+	});
+
+	await expect(renderedTitles(popup)).toHaveCount(3, { timeout: 10_000 });
+
+	// Isolate one stage.
+	await popup.getByLabel("Tahap").selectOption("interview");
+	await expect(renderedTitles(popup)).toHaveText(["Alpha Interview"]);
+
+	// A stage with no matches shows the no-match state, not the empty state.
+	await popup.getByLabel("Tahap").selectOption("diterima");
+	await expect(renderedTitles(popup)).toHaveCount(0);
+	await expect(popup.getByText(/Tidak ada favorit yang cocok/i)).toBeVisible();
+
+	// Back to all stages restores the full list.
+	await popup.getByLabel("Tahap").selectOption("");
+	await expect(renderedTitles(popup)).toHaveCount(3);
+});
+
+// Audit W4: the chosen sort is remembered per tab for the browser session
+// (chrome.storage.session), so closing and reopening the popup keeps the
+// order — and peeking at the Arsip tab no longer discards the Aktif choice.
+test("the chosen sort survives popup close/reopen within the session", async ({
+	page,
+	context,
+	extensionId,
+}) => {
+	await starAllThree(page);
+	const popup = await openPopup(context, extensionId);
+	await expect(renderedTitles(popup)).toHaveCount(3);
+
+	await popup.getByLabel("Urutkan").selectOption("organizer");
+	await expect(renderedTitles(popup)).toHaveText([
+		"Magang Software Engineer",
+		"Magang UI/UX Designer",
+		"Magang Data Analyst",
+	]);
+
+	await popup.close();
+
+	const reopened = await openPopup(context, extensionId);
+	await expect(renderedTitles(reopened)).toHaveCount(3);
+	await expect(reopened.getByLabel("Urutkan")).toHaveValue("organizer");
+	await expect(renderedTitles(reopened)).toHaveText([
+		"Magang Software Engineer",
+		"Magang UI/UX Designer",
+		"Magang Data Analyst",
+	]);
+});
+
+test("switching tabs restores each tab's own remembered sort", async ({
+	page,
+	context,
+	extensionId,
+}) => {
+	await starAllThree(page);
+	const popup = await openPopup(context, extensionId);
+
+	// One archived Favorite so the Arsip tab has content. Seeded at the
+	// CURRENT schema (5): a v4 record would be migrated and have its
+	// `archivedAt` overwritten to null (active) by migrateV4ToV5.
+	await popup.evaluate(async () => {
+		const api = (
+			globalThis as unknown as {
+				chrome: { storage: { local: { set(r: unknown): Promise<void> } } };
+			}
+		).chrome;
+		await api.storage.local.set({
+			"fav:99999999-9999-4999-8999-999999999999": {
+				schemaVersion: 5,
+				uuid: "99999999-9999-4999-8999-999999999999",
+				detailUrl:
+					"/magang-nasional/lowongan/magang-z-99999999-9999-4999-8999-999999999999",
+				savedSnapshot: {
+					title: "Zeta Arsip",
+					organizer: "PT Zeta",
+					location: "Jakarta",
+					capturedAt: "2026-01-01T00:00:00Z",
+				},
+				catatan: "",
+				statusLamar: undefined,
+				liveStatus: { status: "unknown", lastChecked: null },
+				savedAt: "2026-01-01T00:00:00Z",
+				archivedAt: "2026-02-01T00:00:00Z",
+			},
+		});
+	});
+
+	await expect(renderedTitles(popup)).toHaveCount(3, { timeout: 10_000 });
+
+	// Aktif's choice.
+	await popup.getByLabel("Urutkan").selectOption("organizer");
+	await popup.getByRole("tab", { name: /Arsip/ }).click();
+	// Arsip has no remembered choice yet → its own default.
+	await expect(popup.getByLabel("Urutkan")).toHaveValue("archivedAt");
+	await popup.getByRole("tab", { name: "Aktif" }).click();
+	// Aktif's remembered choice is restored — the tab switch did not clobber it.
+	await expect(popup.getByLabel("Urutkan")).toHaveValue("organizer");
+});
+
 // Issue #21 (B2): the stageSeats sort respects the active search — the filtered
 // list is sorted within the filter, never escaping it.
 test("stageSeats sort respects the active search", async ({

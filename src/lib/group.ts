@@ -1,3 +1,4 @@
+import type { SortKey } from "./filter";
 import type { Favorite } from "./types";
 
 /**
@@ -20,6 +21,31 @@ import type { Favorite } from "./types";
 
 /** A Penyelenggara with more than this many Favorites collapses into a group. */
 export const GROUP_THRESHOLD = 3;
+
+/**
+ * The sorts under which per-Penyelenggara grouping is applied (audit W1).
+ *
+ * Grouping collects EVERY Favorite of one organizer into one block at the
+ * organizer's first (best-ranked) appearance, which reorders cards relative
+ * to the chosen sort. That is acceptable when the sort is already "roughly
+ * recent" (`savedAt`, `archivedAt` — the head of the list stays truthful and
+ * a group reads as one org's recent activity) or org-keyed (`organizer`),
+ * but it silently breaks strict orderings like `location` A→Z and the
+ * `stageSeats` urgency buckets — there a group spanning several locations or
+ * buckets would make the list read as something the sort label did not
+ * promise. Under those sorts cards stand alone and the list reads
+ * top-to-bottom exactly as labeled.
+ */
+export const GROUPING_SORT_KEYS: ReadonlySet<SortKey> = new Set([
+	"savedAt",
+	"organizer",
+	"archivedAt",
+]);
+
+/** True when the active sort is compatible with org grouping (audit W1). */
+export function shouldGroup(sortKey: SortKey): boolean {
+	return GROUPING_SORT_KEYS.has(sortKey);
+}
 
 /**
  * The stage-summary categories shown on a group header (issue #22 example:
@@ -116,6 +142,10 @@ export function summaryText(summary: StageSummary): string {
 
 /**
  * Group the (already-filtered, already-sorted) Favorites by Penyelenggara.
+ *
+ * The popup calls this only when the active sort is grouping-compatible
+ * (`shouldGroup`); under `location`/`stageSeats` cards stand alone so the
+ * strict order the sort label promises is never silently reordered.
  *
  * A group collects EVERY favorite from one organizer into one block, even when
  * the active sort interleaves them — the Penyelenggara relationship is the

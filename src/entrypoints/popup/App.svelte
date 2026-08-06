@@ -1,21 +1,29 @@
 <script lang="ts">
+import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/svelte";
 import { onDestroy } from "svelte";
 import { markPopupOpened, syncToolbarBadge } from "@/lib/badge";
-import { Button } from "@/lib/components/ui/button";
-import { Input } from "@/lib/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/lib/components/ui/alert";
+import { Button } from "@/lib/components/ui/button";
 import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/lib/components/ui/collapsible";
+import { Input } from "@/lib/components/ui/input";
 import { type SortKey, searchFavorites, sortFavorites } from "@/lib/filter";
-import { groupFavorites, summaryText } from "@/lib/group";
+import {
+	type GroupedItem,
+	groupFavorites,
+	shouldGroup,
+	summaryText,
+} from "@/lib/group";
 import { type HealthStatus, readHealth } from "@/lib/health";
 import { type ExportFile, exportFavorites, importFavorites } from "@/lib/io";
 import type { RefreshRequest, RefreshResponse } from "@/lib/refresh";
+import { STAGE_LABEL } from "@/lib/stage";
 import { listFavorites } from "@/lib/storage";
-import type { Favorite } from "@/lib/types";
+import type { Favorite, StatusLamar } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import FavoriteCard from "./FavoriteCard.svelte";
 
@@ -53,7 +61,16 @@ function onChanged(_changes: Record<string, unknown>, areaName: string): void {
 }
 
 $effect(() => {
-	void refresh();
+	void (async () => {
+		// W4: restore the remembered sort before the list paints. The popup
+		// always opens on the Aktif tab (ADR-0010), so read that tab's key;
+		// loading stays true until refresh() lands, so the select swaps to the
+		// stored key while the skeleton still shows.
+		const stored = await browser.storage.session.get(sortStorageKey("aktif"));
+		const key = stored[sortStorageKey("aktif")] as SortKey | undefined;
+		if (key) sortKey = key;
+		void refresh();
+	})();
 	browser.storage.onChanged.addListener(onChanged);
 	return () => browser.storage.onChanged.removeListener(onChanged);
 });
@@ -98,6 +115,46 @@ async function refreshAll(): Promise<void> {
 
 let query = $state("");
 let sortKey = $state<SortKey>("savedAt");
+/** Tahap filter (audit W2/W3): "" = all stages, else isolate one Status Lamar. */
+let stageFilter = $state<"" | StatusLamar>("");
+
+/**
+ * The Tahap filter's options: all stages plus the no-filter entry. Labels
+ * come from STAGE_LABEL so the filter, the on-card chip, and the Status Lamar
+ * select can never disagree on vocabulary (D2/D7).
+ */
+const STAGE_FILTER_OPTIONS: ReadonlyArray<
+	readonly [value: string, label: string]
+> = [
+	["", "Semua tahap"],
+	...(Object.keys(STAGE_LABEL) as StatusLamar[]).map(
+		(stage) => [stage, STAGE_LABEL[stage]] as const,
+	),
+];
+
+// ─── Sort persistence (audit W4) ────────────────────────────────────────────
+// The user's sort is remembered PER TAB for the rest of the browser session
+// (chrome.storage.session — a fresh browser opens on the defaults again), and
+// switching tabs restores that tab's own choice instead of clobbering it. The
+// query and Tahap filter are deliberately NOT persisted: a fresh popup should
+// open on the full, unfiltered list.
+function sortStorageKey(tab: "aktif" | "arsip"): string {
+	return `ui:sortKey:${tab}`;
+}
+
+function persistSortKey(tab: "aktif" | "arsip", key: SortKey): void {
+	void browser.storage.session.set({ [sortStorageKey(tab)]: key });
+}
+
+function onSortChange(event: Event): void {
+	sortKey = (event.currentTarget as HTMLSelectElement).value as SortKey;
+	persistSortKey(tab, sortKey);
+}
+
+function onStageFilterChange(event: Event): void {
+	const value = (event.currentTarget as HTMLSelectElement).value;
+	stageFilter = value === "" ? "" : (value as StatusLamar);
+}
 
 // ─── Aktif / Arsip tabs (ADR-0010) ──────────────────────────────────────────
 // Archive is a popup-only view concern: archivedAt !== null hides a Favorite
@@ -122,21 +179,75 @@ const tabFavorites = $derived(
  *  temporal-dead-zone error, not just a lint nit. */
 const refreshDisabled = $derived(refreshingAll || activeFavorites.length === 0);
 
-/** Switch tab and reset the sort to that tab's default (Aktif = savedAt, Arsip
- *  = archivedAt / "terbaru diarsip"). The user can re-pick a sort afterward; */
-function selectTab(next: "aktif" | "arsip"): void {
+/** Switch tab, restoring that tab's own remembered sort instead of clobbering
+ *  the user's choice (audit W4). A peek at the Arsip tab no longer discards
+ *  an Aktif sort; each tab keeps its default (Aktif = savedAt, Arsip =
+ *  archivedAt) until the user picks something, and the choice is remembered
+ *  for the rest of the browser session. */
+async function selectTab(next: "aktif" | "arsip"): Promise<void> {
 	tab = next;
-	sortKey = next === "arsip" ? "archivedAt" : "savedAt";
+	const stored = await browser.storage.session.get(sortStorageKey(next));
+	const key = stored[sortStorageKey(next)] as SortKey | undefined;
+	if (key) {
+		// Guard: archivedAt is only a valid sort inside the Arsip tab (we only
+		// ever write it there, so this is belt-and-suspenders).
+		sortKey = key === "archivedAt" && next === "aktif" ? "savedAt" : key;
+	} else {
+		sortKey = next === "arsip" ? "archivedAt" : "savedAt";
+	}
 }
 
+/** ARIA APG tab keyboard model: Left/Right cycle, Home/End jump to the ends.
+ *  Selection follows focus (both tabs render instantly from already-loaded
+ *  state, so there is no cost to activating on arrow), and focus is moved to
+ *  the newly selected tab so the roving tabindex and the DOM agree. */
+function onTabKeydown(event: KeyboardEvent): void {
+	const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
+	if (!keys.includes(event.key)) return;
+	event.preventDefault();
+	const next =
+		event.key === "Home"
+			? "aktif"
+			: event.key === "End"
+				? "arsip"
+				: tab === "aktif"
+					? "arsip"
+					: "aktif";
+	selectTab(next);
+	// Wait for the roving tabindex to re-render before moving focus, or the
+	// target still has tabindex="-1" and the browser refuses it.
+	queueMicrotask(() => {
+		const el = document.querySelector<HTMLButtonElement>(
+			`[data-tab="${next}"]`,
+		);
+		el?.focus();
+	});
+}
+
+/** Filter by Tahap first, then search, then sort — the popup's full pipeline:
+ *  which subset (tab → stage filter → query), then what order. */
+const tabStageFiltered = $derived(
+	stageFilter === ""
+		? tabFavorites
+		: tabFavorites.filter((f) => f.statusLamar === stageFilter),
+);
+
 const visible = $derived(
-	sortFavorites(searchFavorites(tabFavorites, query), sortKey),
+	sortFavorites(searchFavorites(tabStageFiltered, query), sortKey),
 );
 
 // Issue #22 (C4): collapse Favorites by Penyelenggara when one org has
 // more than 3, with a stage-summary header. Composes AFTER search + sort so
 // the summary reflects the active list, never the whole storage set.
-const groups = $derived(groupFavorites(visible));
+// Audit W1: only under grouping-compatible sorts (savedAt/organizer/
+// archivedAt). Under location/Urgensi the sort is strict — a group that
+// collects every card of one org would silently break the order the label
+// promises — so cards stand alone there.
+const groups = $derived<GroupedItem[]>(
+	shouldGroup(sortKey)
+		? groupFavorites(visible)
+		: visible.map((favorite) => ({ kind: "solo", favorite })),
+);
 
 // Per-group collapse state, keyed by organizer name. Default expanded so the
 // user's favorites are visible; collapsing is the power-user move for taming a
@@ -156,8 +267,15 @@ function toggleGroup(organizer: string): void {
 function isCollapsed(organizer: string): boolean {
 	return collapsed.has(organizer);
 }
-/** The current tab has favorites, but the current query matches none of them. */
+/** The current tab has favorites, but the current query/filter matches none. */
 const noMatches = $derived(tabFavorites.length > 0 && visible.length === 0);
+
+/** W6: the Urutkan select reads as "active" (foreground ink) once the user
+ *  moves off the tab's baseline default, so a non-default order is visible at
+ *  a glance. Baseline: Aktif = savedAt, Arsip = archivedAt. */
+const sortIsCustom = $derived(
+	sortKey !== (tab === "arsip" ? "archivedAt" : "savedAt"),
+);
 
 /** The current tab is empty (regardless of query). Distinct from `noMatches`
  *  so an empty Arsip tab shows an onboarding empty state, not a "no matches"
@@ -242,7 +360,10 @@ const sortSelectClass =
 function tabClass(selected: boolean): string {
 	return cn(
 		// impeccable-disable-next-line border-accent-on-rounded: --radius is 0rem system-wide (DESIGN.md "Sharp-Everywhere"), so this 2px underline has no corner to clash with — it is a tab indicator, not a card edge.
-		"rounded-none border-b-2 px-2 py-1 -mb-px text-xs transition-colors",
+		// py-1.5 → 30px tall (was 26px at py-1, the smallest primary navigation
+		// target in the popup). The underline indicator is unmoved: -mb-px still
+		// pins it to the row's shared baseline with the sort select.
+		"rounded-none border-b-2 px-2 py-1.5 -mb-px text-xs transition-colors",
 		selected
 			? "border-primary font-medium text-foreground"
 			: "border-transparent text-muted-foreground hover:text-foreground",
@@ -258,7 +379,11 @@ function tabClass(selected: boolean): string {
   compressed to a single line. Nothing was removed; the prose was.
 -->
 <header class="border-b px-4 pt-3 pb-2">
-  <div class="flex items-center justify-between gap-2">
+  <!-- `min-h-7` reserves the identity row's height so the *Segarkan semua*
+       button (h-7) coming and going between Aktif and Arsip does not grow or
+       shrink this band — the header is pinned chrome, so a 4px wobble here
+       shifts the whole list below it (reported as CLS on tab switch). -->
+  <div class="flex min-h-7 items-center justify-between gap-2">
     <!-- ADR-0009: the name, not a label for the list. "Favorit Lowongan"
          described what the list below already shows; opened over MagangHub,
          the one thing the header has to establish is who is speaking. -->
@@ -290,12 +415,21 @@ function tabClass(selected: boolean): string {
        changes the rendered subset, never the stored data. -->
   <div class="mt-2 flex items-end justify-between gap-2 border-b border-border">
     <div class="flex items-center gap-1" role="tablist" aria-label="Daftar favorit">
+      <!-- Full APG tab semantics: each tab points at the one panel via
+           aria-controls, carries a roving tabindex so Tab enters the strip once
+           and lands on the selected tab, and Left/Right/Home/End move between
+           them. Without these, role="tab" promised a widget the keyboard did
+           not deliver — plain buttons announcing themselves as tabs. -->
       <button
         type="button"
         role="tab"
+        id="tab-aktif"
         aria-selected={tab === 'aktif'}
+        aria-controls="panel-favorit"
+        tabindex={tab === 'aktif' ? 0 : -1}
         class={tabClass(tab === 'aktif')}
         onclick={() => selectTab('aktif')}
+        onkeydown={onTabKeydown}
         data-tab="aktif"
       >
         Aktif
@@ -303,9 +437,13 @@ function tabClass(selected: boolean): string {
       <button
         type="button"
         role="tab"
+        id="tab-arsip"
         aria-selected={tab === 'arsip'}
+        aria-controls="panel-favorit"
+        tabindex={tab === 'arsip' ? 0 : -1}
         class={tabClass(tab === 'arsip')}
         onclick={() => selectTab('arsip')}
+        onkeydown={onTabKeydown}
         data-tab="arsip"
       >
         Arsip{#if archivedCount > 0} <span class="tabular-nums">({archivedCount})</span>{/if}
@@ -316,20 +454,43 @@ function tabClass(selected: boolean): string {
          e2e can drive it with selectOption; styled to match sera. The 2px
          bottom border matches the tabs' indicator weight so both sit on one
          baseline; --radius is 0rem system-wide, so there is no corner for it
-         to clash with. -->
-    <select
-      class={sortSelectClass}
-      aria-label="Urutkan"
-      bind:value={sortKey}
-    >
-      {#if tab === 'arsip'}
-      <option value="archivedAt" >Terbaru diarsip</option>
-      {/if}
-      <option value="savedAt">Terbaru disimpan</option>
-      <option value="stageSeats">Status Lamar, sisa kursi</option>
-      <option value="organizer">Penyelenggara</option>
-      <option value="location">Lokasi</option>
-    </select>
+         to clash with. Audit W2/W6: the stageSeats key keeps its code value
+         but is shown as "Urgensi" — the sort is urgency (active-with-seats,
+         closest-to-full first) with done items sunk, not a stage ordering;
+         the Tahap select beside it is the real way to isolate a stage. The
+         foreground ink on non-default marks an active sort (W6). W4: the
+         choice persists per tab for the browser session via storage.session. -->
+    <div class="flex items-center gap-1">
+      <select
+        class={cn(sortSelectClass, sortIsCustom && 'text-foreground')}
+        aria-label="Urutkan"
+        value={sortKey}
+        onchange={onSortChange}
+      >
+        {#if tab === 'arsip'}
+        <option value="archivedAt" >Terbaru diarsip</option>
+        {/if}
+        <option value="savedAt">Terbaru disimpan</option>
+        <option value="stageSeats">Urgensi</option>
+        <option value="organizer">Penyelenggara</option>
+        <option value="location">Lokasi</option>
+      </select>
+
+      <!-- Audit W2/W3: the Tahap filter is how a user isolates a stage — the
+           sort select only orders. Same native underline language, same
+           foreground-on-active rule. Not persisted: a fresh popup opens on
+           "Semua tahap". -->
+      <select
+        class={cn(sortSelectClass, stageFilter !== '' && 'text-foreground')}
+        aria-label="Tahap"
+        value={stageFilter}
+        onchange={onStageFilterChange}
+      >
+        {#each STAGE_FILTER_OPTIONS as [value, label]}
+          <option value={value}>{label}</option>
+        {/each}
+      </select>
+    </div>
   </div>
 
   <Input
@@ -353,16 +514,6 @@ function tabClass(selected: boolean): string {
     </div>
   {/if}
 
-  <!-- One line, not a paragraph. Cold cards now show their saved Kuota and
-       Pelamar, so this no longer has to explain an information void — it just
-       states how many readings are stale. The button that fixes it is directly
-       above, already named. -->
-  {#if uncheckedVisible > 0 && !loading && !noMatches}
-    <p class="mt-1.5 text-xs text-muted-foreground" role="status" data-unchecked-coach>
-      <span class="tabular-nums">{uncheckedVisible}</span> favorit belum dicek Status Lowongan.
-    </p>
-  {/if}
-
   {#if importMsg}
     <div class="mh-rise-in mt-2">
       <Alert variant={importMsg.kind === 'warn' ? 'destructive' : 'default'}>
@@ -372,7 +523,34 @@ function tabClass(selected: boolean): string {
   {/if}
 </header>
 
-<main class="space-y-1.5 p-3">
+<!-- The panel the two tabs control. `aria-labelledby` swaps with the tab so a
+     screen reader reads the panel as belonging to whichever is selected.
+     Stays a <main>: app.css scrolls `#app > main`, and this list IS the popup's
+     main content. The lint rule is a heuristic against decorating inert
+     containers; a tabpanel referenced by aria-controls is the APG-sanctioned
+     use, and the role is what makes the tablist above a real widget. -->
+<!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
+<main
+  class="space-y-1.5 p-3"
+  id="panel-favorit"
+  role="tabpanel"
+  aria-labelledby={tab === 'aktif' ? 'tab-aktif' : 'tab-arsip'}
+>
+  <!-- The "belum dicek" coach lives in the scrollable panel, not the pinned
+       header. It is an Aktif-only advisory (Arsip records are skipped by
+       refresh, so the count is always 0 there), and keeping it in the header
+       made the header shrink ~22px on an Aktif→Arsip switch — a layout shift
+       of pinned chrome that read as CLS. Here it is part of the content that
+       already swaps on tab change, so it never moves a stable element. The
+       *Segarkan semua* button that acts on it stays pinned in the header.
+       DESIGN.md still holds: it is one line, `role="status"`, and only shows
+       when there is something stale to name. -->
+  {#if uncheckedVisible > 0 && !loading && !noMatches}
+    <p class="text-xs text-muted-foreground" role="status" data-unchecked-coach>
+      <span class="tabular-nums">{uncheckedVisible}</span> favorit belum dicek Status Lowongan.
+    </p>
+  {/if}
+
   {#if loading}
     <div class="space-y-1.5" aria-hidden="true">
       <div class="h-[76px] rounded-none bg-muted"></div>
@@ -412,11 +590,11 @@ function tabClass(selected: boolean): string {
     {/if}
   {:else if noMatches}
     <!-- Distinct from the empty state above: the user HAS favorites, this
-         query just matches none of them. -->
+         query/filter just matches none of them. -->
     <div class="px-4 py-10 text-center">
       <p class="text-sm font-medium">Tidak ada favorit yang cocok</p>
       <p class="mx-auto mt-1 max-w-[15rem] text-xs leading-relaxed text-muted-foreground">
-        Coba kata kunci lain atau kosongkan pencarian.
+        Coba kata kunci lain atau ubah filter.
       </p>
     </div>
   {:else}
@@ -437,17 +615,28 @@ function tabClass(selected: boolean): string {
         <section class="mh-group" data-group-organizer={item.organizer}>
           <button
             type="button"
-            class="flex w-full items-baseline gap-2 rounded-none border-b border-border px-1 pt-1 pb-1.5 text-left transition-colors hover:border-b-foreground/30"
+            class="flex w-full items-center gap-2 rounded-none border-b border-border px-1 py-1.5 text-left transition-colors hover:border-b-foreground/30"
             aria-expanded={!isCollapsed(item.organizer)}
             data-group-toggle
             onclick={() => toggleGroup(item.organizer)}
           >
-            <span
-              class="shrink-0 text-xs text-muted-foreground transition-transform duration-150 ease-out"
-              class:rotate-0={!isCollapsed(item.organizer)}
-              class:-rotate-90={isCollapsed(item.organizer)}
+            <!-- Same icon, same rotation, same duration as the card's own
+                 disclosure chevron (FavoriteCard.svelte): the arrow points down
+                 while the group is collapsed and rotates -180° (up) once it is
+                 expanded — down-to-open, up-to-close, matching the card. It was
+                 a `▾` text glyph turning -90° while the card's Hugeicons chevron
+                 turned -180°, so one affordance spoke in two icon systems and
+                 two directions on the same screen; the previous logic inverted
+                 this one (up when collapsed) and re-introduced the same split. -->
+            <HugeiconsIcon
+              icon={ArrowDown01Icon}
+              strokeWidth={2}
+              class={cn(
+                'size-3.5 shrink-0 self-center text-muted-foreground transition-transform duration-150 ease-out',
+                !isCollapsed(item.organizer) && '-rotate-180',
+              )}
               aria-hidden="true"
-            >▾</span>
+            />
             <span class="min-w-0 flex-1">
               <span class="block truncate text-xs font-semibold">{item.organizer}</span>
             </span>
@@ -511,7 +700,15 @@ function tabClass(selected: boolean): string {
         aria-label="Impor file favorit"
         onchange={onImportFile}
       />
-      <CollapsibleTrigger class="ml-auto shrink-0 text-xs font-medium text-primary underline-offset-2 hover:underline">
+      <!-- `py-2 -my-2` extends the tap target to 32px without moving the
+           baseline: the padding grows the box, the negative margin gives the
+           space back to the flex row. A bare 16px text node was the smallest
+           target in the popup. -->
+      <!-- DESIGN.md trust explainer: an underlined `text-primary` summary —
+           underlined at rest, not just on hover, so the disclosure reads as a
+           link the moment the row paints (the *Buka di MagangHub* exit link is
+           the hover-underline one; this one signals "open for more"). -->
+      <CollapsibleTrigger class="ml-auto -my-2 inline-flex shrink-0 items-center py-2 text-xs font-medium text-primary underline underline-offset-2 hover:decoration-primary/40">
         Mengapa aman?
       </CollapsibleTrigger>
     </div>

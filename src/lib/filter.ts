@@ -1,3 +1,4 @@
+import { favoriteSeats } from "./seats";
 import type { Favorite, StatusLamar } from "./types";
 
 /**
@@ -8,7 +9,8 @@ import type { Favorite, StatusLamar } from "./types";
 
 /**
  * Filter Favorites by a free-text query, matched against the saved snapshot's
- * title, Penyelenggara, and location.
+ * title, Penyelenggara, location, and the user's own Catatan (audit W3 — a
+ * note exists to be found again, and it is the one user-authored field).
  */
 export function searchFavorites(
 	favorites: readonly Favorite[],
@@ -19,20 +21,25 @@ export function searchFavorites(
 	return favorites.filter((fav) => haystack(fav).includes(needle));
 }
 
-/** The searchable text of one Favorite: title + Penyelenggara + location. */
+/**
+ * The searchable text of one Favorite: title + Penyelenggara + location +
+ * Catatan. The snapshot stays the source of truth (ADR-0002); the title-cased
+ * display text is NOT searched because search lowercases both sides already
+ * and the raw string is what the page showed.
+ */
 function haystack(fav: Favorite): string {
 	const { title, organizer, location } = fav.savedSnapshot;
-	return `${title}\n${organizer}\n${location}`.toLowerCase();
+	return `${title}\n${organizer}\n${location}\n${fav.catatan}`.toLowerCase();
 }
 
 /**
  * The orders the popup offers. `savedAt` is newest-first; `organizer` and
- * `location` are A→Z; `stageSeats` (issue #21) orders by Status Lamar first
- * (active above terminal), then by remaining seats within the active block.
- * `archivedAt` (ADR-0010) is newest-first by archive timestamp — the natural
- * order for the popup's Arsip tab ("terbaru diarsip" on top). It is only
- * offered in the Arsip tab; in the Aktif tab it would be `null` for every
- * row.
+ * `location` are A→Z; `stageSeats` (issue #21) orders active above terminal,
+ * then by remaining seats within the active block — it is urgency, not a
+ * stage ordering, so the popup labels it "Urgensi" (audit W2). `archivedAt`
+ * (ADR-0010) is newest-first by archive timestamp — the natural order for the
+ * popup's Arsip tab ("terbaru diarsip" on top). It is only offered in the
+ * Arsip tab; in the Aktif tab it would be `null` for every row.
  */
 export type SortKey =
 	| "savedAt"
@@ -65,10 +72,11 @@ const TERMINAL_STAGES: ReadonlySet<StatusLamar> = new Set([
  *   Kept below `withSeats`; ordered ascending by remaining too, so the
  *   most-over-subscribed (smallest remaining, e.g. −10 before −1) sorts first
  *   — one rule (ascending by remaining) covers both numeric buckets.
- * - `unrefreshed` (2): active stage, but kuota/pelamar unknown (never refreshed
- *   or refresh failed with no prior numbers). No remaining to order by, so
- *   newest-saved first — the recently-saved Lowongan the user might still want
- *   to refresh lands above older stale ones.
+ * - `unrefreshed` (2): active stage, but no seat numbers from EITHER source
+ *   (never refreshed AND the snapshot captured no badges, or both parsings
+ *   failed). No remaining to order by, so newest-saved first — the
+ *   recently-saved Lowongan the user might still want to refresh lands above
+ *   older stale ones.
  * - `terminal` (3): Status Lamar is Diterima/Ditolak, or Status Lowongan is
  *   Closed — the user is done with this one. Newest-saved first.
  *
@@ -89,14 +97,18 @@ function stageSeatsRank(fav: Favorite): StageSeatsRank {
 
 /**
  * Remaining seats = kuota − pelamar, or `undefined` when either number is
- * unknown (never refreshed, or refresh failed with no prior numbers). Used by
- * both the ranker (to pick the bucket) and the comparator (to order within it),
- * so the two never disagree on what "remaining" means.
+ * unknown. Reads the SAME source the card renders (audit W5): live numbers
+ * once refreshed, else the snapshot badges captured at star time — so the
+ * sort and the seat line never disagree about how many seats remain, and a
+ * never-refreshed Favorite whose snapshot has numbers ranks in a numeric
+ * bucket instead of falling into "unrefreshed". Used by both the ranker (to
+ * pick the bucket) and the comparator (to order within it), so the two never
+ * disagree on what "remaining" means. Snapshot numbers are star-time readings;
+ * the card already shows them without a freshness qualifier, so consistency
+ * wins over staleness.
  */
 function remainingSeats(fav: Favorite): number | undefined {
-	const { kuota, pelamar } = fav.liveStatus;
-	if (kuota === undefined || pelamar === undefined) return undefined;
-	return kuota - pelamar;
+	return favoriteSeats(fav).remaining;
 }
 
 /**
@@ -122,9 +134,10 @@ function compareByStageSeats(a: Favorite, b: Favorite): number {
  *
  * `savedAt` is newest-first (matching the storage layer's default order);
  * `organizer` and `location` are A→Z, compared with Indonesian locale collation
- * so accents and case sort the way a reader expects. `stageSeats` (issue #21)
- * orders by Status Lamar first (active above terminal), then by remaining
- * seats within the active block — see `compareByStageSeats`. `archivedAt`
+ * so accents and case sort the way a reader expects. `stageSeats` (issue #21,
+ * shown to the user as "Urgensi" since audit W2 — it is urgency ordering, not
+ * a stage ordering) orders active above terminal, then by remaining seats
+ * within the active block — see `compareByStageSeats`. `archivedAt`
  * (ADR-0010) is newest-first by archive timestamp. All other keys fall back
  * to newest-first on ties, so every sort is stable and meaningful.
  */

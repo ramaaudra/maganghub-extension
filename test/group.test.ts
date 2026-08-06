@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
 	GROUP_THRESHOLD,
 	groupFavorites,
+	type StageSummary,
+	shouldGroup,
 	summarizeStages,
 	summaryText,
-	type StageSummary,
 } from "@/lib/group";
 import { type Favorite, SCHEMA_VERSION, type StatusLamar } from "@/lib/types";
 
@@ -66,6 +67,22 @@ function uuidOutline(items: ReturnType<typeof groupFavorites>): string[] {
 	}
 	return out;
 }
+
+describe("shouldGroup", () => {
+	it("groups under savedAt, organizer, and archivedAt", () => {
+		expect(shouldGroup("savedAt")).toBe(true);
+		expect(shouldGroup("organizer")).toBe(true);
+		expect(shouldGroup("archivedAt")).toBe(true);
+	});
+
+	it("does NOT group under location or stageSeats — strict sorts keep their order (audit W1)", () => {
+		// Under location the group would collect cards across cities and break
+		// the A→Z the label promises; under stageSeats it would mix urgency
+		// buckets inside one block. Cards stand alone instead.
+		expect(shouldGroup("location")).toBe(false);
+		expect(shouldGroup("stageSeats")).toBe(false);
+	});
+});
 
 describe("groupFavorites", () => {
 	it("groups a Penyelenggara with more than 3 Favorites into one collapsible group", () => {
