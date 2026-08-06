@@ -272,8 +272,10 @@ const actionClass =
 
 <Card
   class={cn(
-	  'gap-0 py-0 transition-[background-color,border-color] duration-200 ease-out',
-	  isActiveStage && 'border border-primary/40 bg-primary/5 ring-primary/40',
+	  'gap-0 py-0 border transition-[background-color,border-color] duration-200 ease-out',
+	  isActiveStage
+		  ? 'border-primary bg-primary/5 ring-primary/40 hover:border-primary'
+		  : 'border-border shadow-sm hover:border-foreground/25',
   )}
   data-favorite-uuid={favorite.uuid}
   data-expanded={expanded}
@@ -283,13 +285,17 @@ const actionClass =
     separate 24px chevron target wastes the width and invites mis-clicks; the
     row itself is the affordance, and the chevron is its state readout.
 
+    Hover feedback lives on the Card's hairline (hover:border-foreground/25)
+    instead of a row fill — the box IS the unit (Cards line language), so the
+    box edge darkens rather than the row washing to Field.
+
     Focus ring is solid `ring-ring`, not `ring-ring/30`: at 30% alpha Field Blue
     composites to 1.58:1 against the card — under the 3:1 WCAG 2.4.11 floor for
     a non-text focus indicator. At full opacity it is 5.85:1.
   -->
   <button
     type="button"
-    class="w-full cursor-default rounded-none px-4 py-2.5 text-left outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+    class="w-full cursor-default rounded-none px-4 py-3 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
     aria-expanded={expanded}
     aria-label={toggleLabel}
     data-favorite-toggle
@@ -398,7 +404,7 @@ const actionClass =
   {/if}
 
   {#if expanded}
-    <CardContent class="mh-rise-in space-y-2 border-t border-border/70 px-4 pt-2.5 pb-3">
+    <CardContent class="mh-rise-in space-y-2 border-t border-border/70 px-4 pt-3 pb-3">
       <!-- Status Lamar full-width — never squeezed between actions -->
       <label class="flex min-w-0 items-baseline gap-2 text-xs">
         <span class="shrink-0 text-muted-foreground">Status Lamar</span>

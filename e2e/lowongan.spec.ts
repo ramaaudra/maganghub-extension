@@ -74,6 +74,14 @@ test("the popup shows an empty state when there are no favorites", async ({
 }) => {
 	const popup = await openPopup(context, extensionId);
 	await expect(popup.getByText("Belum ada favorit")).toBeVisible();
+	await expect(popup.locator("[data-empty-state-icon]")).toHaveCSS(
+		"border-width",
+		"0px",
+	);
+	await expect(popup.getByPlaceholder("Cari favorit...")).toHaveCSS(
+		"font-size",
+		"12px",
+	);
 });
 test("a favorited Lowongan shows filled on reload (state read from storage on inject)", async ({
 	page,

@@ -345,9 +345,14 @@ onDestroy(() => {
 	clearTimeout(importTimer);
 });
 
-/** Shared underline control height — search and sort speak one language. */
+/** The one boxed input in the popup (Cards line language). The Catatan
+ *  textarea and the two selects keep the underline idiom; Cari is the header's
+ *  closing element, so it reads as a filled field resting on the header's
+ *  single bottom rule instead of a third hairline under the tabs row. The
+ *  explicit `md:text-xs` keeps the fixed-width popup from inheriting Input's
+ *  desktop-sized `md:text-sm` default in wider browser contexts. */
 const controlClass =
-	"h-8 rounded-none border-0 border-b border-border bg-transparent px-0 text-xs text-foreground outline-none transition-[border-color] hover:border-b-foreground/40 focus-visible:border-b-ring";
+	"h-8 rounded-none border border-border bg-muted px-2.5 text-xs md:text-xs text-foreground outline-none transition-[border-color] hover:border-foreground/30 focus-visible:border-ring";
 
 /** The Urutkan select, sitting on the same baseline as the tabs. Its 2px
  *  bottom border matches the tab indicator's weight so the row reads as one
@@ -375,8 +380,11 @@ function tabClass(selected: boolean): string {
   Header, rebuilt for readability. It used to stack five bands — name+refresh,
   tabs, health, search+sort, and a two-line coach paragraph — which pushed the
   first Favorite past 200px and made the panel read as a form. Now: two control
-  rows (identity+action, then tabs+sort), one search field, and any advisory
-  compressed to a single line. Nothing was removed; the prose was.
+  rows (identity+action, then tabs+sort), one boxed search field, and any
+  advisory compressed to a single line. One rule closes the header: the
+  tabs+sort row is borderless (the selected tab's 2px underline is its only
+  indicator), and the boxed Cari field sits above the header's single border-b
+  (Cards line language — see DESIGN.md). Nothing was removed; the prose was.
 -->
 <header class="border-b px-4 pt-3 pb-2">
   <!-- `min-h-7` reserves the identity row's height so the *Segarkan semua*
@@ -408,12 +416,14 @@ function tabClass(selected: boolean): string {
   </div>
 
   <!-- Tabs and sort share one row: both answer "which Favorites, in what
-       order", and pairing them frees a whole band. The row sits on the tabs'
-       own baseline border, so the two controls read as one strip.
+       order", and pairing them frees a whole band. The row is borderless —
+       the selected tab's 2px underline is the only rule in it, and the
+       header's single border-b closes the band below Cari (Cards line
+       language: one rule, not three stacked hairlines).
        ADR-0010: Arsip shows a count so the user knows archived Favorites exist
        without switching. Default Aktif on every popup open; the tab only
        changes the rendered subset, never the stored data. -->
-  <div class="mt-2 flex items-end justify-between gap-2 border-b border-border">
+  <div class="mt-2 flex items-end justify-between gap-2">
     <div class="flex items-center gap-1" role="tablist" aria-label="Daftar favorit">
       <!-- Full APG tab semantics: each tab points at the one panel via
            aria-controls, carries a roving tabindex so Tab enters the strip once
@@ -495,7 +505,7 @@ function tabClass(selected: boolean): string {
 
   <Input
     type="search"
-    class={controlClass + ' mt-1 min-w-0 w-full text-sm'}
+    class={controlClass + ' mt-2 min-w-0 w-full'}
     placeholder="Cari favorit..."
     aria-label="Cari favorit"
     bind:value={query}
@@ -531,7 +541,7 @@ function tabClass(selected: boolean): string {
      use, and the role is what makes the tablist above a real widget. -->
 <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
 <main
-  class="space-y-1.5 p-3"
+  class="space-y-2.5 p-3"
   id="panel-favorit"
   role="tabpanel"
   aria-labelledby={tab === 'aktif' ? 'tab-aktif' : 'tab-arsip'}
@@ -552,7 +562,7 @@ function tabClass(selected: boolean): string {
   {/if}
 
   {#if loading}
-    <div class="space-y-1.5" aria-hidden="true">
+    <div class="space-y-2.5" aria-hidden="true">
       <div class="h-[76px] rounded-none bg-muted"></div>
       <div class="h-[76px] rounded-none bg-muted"></div>
       <div class="h-[76px] rounded-none bg-muted/60"></div>
@@ -573,7 +583,7 @@ function tabClass(selected: boolean): string {
         </div>
       {:else}
         <div class="px-4 py-10 text-center">
-          <div class="mx-auto mb-3 flex size-9 items-center justify-center rounded-none border border-border text-base text-muted-foreground" aria-hidden="true">★</div>
+          <div class="mx-auto mb-3 text-base leading-none text-muted-foreground" aria-hidden="true" data-empty-state-icon>★</div>
           <p class="text-sm font-medium">Belum ada favorit</p>
           <p class="mx-auto mt-1 max-w-[15rem] text-xs leading-relaxed text-muted-foreground">
             Bintangi Lowongan di MagangHub untuk menyimpannya di sini.
@@ -607,15 +617,15 @@ function tabClass(selected: boolean): string {
           onrefresh={() => refreshOne(item.favorite)}
         />
       {:else}
-        <!-- Group header, de-boxed. It used to be a filled bordered bar as tall
-             as a card band, so a screen of grouped Favorites alternated two
-             competing container styles. Now it is a label — organizer over
-             summary, on the panel, with a rule beneath — and only the cards
-             carry borders. Same information, one less frame. -->
+        <!-- Group header, pure label. It used to be a filled bordered bar as
+             tall as a card band; then a label with a rule beneath. Now (Cards
+             line language) it is neither box nor rule — organizer over
+             summary, on the panel, held together by weight and spacing alone.
+             Same information, one less frame every time. -->
         <section class="mh-group" data-group-organizer={item.organizer}>
           <button
             type="button"
-            class="flex w-full items-center gap-2 rounded-none border-b border-border px-1 py-1.5 text-left transition-colors hover:border-b-foreground/30"
+            class="flex w-full items-center gap-2 rounded-none px-1 py-2 text-left"
             aria-expanded={!isCollapsed(item.organizer)}
             data-group-toggle
             onclick={() => toggleGroup(item.organizer)}
@@ -643,7 +653,7 @@ function tabClass(selected: boolean): string {
             <span class="shrink-0 truncate text-xs text-muted-foreground" data-group-summary>{summaryText(item.summary) || `${item.favorites.length} favorit`}</span>
           </button>
           {#if !isCollapsed(item.organizer)}
-            <div class="mt-1.5 space-y-1.5">
+            <div class="mt-2 space-y-2.5">
               {#each item.favorites as fav (fav.uuid)}
                 <FavoriteCard
                   favorite={fav}
