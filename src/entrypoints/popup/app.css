@@ -74,7 +74,12 @@
 	--accent-foreground: oklch(0.205 0 0);
 	--destructive: oklch(0.577 0.245 27.325);
 	--input: oklch(0.922 0 0);
-	--ring: oklch(0.708 0 0);
+	/* Field Blue, per DESIGN.md: "Field Blue ... and the focus ring". The old
+	 * grey oklch(0.708 0 0) measured 2.59:1 against the white panel and 2.06:1
+	 * against the hairline it replaces on the underline controls — under the
+	 * 3:1 WCAG 2.4.11 floor for a non-text focus indicator. Field Blue is
+	 * 5.85:1 and is already the system's focus colour on paper. */
+	--ring: oklch(0.5 0.134 242.749);
 	--chart-1: oklch(0.897 0.196 126.665);
 	--chart-2: oklch(0.768 0.233 130.85);
 	--chart-3: oklch(0.648 0.2 131.684);
@@ -91,9 +96,14 @@
 	--sidebar-ring: oklch(0.708 0 0);
 }
 
-* {
-	border-color: var(--color-border);
-}
+/*
+ * The default border color lives in `@layer base` below (`* { @apply
+ * border-border }`), NOT here. An unlayered `* { border-color }` rule outranks
+ * every Tailwind border-color utility — layered utilities lose to unlayered
+ * rules regardless of specificity — which silently flattened `border-primary`,
+ * `border-b-ring`, `border-rose-300`, and `border-r-transparent` to the hairline
+ * grey across the whole popup. Keep this file free of unlayered `*` rules.
+ */
 
 /*
  * Popup shell: 360×≤600. Header + footer stay put; only the Favorites list
@@ -208,6 +218,25 @@ body {
 	}
 	html {
 		@apply font-sans;
+	}
+	/*
+	 * Real keyboard-focus fallback. `outline-ring/50` above only sets
+	 * outline-COLOR — with no style or width it paints nothing, so any control
+	 * without its own focus-visible rule (the tabs, the group toggle, "Mengapa
+	 * aman?", "Buka di MagangHub") fell back to the UA outline, and any control
+	 * with `outline-none` had nothing at all. This gives every focusable element
+	 * one visible 2px Field Blue ring; components that draw their own
+	 * (border-b-ring, ring-2) simply paint over it with the same colour.
+	 */
+	:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+	/* Full-bleed controls: a +2px offset would clip against the card edge or
+	 * the 360px panel wall, so their ring sits just inside instead. */
+	[data-favorite-toggle]:focus-visible,
+	[data-group-toggle]:focus-visible {
+		outline-offset: -2px;
 	}
 }
 

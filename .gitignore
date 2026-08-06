@@ -1,19 +1,80 @@
+# ===== Dependencies =====
 node_modules/
+
+# ===== Build output / artifacts =====
 dist/
 .output/
 .wxt/
+*.zip
+*.tar.gz
+*.tgz
+
+# ===== Test & coverage artifacts =====
 test-results/
 playwright-report/
+coverage/
+.nyc_output/
+*.lcov
+
+# ===== Logs & temp =====
+*.log
+*.pid
+*.seed
+*.pid.lock
+.tmp/
+tmp/
+
+# ===== Environment & secrets =====
+.env
+.env.*
+!.env.example
+*.local
+
+# ===== OS junk =====
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ===== Editor / IDE =====
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+*.sublime-workspace
+*.sublime-project
+
+# ===== TypeScript =====
+*.tsbuildinfo
+
+# ===== Cache =====
+.cache/
+.turbo/
+.eslintcache
+.parcel-cache/
+
+# ===== AI / agent artifacts =====
+.pi/
 .pi-subagents/
 .claude/
 .opencode/
-.pi/
+.cursor/
+.codeium/
+.aider*
+.continue/
+.tabnine/
+.codebase-memory/
+
+# ===== Impeccable (design skill) =====
 .impeccable/config.json
 .impeccable/config.local.json
 .impeccable/hook.cache.json
 .impeccable/critique/
-.DS_Store
-*.log
-.env
-.env.*
-!.env.example
+.impeccable/live/
+
+# ===== Playwright =====
+playwright/.cache/

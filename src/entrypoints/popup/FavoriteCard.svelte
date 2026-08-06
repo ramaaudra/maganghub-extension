@@ -267,7 +267,7 @@ onDestroy(() => {
 /** Shared action-button classes — one vocabulary for every control in the
  *  expanded tray (DESIGN.md: outline only, sharp, 12px label). */
 const actionClass =
-	"inline-flex h-7 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-none border border-border bg-transparent px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-muted outline-none disabled:pointer-events-none disabled:opacity-50 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30";
+	"inline-flex h-7 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-none border border-border bg-transparent px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-muted outline-none disabled:pointer-events-none disabled:opacity-50 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring";
 </script>
 
 <Card
@@ -282,10 +282,14 @@ const actionClass =
     The whole resting card is the disclosure control. A 360px row with a
     separate 24px chevron target wastes the width and invites mis-clicks; the
     row itself is the affordance, and the chevron is its state readout.
+
+    Focus ring is solid `ring-ring`, not `ring-ring/30`: at 30% alpha Field Blue
+    composites to 1.58:1 against the card — under the 3:1 WCAG 2.4.11 floor for
+    a non-text focus indicator. At full opacity it is 5.85:1.
   -->
   <button
     type="button"
-    class="w-full cursor-default rounded-none px-4 py-2.5 text-left outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-inset"
+    class="w-full cursor-default rounded-none px-4 py-2.5 text-left outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
     aria-expanded={expanded}
     aria-label={toggleLabel}
     data-favorite-toggle
@@ -473,10 +477,16 @@ const actionClass =
         {:else if confirmDelete}
           <!-- Inline confirm: the destructive action swaps the row for a
                two-button prompt in the card's own context. -->
+          <!-- Inline confirm: the destructive action swaps the row for a
+               two-button prompt in the card's own context. The affirmative
+               uses the system's `--destructive` token (DESIGN.md Destructive
+               Reservation: irreversible delete is the one action it permits),
+               not an ad-hoc rose scale — which keeps the danger treatment on
+               the same token as *Refresh gagal* and the import-error alert. -->
           <span class="text-xs text-muted-foreground" data-delete-confirm>Yakin?</span>
           <button
             type="button"
-            class="inline-flex h-7 shrink-0 items-center justify-center rounded-none border border-rose-300 bg-rose-50 px-2.5 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100 outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+            class="inline-flex h-7 shrink-0 items-center justify-center rounded-none border border-destructive/40 bg-destructive/10 px-2.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/20 outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring"
             onclick={onDeletePermanent}
             aria-label="Ya, hapus permanen"
             data-confirm-delete
@@ -504,7 +514,7 @@ const actionClass =
           </button>
           <button
             type="button"
-            class="inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-none border border-transparent bg-transparent px-2 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-50 outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+            class="inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-none border border-transparent bg-transparent px-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring"
             onclick={() => (confirmDelete = true)}
             aria-label="Hapus permanen"
             title="Hapus permanen — tidak bisa dikembalikan"
@@ -515,8 +525,11 @@ const actionClass =
           </button>
         {/if}
         {#if favorite.detailUrl}
+          <!-- h-7 matches the action buttons it shares the row with: the link
+               was a 16px text node next to 28px controls, so it was both the
+               smallest target here and optically high against their centres. -->
           <a
-            class="ml-auto shrink-0 text-xs font-medium text-primary underline-offset-2 hover:underline"
+            class="ml-auto inline-flex h-7 shrink-0 items-center text-xs font-medium text-primary underline-offset-2 hover:underline"
             href={resolveDetailUrl(favorite.detailUrl)}
             target="_blank"
             rel="noopener noreferrer"
