@@ -399,7 +399,18 @@ function tabClass(selected: boolean): string {
     <!-- ADR-0009: the name, not a label for the list. "Favorit Lowongan"
          described what the list below already shows; opened over MagangHub,
          the one thing the header has to establish is who is speaking. -->
-    <h1 class="font-heading text-base font-semibold tracking-normal">SakuMagang</h1>
+    <div class="flex min-w-0 items-center gap-2">
+      <img
+        src="/icon/route.svg"
+        width="24"
+        height="24"
+        class="size-6 shrink-0"
+        alt=""
+        aria-hidden="true"
+        data-brand-icon
+      />
+      <h1 class="font-heading text-base font-semibold tracking-normal">SakuMagang</h1>
+    </div>
     {#if tab === 'aktif'}
       <Button
         variant="outline"

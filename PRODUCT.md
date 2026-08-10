@@ -63,7 +63,7 @@ MagangHub's markup is not under our control. When a selector stops matching, the
 
 ## Brand Commitments
 
-The name is **SakuMagang**, one word, both capitals — carried by the manifest `name`, the popup `<h1>`, and the toolbar icon: a white Geist "S" on a full-bleed Field Blue square with sharp corners, rendered from the DESIGN.md tokens by `scripts/render-icon.mjs` (ADR-0009). The popup header shows the name alone; it does not also label the list, because the list already labels itself.
+The name is **SakuMagang**, one word, both capitals — carried by the manifest `name`, the popup `<h1>`, and the toolbar icon: the blue Route mark on a Paper surface, rendered from the canonical `src/public/icon/route.svg` by `scripts/render-icon.mjs` (ADR-0009). The popup header shows the mark beside the name; it does not also label the list, because the list already labels itself.
 
 The popup carries its own identity — a "Field-Notebook" look (one calm blue accent, sharp corners, Geist, flat depth) defined by the shadcn-svelte preset "sera" and normative in `DESIGN.md` — so it reads as a plainly different, trustworthy instrument beside the site, not as a mimicry of it (ADR-0008 supersedes ADR-0004's original "match MagangHub's aesthetic" commitment). The injected detail toggle is a separate matter and still mirrors the measured geometry of MagangHub's "Bagikan" button — 40×40, 14px radius, 1px `#e1e7ef` border, white background (ADR-0004, unchanged) — because a differently shaped button in a two-button cluster reads as bolted on, and the content script ships no framework runtime.
 
@@ -83,7 +83,7 @@ Vocabulary is fixed and non-negotiable across code, docs, and UI: **SakuMagang**
 - **No Chrome Web Store listing.** Confirmed not published. No surface may claim it is installable from the Web Store, link to a store page, or imply a trusted-source install. Sideload/dev-load is the only current install path.
 - **No users, install counts, ratings, reviews, or testimonials.** Zero. Do not invent social proof.
 - **No press, endorsement, or affiliation with Kemnaker.** The extension is unofficial and third-party; implying otherwise would be false and would undermine the trust posture it is built on.
-- **No screenshots or store artwork.** A toolbar icon exists (the "S" monogram, ADR-0009); nothing else does — no promo tiles, no listing screenshots, no illustrated logo lockup.
+- **No screenshots or store artwork.** A toolbar icon exists (the Route mark, ADR-0009); nothing else does — no promo tiles, no listing screenshots, no illustrated logo lockup.
 - **No telemetry or analytics**, by design — so no usage data exists to cite.
 
 ## Product Principles

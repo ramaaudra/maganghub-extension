@@ -258,7 +258,7 @@
     ],
     "dos": [
       "Do keep every surface and control square-cornered (--radius: 0rem); the only rounded-full is the status chip's leading dot.",
-      "Do use Field Blue (oklch(0.5 0.134 242.749)) only for the active-stage tint, the dilamar chip, the 'Buka di MagangHub' link, and focus — ≤10% of any screen.",
+      "Do use Field Blue (oklch(0.5 0.134 242.749)) only for the Route mark, active-stage tint, dilamar chip, the 'Buka di MagangHub' link, and focus — ≤10% of any screen.",
       "Do convey depth with 1px --border and bg-muted; use shadow-sm only on Cards and never larger.",
       "Do write UI copy in plain Indonesian using the fixed vocabulary from CONTEXT.md.",
       "Do keep the popup at 360px; reach for an 8px rhythm (gap-2, space-y-2, p-3) before adding new spacing values.",
@@ -270,7 +270,7 @@
       "Don't use emerald/amber/rose outside status chips and the change-notice / health banners — they are state signals, not a palette.",
       "Don't add a second typeface or a display size; Geist Variable at 12–16px is the whole hierarchy.",
       "Don't use --destructive for anything but genuine failure (Refresh gagal, import error).",
-      "Don't claim a Chrome Web Store listing, users, ratings, press, or Kemnaker affiliation, or fabricate an icon/logo — none exist.",
+      "Don't claim a Chrome Web Store listing, users, ratings, press, or Kemnaker affiliation, or fabricate additional logo lockups — the Route mark is the only production identity asset.",
       "Don't treat this system as a mirror of MagangHub's aesthetic; the preset establishes a distinct Field-Notebook identity. If the project re-commits to ADR-0004's 'feel native to MagangHub' goal, this DESIGN.md and the preset must be revisited together."
     ]
   }

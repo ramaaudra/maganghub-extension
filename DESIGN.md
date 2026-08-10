@@ -132,6 +132,12 @@ Voice is plain Indonesian, direct, never alarmist — matching PRODUCT.md. The s
 - 360px fixed popup; tight 8px rhythm; information-dense but calm.
 - Plain Indonesian copy; fixed vocabulary (Lowongan, Penyelenggara, Batch, Kuota, Pelamar, Favorite, Catatan, Status Lamar, Status Lowongan).
 
+## Brand mark
+
+The production mark is the **Route** symbol: a continuous blue path with square endpoint markers on a Paper tile. It carries the product idea—keeping a path toward a magang opportunity—without borrowing the browser bookmark star, a graduation cap, or a generic briefcase. The canonical source is `src/public/icon/route.svg`; `scripts/render-icon.mjs` rasterizes that same file to the manifest's 16/32/48/128px PNGs, and the popup header displays the SVG source directly.
+
+The mark uses `#0069a8` Field Blue on `#f4f3ed` Paper with a one-pixel neutral boundary. Its visible geometry is inset 15 viewBox units from every side, so the mark does not drift vertically or horizontally between the toolbar, popup, and generated PNG sizes. Do not redraw the path in a component or reintroduce the old Geist monogram; update the canonical SVG and regenerate the PNGs instead.
+
 ## Colors
 
 A neutral ink-on-paper palette with one calm blue accent and a reserved destructive red. Status semantics (open/filling/closed) borrow Tailwind's emerald/amber/rose 100/700 pairs as ad-hoc surface fills — they are not design tokens and should not be introduced elsewhere.
@@ -274,5 +280,5 @@ One form: the sharp rectangle (radius `0rem`, the preset's `--radius: 0rem`). Ca
 - **Don't** state the same fact on both the resting row and the tray. "Belum dicek" as a chip and "saat disimpan" beside the seat count said one thing twice and wrapped the seat line onto two, which made cards uneven.
 - **Don't** render a `savedSnapshot.kuota`/`.pelamar` string under a hand-written label — those values already carry their own ("Kuota: 5"), which is what produced *"Kuota Kuota: 1"*. Go through `src/lib/seats.ts`, which owns the wording.
 - **Don't** reseed `catatanDraft` from an incoming record while the textarea has focus. Saving writes to storage, which fires `storage.onChanged`, which re-renders the card — an unguarded `$effect.pre` then discards whatever was typed since the save.
-- **Don't** claim a Chrome Web Store listing, users, ratings, press, or Kemnaker affiliation, or fabricate an icon/logo — none exist (PRODUCT.md absences).
+- **Don't** claim a Chrome Web Store listing, users, ratings, press, or Kemnaker affiliation, or fabricate additional logo lockups — the Route mark is the only production identity asset (PRODUCT.md absences).
 - **Don't** treat this system as a mirror of MagangHub's aesthetic; the preset establishes a distinct Field-Notebook identity. If the project re-commits to ADR-0004's "feel native to MagangHub" goal, this DESIGN.md and the preset must be revisited together.

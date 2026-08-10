@@ -144,7 +144,7 @@ src/
 │   └── popup/                  # aplikasi popup Svelte
 ├── lib/                        # storage favorite, refresh, parse, migrasi skema
 ├── offscreen/                  # fetch tanpa kredensial + DOMParser untuk refresh
-└── public/icon/                # monogram toolbar (Field Blue "S")
+└── public/icon/                # Route mark toolbar assets (blue on Paper)
 ```
 
 Keputusan utama ada di `docs/adr/`:
