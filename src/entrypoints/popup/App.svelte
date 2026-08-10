@@ -1,5 +1,9 @@
 <script lang="ts">
-import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
+import {
+	ArrowDown01Icon,
+	Loading03Icon,
+	StarIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/svelte";
 import { onDestroy } from "svelte";
 import { markPopupOpened, syncToolbarBadge } from "@/lib/badge";
@@ -405,10 +409,13 @@ function tabClass(selected: boolean): string {
         aria-busy={refreshingAll}
       >
         {#if refreshingAll}
-          <span
-            class="mh-spin size-3 shrink-0 rounded-none border border-current border-r-transparent"
+          <HugeiconsIcon
+            icon={Loading03Icon}
+            strokeWidth={2}
+            class="mh-spin size-3.5 shrink-0"
             aria-hidden="true"
-          ></span>
+            data-refresh-icon
+          />
         {/if}
         {refreshingAll ? 'Memperbarui…' : 'Segarkan semua'}
       </Button>
@@ -583,7 +590,9 @@ function tabClass(selected: boolean): string {
         </div>
       {:else}
         <div class="px-4 py-10 text-center">
-          <div class="mx-auto mb-3 text-base leading-none text-muted-foreground" aria-hidden="true" data-empty-state-icon>★</div>
+          <div class="mx-auto mb-3 text-muted-foreground" aria-hidden="true" data-empty-state-icon>
+            <HugeiconsIcon icon={StarIcon} strokeWidth={2} class="mx-auto size-5" />
+          </div>
           <p class="text-sm font-medium">Belum ada favorit</p>
           <p class="mx-auto mt-1 max-w-[15rem] text-xs leading-relaxed text-muted-foreground">
             Bintangi Lowongan di MagangHub untuk menyimpannya di sini.

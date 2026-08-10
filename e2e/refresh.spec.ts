@@ -139,6 +139,35 @@ test("refresh all computes Status Lowongan from fixture detail HTML (open / clos
 	}
 });
 
+test("refresh feedback renders a Hugeicons loading icon", async ({
+	page,
+	context,
+	extensionId,
+}) => {
+	await routeList(context);
+	await starAllCards(page);
+
+	const popup = await openPopup(context, extensionId);
+	await popup.evaluate(() => {
+		const runtime = (globalThis as unknown as {
+			browser: { runtime: { sendMessage: () => Promise<never> } };
+		}).browser.runtime;
+		runtime.sendMessage = () => new Promise<never>(() => {});
+	});
+
+	const refreshButton = popup.locator('header [data-slot="button"]');
+	await expect(refreshButton).toBeEnabled();
+	await refreshButton.click();
+	await expect(refreshButton).toHaveAttribute("aria-busy", "true");
+	await expect(refreshButton.locator("svg[data-refresh-icon]")).toHaveCount(1);
+	await expect(refreshButton.locator("span.mh-spin")).toHaveCount(0);
+
+	const card = popup.locator("[data-favorite-uuid]").first();
+	await expandCard(card);
+	await expect(card.locator("svg[data-refresh-icon]")).toHaveCount(1);
+	await expect(card.locator("span.mh-spin")).toHaveCount(0);
+});
+
 test("a single-favorite refresh shows the open status badge", async ({
 	page,
 	context,

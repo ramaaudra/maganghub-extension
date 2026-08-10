@@ -1,3 +1,4 @@
+import { ArrowDown01Icon, StarIcon } from "@hugeicons/core-free-icons";
 import {
 	CARD_ANCHOR_SELECTOR,
 	CARD_SELECTOR,
@@ -45,6 +46,7 @@ import {
 } from "@/lib/stage";
 import { composeStarTitle } from "@/lib/star-title";
 import type { Favorite, StatusLamar } from "@/lib/types";
+import { renderHugeiconDataUri, renderHugeiconSvg } from "@/lib/icon-svg";
 
 /**
  * Content script for MagangHub Lowongan pages.
@@ -381,9 +383,9 @@ function buildStarChrome(shadow: ShadowRoot): {
 	button.className = "mh-star";
 	button.setAttribute("aria-label", "Tandai sebagai favorit");
 	button.setAttribute("aria-pressed", "false");
-	// Same lucide `star` the detail toggle uses. A `★` text glyph sat on a text
-	// baseline, which is why it never optically centred in a round button; the
-	// SVG centres on its own box and matches the icon weight of the card.
+	// The SVG comes from Hugeicons core data so this plain-DOM content script
+	// stays on the same icon system as the Svelte popup without shipping the
+	// Svelte runtime into every MagangHub page.
 	button.innerHTML = STAR_ICON_SVG;
 	// Chip lives in light DOM via <slot>, so Playwright/AT see it on the host.
 	const chip = document.createElement("span");
@@ -513,19 +515,24 @@ function buildDetailButton(shadow: ShadowRoot): HTMLButtonElement {
 }
 
 /**
- * Lucide `star`, inline. Shared by both toggles.
+ * Hugeicons `star`, inline. Shared by both toggles.
  *
  * On the detail page the neighbouring "Bagikan" button renders a lucide SVG at
- * stroke-width 2, so a `★` text glyph beside it would sit at a visibly
- * different weight and baseline. The same held on the list card, which drew its
- * own `★` glyph: MagangHub's card icons are lucide at stroke-width 2, and a
- * font-rendered glyph among them read as a different alphabet — and never
- * optically centred, because it sat on a text baseline rather than its own box.
- * One icon for both surfaces is also one thing to keep consistent, not two.
+ * stroke-width 2, so a font-rendered glyph beside it would sit at a visibly
+ * different weight and baseline. The SVG centres on its own box and keeps both
+ * extension surfaces on the same icon system.
  *
  * `fill` is driven by CSS: `none` when unsaved, `currentColor` when saved.
  */
-const STAR_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const STAR_ICON_SVG = renderHugeiconSvg(StarIcon, {
+	size: 16,
+	strokeWidth: 2,
+});
+const STAGE_SELECT_CHEVRON_DATA_URI = renderHugeiconDataUri(ArrowDown01Icon, {
+	size: 12,
+	strokeWidth: 2,
+	color: "#64748b",
+});
 
 function attachDetailToggle(
 	uuid: string,
@@ -916,7 +923,7 @@ function attachStarToggle(
  * same 32px, which is what the removed urgency band was.
  *
  * Geometry is borrowed from the detail toggle (`DETAIL_CSS`) so the two read as
- * one control at two sizes: same `#e1e7ef` border, same lucide star at the same
+ * one control at two sizes: same `#e1e7ef` border, same Hugeicons star at the same
  * stroke weight, same amber. Only the size and radius differ — 32px and fully
  * round on the card, because it floats over MagangHub's content instead of
  * sitting in a button row.
@@ -1188,7 +1195,7 @@ const STAGE_CARD_CSS = `
     background-color: rgb(255, 255, 255);
     /* Chevron drawn so we can drop UA appearance bloat without losing the
        affordance. Right padding keeps the value clear of the glyph. */
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-image: url("${STAGE_SELECT_CHEVRON_DATA_URI}");
     background-repeat: no-repeat;
     background-position: right 8px center;
     background-size: 12px;

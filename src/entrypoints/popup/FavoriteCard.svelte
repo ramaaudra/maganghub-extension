@@ -5,6 +5,7 @@ import {
 	Archive02Icon,
 	ArrowDown01Icon,
 	Delete02Icon,
+	Loading03Icon,
 	Note01Icon,
 } from "@hugeicons/core-free-icons";
 import { formatChangeNotice } from "@/lib/change";
@@ -462,10 +463,13 @@ const actionClass =
             aria-busy={refreshing}
           >
             {#if refreshing}
-              <span
-                class="mh-spin size-3 shrink-0 rounded-none border border-current border-r-transparent"
+              <HugeiconsIcon
+                icon={Loading03Icon}
+                strokeWidth={2}
+                class="mh-spin size-3.5 shrink-0"
                 aria-hidden="true"
-              ></span>
+                data-refresh-icon
+              />
             {/if}
             {refreshing ? 'Memperbarui…' : 'Segarkan'}
           </button>

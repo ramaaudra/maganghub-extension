@@ -78,6 +78,7 @@ test("the popup shows an empty state when there are no favorites", async ({
 		"border-width",
 		"0px",
 	);
+	await expect(popup.locator("[data-empty-state-icon] svg")).toHaveCount(1);
 	await expect(popup.getByPlaceholder("Cari favorit...")).toHaveCSS(
 		"font-size",
 		"12px",
