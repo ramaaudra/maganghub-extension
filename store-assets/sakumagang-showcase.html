@@ -1,0 +1,2071 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>SakuMagang — Chrome Web Store Showcase</title>
+  <style>
+    :root {
+      --canvas-width: 1280px;
+      --canvas-height: 800px;
+      --paper: #f4f3ed;
+      --paper-bright: #ffffff;
+      --ink: #171717;
+      --slate: #64748b;
+      --hairline: #e5e7eb;
+      --field: #f7f7f7;
+      --field-blue: #0069a8;
+      --field-blue-soft: #edf7fc;
+      --navy: #0f1729;
+      --amber: #f59e0b;
+      --emerald: #059669;
+      --rose: #e11d48;
+      --white: #ffffff;
+      --shadow: 0 24px 70px rgba(15, 23, 41, 0.16);
+      --font: "Geist Variable", "Geist", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-width: var(--canvas-width);
+      min-height: var(--canvas-height);
+      margin: 0;
+      overflow: hidden;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button,
+    select {
+      cursor: pointer;
+    }
+
+    svg {
+      display: block;
+    }
+
+    .icon {
+      width: 1em;
+      height: 1em;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.9;
+    }
+
+    .scene {
+      position: absolute;
+      inset: 0 auto auto 0;
+      display: none;
+      width: var(--canvas-width);
+      height: var(--canvas-height);
+      overflow: hidden;
+      background: var(--paper);
+      isolation: isolate;
+    }
+
+    .scene.is-active {
+      display: block;
+    }
+
+    .route-watermark {
+      position: absolute;
+      z-index: -1;
+      color: var(--field-blue);
+      opacity: 0.08;
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin: 0 0 18px;
+      color: var(--field-blue);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 26px;
+      height: 2px;
+      background: currentColor;
+      content: "";
+    }
+
+    .display-title {
+      margin: 0;
+      max-width: 530px;
+      font-size: 60px;
+      font-weight: 650;
+      letter-spacing: -0.055em;
+      line-height: 0.99;
+      text-wrap: balance;
+    }
+
+    .display-title .blue {
+      color: var(--field-blue);
+    }
+
+    .lede {
+      max-width: 495px;
+      margin: 22px 0 0;
+      color: #465160;
+      font-size: 20px;
+      line-height: 1.52;
+      text-wrap: balance;
+    }
+
+    .micro-proof {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 26px;
+    }
+
+    .micro-proof span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 30px;
+      padding: 5px 10px;
+      border: 1px solid #d9d8d1;
+      background: rgba(255, 255, 255, 0.58);
+      color: #475569;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .micro-proof svg {
+      width: 14px;
+      height: 14px;
+      color: var(--field-blue);
+    }
+
+    .brand-lockup {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--navy);
+      font-size: 18px;
+      font-weight: 680;
+      letter-spacing: -0.02em;
+    }
+
+    .route-mark {
+      width: 36px;
+      height: 36px;
+      flex: 0 0 auto;
+      border: 1px solid #d5d9d5;
+      background: #f4f3ed;
+    }
+
+    .route-mark.small {
+      width: 24px;
+      height: 24px;
+    }
+
+    .legal-note {
+      color: #64748b;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .browser-window {
+      overflow: hidden;
+      border: 1px solid #cbd5e1;
+      border-radius: 15px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+    }
+
+    .browser-chrome {
+      display: grid;
+      grid-template-columns: 82px 1fr 76px;
+      align-items: center;
+      height: 44px;
+      padding: 0 13px;
+      border-bottom: 1px solid #e2e8f0;
+      background: #f8fafc;
+      color: #94a3b8;
+    }
+
+    .traffic-lights {
+      display: flex;
+      gap: 7px;
+    }
+
+    .traffic-lights span {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #d7dee8;
+    }
+
+    .address-bar {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      width: min(100%, 520px);
+      height: 27px;
+      margin: 0 auto;
+      padding: 0 11px;
+      border: 1px solid #e2e8f0;
+      border-radius: 9999px;
+      background: #ffffff;
+      color: #64748b;
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .address-bar svg {
+      width: 11px;
+      height: 11px;
+      color: #94a3b8;
+    }
+
+    .browser-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .browser-actions span {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #e2e8f0;
+    }
+
+    .site-page {
+      position: relative;
+      height: calc(100% - 44px);
+      min-height: 0;
+      background: #f8fafc;
+      color: #0f1729;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    .site-header {
+      display: flex;
+      align-items: center;
+      height: 59px;
+      padding: 0 32px;
+      border-bottom: 1px solid #edf0f4;
+      background: #ffffff;
+    }
+
+    .mh-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: #0874d1;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .mh-brand-mark {
+      display: grid;
+      width: 25px;
+      height: 25px;
+      place-items: center;
+      border-radius: 7px;
+      background: #e9f5ff;
+      color: #0874d1;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .site-nav {
+      display: flex;
+      gap: 24px;
+      margin-left: 32px;
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .site-nav .active {
+      color: #0874d1;
+    }
+
+    .site-login {
+      margin-left: auto;
+      padding: 7px 13px;
+      border: 1px solid #dbe2ea;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #334155;
+      font-size: 10px;
+      font-weight: 650;
+    }
+
+    .site-content {
+      padding: 27px 34px 34px;
+    }
+
+    .site-kicker {
+      margin: 0 0 6px;
+      color: #0874d1;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .site-title {
+      margin: 0;
+      color: #0f1729;
+      font-size: 23px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .site-subtitle {
+      margin: 6px 0 0;
+      color: #64748b;
+      font-size: 10px;
+    }
+
+    .site-filter-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .site-filter {
+      display: flex;
+      align-items: center;
+      min-width: 92px;
+      height: 31px;
+      padding: 0 10px;
+      border: 1px solid #dfe5ec;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #64748b;
+      font-size: 9px;
+    }
+
+    .site-filter.search {
+      width: 210px;
+    }
+
+    .site-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .site-job-card {
+      position: relative;
+      min-height: 205px;
+      padding: 17px;
+      border: 1px solid #e1e7ef;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(15, 23, 41, 0.035);
+    }
+
+    .company-logo {
+      display: grid;
+      width: 35px;
+      height: 35px;
+      place-items: center;
+      border: 1px solid #e2e8f0;
+      border-radius: 9px;
+      background: #f8fafc;
+      color: #334155;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .site-job-card h3 {
+      max-width: calc(100% - 34px);
+      margin: 15px 0 4px;
+      color: #0f1729;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .site-job-card .company {
+      margin: 0;
+      color: #475569;
+      font-size: 9px;
+      line-height: 1.4;
+    }
+
+    .site-job-card .location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 12px;
+      color: #64748b;
+      font-size: 9px;
+    }
+
+    .site-job-card .location svg {
+      width: 11px;
+      height: 11px;
+    }
+
+    .job-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding-top: 11px;
+      border-top: 1px solid #eef2f6;
+      color: #64748b;
+      font-size: 8px;
+    }
+
+    .opportunity {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 7px;
+      border-radius: 9999px;
+      background: #ecfdf5;
+      color: #047857;
+      font-size: 8px;
+      font-weight: 700;
+    }
+
+    .list-star {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      padding: 0;
+      border: 1px solid rgba(245, 158, 11, 0.6);
+      border-radius: 9999px;
+      background: #ffffff;
+      color: var(--amber);
+      box-shadow: 0 1px 2px rgba(15, 23, 41, 0.06), 0 1px 1px rgba(15, 23, 41, 0.04);
+    }
+
+    .list-star svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+
+    .stage-chip-site {
+      position: absolute;
+      top: 50px;
+      right: 12px;
+      max-width: 88px;
+      overflow: hidden;
+      padding: 2px 6px;
+      border: 1px solid #cbd5e1;
+      border-radius: 9999px;
+      background: #f8fafc;
+      color: #334155;
+      font-size: 8px;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .popup-shell {
+      display: flex;
+      width: 360px;
+      max-height: 600px;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid #dfe3e7;
+      background: #ffffff;
+      color: #171717;
+      font-family: var(--font);
+      box-shadow: 0 20px 55px rgba(15, 23, 41, 0.22);
+    }
+
+    .popup-header {
+      flex: 0 0 auto;
+      padding: 12px 16px 8px;
+      border-bottom: 1px solid #ebebeb;
+      background: #ffffff;
+    }
+
+    .popup-identity {
+      display: flex;
+      min-height: 28px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .popup-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .popup-brand h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+
+    .outline-button {
+      display: inline-flex;
+      height: 28px;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 10px;
+      border: 1px solid #e5e7eb;
+      border-radius: 0;
+      background: transparent;
+      color: #171717;
+      font-size: 12px;
+      font-weight: 550;
+      white-space: nowrap;
+    }
+
+    .popup-controls {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .popup-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .popup-tab {
+      height: 30px;
+      margin-bottom: -1px;
+      padding: 0 8px;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      background: transparent;
+      color: #737373;
+      font-size: 12px;
+    }
+
+    .popup-tab.active {
+      border-bottom-color: #0069a8;
+      color: #171717;
+      font-weight: 600;
+    }
+
+    .select-pair {
+      display: flex;
+      gap: 4px;
+    }
+
+    .under-select {
+      max-width: 110px;
+      height: 28px;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      background: transparent;
+      color: #737373;
+      font-size: 11px;
+      outline: 0;
+    }
+
+    .popup-search {
+      width: 100%;
+      height: 32px;
+      margin-top: 8px;
+      padding: 0 10px;
+      border: 1px solid #e5e7eb;
+      border-radius: 0;
+      background: #f7f7f7;
+      color: #171717;
+      font-size: 12px;
+      outline: 0;
+    }
+
+    .popup-search::placeholder {
+      color: #737373;
+      opacity: 1;
+    }
+
+    .popup-main {
+      display: flex;
+      min-height: 0;
+      flex: 1 1 auto;
+      flex-direction: column;
+      gap: 10px;
+      overflow: hidden;
+      padding: 12px;
+      background: #ffffff;
+    }
+
+    .unchecked-coach {
+      margin: 0;
+      color: #737373;
+      font-size: 12px;
+    }
+
+    .favorite-card {
+      overflow: hidden;
+      flex: 0 0 auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 0;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(15, 23, 41, 0.035);
+    }
+
+    .favorite-card.active-stage {
+      border-color: rgba(0, 105, 168, 0.5);
+      background: rgba(0, 105, 168, 0.045);
+    }
+
+    .favorite-card-button {
+      width: 100%;
+      padding: 12px 16px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+    }
+
+    .favorite-title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .favorite-title {
+      min-width: 0;
+      margin: 0;
+      color: #171717;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.012em;
+      line-height: 1.35;
+    }
+
+    .status-label {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 5px;
+      margin-top: 1px;
+      color: #0069a8;
+      font-size: 10px;
+      font-weight: 600;
+      line-height: 1.3;
+      text-transform: uppercase;
+    }
+
+    .status-label.interview {
+      color: #2563eb;
+    }
+
+    .status-label.accepted {
+      color: #059669;
+    }
+
+    .status-label::before {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      content: "";
+    }
+
+    .favorite-meta {
+      margin: 3px 0 0;
+      overflow: hidden;
+      color: #737373;
+      font-size: 12px;
+      line-height: 1.3;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .signal-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 7px;
+      color: #737373;
+      font-size: 12px;
+    }
+
+    .signal-row .seats {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .signal-row .right-signals {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 7px;
+      margin-left: auto;
+    }
+
+    .note-mark {
+      width: 14px;
+      height: 14px;
+      color: #737373;
+    }
+
+    .live-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: #059669;
+      font-size: 10px;
+      font-weight: 600;
+      line-height: 1.3;
+      text-transform: uppercase;
+    }
+
+    .live-status.filling {
+      color: #d97706;
+    }
+
+    .live-status.closed {
+      color: #e11d48;
+    }
+
+    .live-status::before {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      content: "";
+    }
+
+    .chevron {
+      width: 14px;
+      height: 14px;
+      color: #737373;
+    }
+
+    .chevron.up {
+      transform: rotate(180deg);
+    }
+
+    .change-notice {
+      margin: -3px 0 0;
+      padding: 0 16px 9px;
+      color: #b45309;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .favorite-tray {
+      display: grid;
+      gap: 9px;
+      padding: 11px 16px 12px;
+      border-top: 1px solid #ececec;
+      background: transparent;
+    }
+
+    .stage-field {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      color: #737373;
+      font-size: 12px;
+    }
+
+    .stage-field select {
+      min-width: 0;
+      flex: 1;
+      padding: 2px 0;
+      border: 0;
+      border-bottom: 1px solid #e5e7eb;
+      border-radius: 0;
+      background: transparent;
+      color: #171717;
+      font-size: 12px;
+    }
+
+    .note-field {
+      min-height: 37px;
+      padding: 3px 0 6px;
+      border-bottom: 1px solid #e5e7eb;
+      color: #334155;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-actions .outline-button {
+      height: 28px;
+      padding-inline: 9px;
+    }
+
+    .popup-link {
+      margin-left: auto;
+      color: #0069a8;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .provenance {
+      margin: 0;
+      color: #737373;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .popup-footer {
+      flex: 0 0 auto;
+      padding: 10px 16px;
+      border-top: 1px solid #e5e7eb;
+      background: #ffffff;
+    }
+
+    .popup-footer-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .safe-link {
+      margin-left: auto;
+      color: #0069a8;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .popup-trust {
+      margin: 7px 0 0;
+      color: #737373;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .stage-card {
+      padding: 16px 18px;
+      border: 1px solid #cbd5e1;
+      border-radius: 16px;
+      background: #f8fafc;
+      color: #0f1729;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    .stage-card h4 {
+      margin: 0;
+      color: #334155;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .stage-card p {
+      margin: 4px 0 0;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .stage-card label {
+      display: grid;
+      gap: 4px;
+      margin-top: 12px;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .stage-card select {
+      width: 100%;
+      padding: 6px 28px 6px 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #0f1729;
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    .annotation {
+      position: absolute;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--navy);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+
+    .annotation::after {
+      width: 54px;
+      height: 1px;
+      background: currentColor;
+      opacity: 0.45;
+      content: "";
+    }
+
+    .scene-one {
+      background:
+        linear-gradient(90deg, rgba(244, 243, 237, 1) 0%, rgba(244, 243, 237, 0.98) 44%, rgba(237, 247, 252, 0.88) 100%);
+    }
+
+    .scene-one .route-watermark {
+      top: -90px;
+      right: -70px;
+      width: 620px;
+      height: 620px;
+      opacity: 0.065;
+    }
+
+    .scene-one-copy {
+      position: absolute;
+      top: 73px;
+      left: 72px;
+      z-index: 3;
+    }
+
+    .scene-one-copy .brand-lockup {
+      margin-bottom: 74px;
+    }
+
+    .scene-one-browser {
+      position: absolute;
+      top: 74px;
+      right: 24px;
+      width: 690px;
+      height: 655px;
+    }
+
+    .scene-one-browser .site-content {
+      padding: 24px 26px;
+    }
+
+    .scene-one-browser .site-job-card {
+      min-height: 185px;
+    }
+
+    .scene-one-popup {
+      position: absolute;
+      right: 40px;
+      bottom: 38px;
+      z-index: 6;
+      transform: scale(0.86);
+      transform-origin: right bottom;
+    }
+
+    .scene-one-popup .popup-main {
+      max-height: 238px;
+    }
+
+    .scene-one-popup .popup-footer {
+      display: none;
+    }
+
+    .scene-one .micro-proof {
+      max-width: 450px;
+    }
+
+    .scene-two {
+      background: #eaf2f6;
+    }
+
+    .scene-two .browser-window {
+      position: absolute;
+      top: 42px;
+      left: 42px;
+      width: 1196px;
+      height: 716px;
+      box-shadow: 0 30px 80px rgba(15, 23, 41, 0.18);
+    }
+
+    .scene-two .site-header {
+      height: 68px;
+      padding-inline: 58px;
+    }
+
+    .scene-two .site-content {
+      padding: 34px 58px;
+    }
+
+    .scene-two .site-title {
+      font-size: 29px;
+    }
+
+    .scene-two .site-subtitle,
+    .scene-two .site-kicker,
+    .scene-two .site-nav,
+    .scene-two .site-login {
+      font-size: 12px;
+    }
+
+    .scene-two .site-filter {
+      height: 38px;
+      font-size: 11px;
+    }
+
+    .scene-two .site-filter.search {
+      width: 285px;
+    }
+
+    .scene-two .site-cards {
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .scene-two .site-job-card {
+      min-height: 248px;
+      padding: 21px;
+    }
+
+    .scene-two .site-job-card h3 {
+      margin-top: 18px;
+      font-size: 15px;
+    }
+
+    .scene-two .site-job-card .company,
+    .scene-two .site-job-card .location {
+      font-size: 11px;
+    }
+
+    .scene-two .job-meta {
+      margin-top: 21px;
+      font-size: 10px;
+    }
+
+    .scene-two .opportunity,
+    .scene-two .stage-chip-site {
+      font-size: 10px;
+    }
+
+    .scene-two-title {
+      position: absolute;
+      top: 94px;
+      right: 84px;
+      z-index: 4;
+      width: 330px;
+      padding: 18px 20px;
+      border-left: 3px solid var(--field-blue);
+      background: #ffffff;
+      box-shadow: 0 14px 40px rgba(15, 23, 41, 0.12);
+    }
+
+    .scene-two-title h1 {
+      margin: 0;
+      color: var(--navy);
+      font-size: 28px;
+      font-weight: 680;
+      letter-spacing: -0.035em;
+      line-height: 1.08;
+    }
+
+    .scene-two-title p {
+      margin: 8px 0 0;
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .scene-two .annotation.star-note {
+      top: 369px;
+      right: 148px;
+    }
+
+    .scene-two .annotation.stage-note {
+      top: 407px;
+      right: 148px;
+    }
+
+    .scene-three {
+      background:
+        linear-gradient(135deg, #f4f3ed 0 54%, #e9f5fb 54% 100%);
+    }
+
+    .scene-three .route-watermark {
+      bottom: -230px;
+      left: -160px;
+      width: 700px;
+      height: 700px;
+    }
+
+    .scene-three-copy {
+      position: absolute;
+      top: 116px;
+      left: 84px;
+      width: 490px;
+    }
+
+    .scene-three-copy .display-title {
+      font-size: 55px;
+    }
+
+    .feature-index {
+      display: grid;
+      gap: 14px;
+      margin-top: 35px;
+    }
+
+    .feature-index-row {
+      display: grid;
+      grid-template-columns: 29px 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .feature-index-row strong {
+      color: var(--field-blue);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .feature-index-row p {
+      margin: 0;
+      color: #465160;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .scene-three-popup {
+      position: absolute;
+      top: 46px;
+      right: 142px;
+      transform: scale(1.18);
+      transform-origin: top right;
+    }
+
+    .scene-three-popup .popup-main {
+      max-height: 360px;
+    }
+
+    .scene-three-callout {
+      position: absolute;
+      right: 62px;
+      bottom: 24px;
+      width: 260px;
+      padding: 14px 16px;
+      border: 1px solid rgba(0, 105, 168, 0.25);
+      background: #ffffff;
+      color: #334155;
+      font-size: 12px;
+      line-height: 1.45;
+      box-shadow: 0 12px 36px rgba(15, 23, 41, 0.1);
+    }
+
+    .scene-three-callout strong {
+      display: block;
+      margin-bottom: 3px;
+      color: #0069a8;
+      font-size: 12px;
+    }
+
+    .scene-four {
+      background: #eef6fa;
+    }
+
+    .scene-four-copy {
+      position: absolute;
+      top: 76px;
+      left: 72px;
+      width: 430px;
+    }
+
+    .scene-four-copy .display-title {
+      font-size: 52px;
+    }
+
+    .signal-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 30px;
+    }
+
+    .signal-list-item {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      color: #334155;
+      font-size: 14px;
+      font-weight: 550;
+    }
+
+    .signal-list-item .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--field-blue);
+      box-shadow: 0 0 0 5px rgba(0, 105, 168, 0.09);
+    }
+
+    .scene-four-browser {
+      position: absolute;
+      top: 56px;
+      right: 57px;
+      width: 685px;
+      height: 684px;
+    }
+
+    .detail-layout {
+      display: grid;
+      grid-template-columns: 1fr 225px;
+      gap: 20px;
+      padding: 28px 30px;
+      background: #f8fafc;
+    }
+
+    .detail-main,
+    .detail-sidebar-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      background: #ffffff;
+    }
+
+    .detail-main {
+      min-height: 410px;
+      padding: 25px;
+    }
+
+    .detail-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .detail-main h3 {
+      margin: 14px 0 4px;
+      color: #0f1729;
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .detail-main .company {
+      margin: 0;
+      color: #475569;
+      font-size: 12px;
+    }
+
+    .detail-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .detail-action {
+      display: grid;
+      width: 40px;
+      height: 40px;
+      place-items: center;
+      padding: 0;
+      border: 1px solid #e1e7ef;
+      border-radius: 14px;
+      background: #ffffff;
+      color: #0f1729;
+    }
+
+    .detail-action.favorite {
+      border-color: rgba(245, 158, 11, 0.6);
+      color: #f59e0b;
+    }
+
+    .detail-action.favorite svg {
+      fill: currentColor;
+    }
+
+    .detail-action svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .detail-facts {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .detail-fact {
+      padding: 13px;
+      border: 1px solid #e8edf2;
+      border-radius: 10px;
+      background: #f8fafc;
+    }
+
+    .detail-fact span {
+      display: block;
+      color: #64748b;
+      font-size: 9px;
+    }
+
+    .detail-fact strong {
+      display: block;
+      margin-top: 3px;
+      color: #0f1729;
+      font-size: 12px;
+    }
+
+    .detail-copy-lines {
+      display: grid;
+      gap: 8px;
+      margin-top: 26px;
+    }
+
+    .detail-copy-lines span {
+      display: block;
+      height: 8px;
+      border-radius: 5px;
+      background: #e9edf2;
+    }
+
+    .detail-copy-lines span:nth-child(2) {
+      width: 92%;
+    }
+
+    .detail-copy-lines span:nth-child(3) {
+      width: 67%;
+    }
+
+    .detail-sidebar {
+      display: grid;
+      align-content: start;
+      gap: 14px;
+    }
+
+    .detail-sidebar-card {
+      padding: 17px;
+    }
+
+    .detail-sidebar-card h4 {
+      margin: 0;
+      color: #0f1729;
+      font-size: 13px;
+    }
+
+    .detail-sidebar-card p {
+      margin: 7px 0 0;
+      color: #64748b;
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .scene-four-popup {
+      position: absolute;
+      right: 650px;
+      bottom: 56px;
+      z-index: 5;
+      transform: scale(0.91);
+      transform-origin: left bottom;
+    }
+
+    .scene-four-popup .popup-header,
+    .scene-four-popup .popup-footer {
+      display: none;
+    }
+
+    .scene-four-popup .popup-main {
+      padding: 0;
+    }
+
+    .scene-four-popup .favorite-card {
+      border: 0;
+      box-shadow: none;
+    }
+
+    .scene-five {
+      background: var(--navy);
+      color: #ffffff;
+    }
+
+    .scene-five .route-watermark {
+      top: -260px;
+      left: -160px;
+      width: 850px;
+      height: 850px;
+      color: #38bdf8;
+      opacity: 0.085;
+    }
+
+    .scene-five-copy {
+      position: absolute;
+      top: 73px;
+      left: 76px;
+      width: 505px;
+    }
+
+    .scene-five .eyebrow {
+      color: #7dd3fc;
+    }
+
+    .scene-five .display-title {
+      color: #ffffff;
+      font-size: 55px;
+    }
+
+    .scene-five .display-title .blue {
+      color: #7dd3fc;
+    }
+
+    .scene-five .lede {
+      color: #cbd5e1;
+      font-size: 18px;
+    }
+
+    .permission-card {
+      display: grid;
+      gap: 0;
+      width: 500px;
+      margin-top: 34px;
+      border: 1px solid rgba(148, 163, 184, 0.33);
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .permission-row {
+      display: grid;
+      grid-template-columns: 115px 1fr;
+      gap: 16px;
+      padding: 13px 16px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+    }
+
+    .permission-row:last-child {
+      border-bottom: 0;
+    }
+
+    .permission-row code {
+      color: #7dd3fc;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .permission-row span {
+      color: #cbd5e1;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .not-requested {
+      margin-top: 14px;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .not-requested strong {
+      color: #ffffff;
+    }
+
+    .scene-five-panel {
+      position: absolute;
+      top: 84px;
+      right: 80px;
+      width: 520px;
+      height: 630px;
+      padding: 42px 44px;
+      background: #f4f3ed;
+      color: #171717;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.28);
+    }
+
+    .scene-five-panel .brand-lockup {
+      margin-bottom: 42px;
+    }
+
+    .trust-statement {
+      margin: 0;
+      font-size: 31px;
+      font-weight: 650;
+      letter-spacing: -0.045em;
+      line-height: 1.08;
+    }
+
+    .trust-statement span {
+      color: #0069a8;
+    }
+
+    .trust-checks {
+      display: grid;
+      gap: 17px;
+      margin-top: 32px;
+    }
+
+    .trust-check {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .trust-check svg {
+      width: 22px;
+      height: 22px;
+      color: #0069a8;
+    }
+
+    .trust-check strong {
+      display: block;
+      color: #171717;
+      font-size: 14px;
+    }
+
+    .trust-check p {
+      margin: 3px 0 0;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .trust-footer {
+      position: absolute;
+      right: 44px;
+      bottom: 38px;
+      left: 44px;
+      padding-top: 18px;
+      border-top: 1px solid #d9d8d1;
+      color: #64748b;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    #scene-picker {
+      position: fixed;
+      z-index: 100;
+      right: 20px;
+      bottom: 20px;
+      display: none;
+      align-items: center;
+      gap: 5px;
+      padding: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(15, 23, 41, 0.88);
+      box-shadow: 0 12px 28px rgba(15, 23, 41, 0.24);
+      backdrop-filter: blur(12px);
+    }
+
+    body.show-controls #scene-picker {
+      display: flex;
+    }
+
+    #scene-picker button {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      border: 1px solid transparent;
+      border-radius: 0;
+      background: transparent;
+      color: #cbd5e1;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    #scene-picker button[aria-pressed="true"] {
+      border-color: #7dd3fc;
+      background: rgba(125, 211, 252, 0.14);
+      color: #ffffff;
+    }
+
+    @media print {
+      #scene-picker {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <defs>
+      <symbol id="icon-star" viewBox="0 0 24 24">
+        <path d="m12 2.8 2.75 5.56 6.14.9-4.45 4.33 1.05 6.12L12 16.82l-5.49 2.89 1.05-6.12-4.45-4.33 6.14-.9L12 2.8Z" />
+      </symbol>
+      <symbol id="icon-chevron" viewBox="0 0 24 24">
+        <path d="m6 9 6 6 6-6" />
+      </symbol>
+      <symbol id="icon-note" viewBox="0 0 24 24">
+        <path d="M5 3.5h14v13L14.5 21H5V3.5Z" />
+        <path d="M14 20.5V16h4.5M8 8h8M8 12h6" />
+      </symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24">
+        <path d="M20 7v5h-5M4 17v-5h5" />
+        <path d="M6.1 8.5A7 7 0 0 1 19.4 12M17.9 15.5A7 7 0 0 1 4.6 12" />
+      </symbol>
+      <symbol id="icon-archive" viewBox="0 0 24 24">
+        <path d="M4 7.5h16V21H4V7.5ZM3 3h18v4.5H3V3Z" />
+        <path d="M9 12h6" />
+      </symbol>
+      <symbol id="icon-pin" viewBox="0 0 24 24">
+        <path d="M20 10c0 5.2-8 11-8 11s-8-5.8-8-11a8 8 0 1 1 16 0Z" />
+        <circle cx="12" cy="10" r="2.5" />
+      </symbol>
+      <symbol id="icon-lock" viewBox="0 0 24 24">
+        <rect x="4" y="10" width="16" height="11" rx="2" />
+        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+      </symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="m8 12 2.7 2.7L16.5 9" />
+      </symbol>
+      <symbol id="icon-share" viewBox="0 0 24 24">
+        <circle cx="18" cy="5" r="2.5" />
+        <circle cx="6" cy="12" r="2.5" />
+        <circle cx="18" cy="19" r="2.5" />
+        <path d="m8.3 10.9 7.4-4.7M8.3 13.1l7.4 4.7" />
+      </symbol>
+    </defs>
+  </svg>
+
+  <section class="scene scene-one is-active" data-scene="1" aria-label="Simpan Lowongan pilihan">
+    <svg aria-hidden="true" class="route-watermark" viewBox="0 0 100 100" fill="none" >
+      <path d="M24 24h33c12 0 20 6 20 13s-8 13-20 13H43c-12 0-20 6-20 13s8 13 20 13h33" stroke="currentColor" stroke-width="9" stroke-linecap="round" />
+      <rect x="15" y="15" width="18" height="18" fill="currentColor" />
+      <rect x="67" y="67" width="18" height="18" fill="currentColor" />
+    </svg>
+
+    <div class="scene-one-copy">
+      <div class="brand-lockup">
+        <svg aria-hidden="true" class="route-mark" viewBox="0 0 100 100" fill="none" >
+          <rect width="100" height="100" fill="#f4f3ed" />
+          <path d="M24 24h33c12 0 20 6 20 13s-8 13-20 13H43c-12 0-20 6-20 13s8 13 20 13h33" stroke="#0069a8" stroke-width="9" stroke-linecap="round" />
+          <rect x="15" y="15" width="18" height="18" fill="#0069a8" />
+          <rect x="67" y="67" width="18" height="18" fill="#0069a8" />
+          <rect x="22" y="22" width="4" height="4" fill="#f4f3ed" />
+          <rect x="74" y="74" width="4" height="4" fill="#f4f3ed" />
+        </svg>
+        SakuMagang
+      </div>
+      <p class="eyebrow">Shortlist untuk MagangHub</p>
+      <h1 class="display-title">Simpan Lowongan yang <span class="blue">layak diperjuangkan.</span></h1>
+      <p class="lede">Favorite, Catatan, Status Lamar, Kuota &amp; Pelamar—semuanya rapi di satu popup dan tersimpan lokal.</p>
+      <div class="micro-proof">
+        <span><svg aria-hidden="true" class="icon"><use href="#icon-star" /></svg> Bintangi saat browsing</span>
+        <span><svg aria-hidden="true" class="icon"><use href="#icon-note" /></svg> Catatan pribadi</span>
+        <span><svg aria-hidden="true" class="icon"><use href="#icon-lock" /></svg> Tanpa password SiapKerja</span>
+      </div>
+    </div>
+
+    <div class="browser-window scene-one-browser" aria-hidden="true">
+      <div class="browser-chrome">
+        <div class="traffic-lights"><span></span><span></span><span></span></div>
+        <div class="address-bar"><svg aria-hidden="true" class="icon"><use href="#icon-lock" /></svg> maganghub.kemnaker.go.id/magang-nasional/lowongan</div>
+        <div class="browser-actions"><span></span><span></span></div>
+      </div>
+      <div class="site-page">
+        <div class="site-header">
+          <div class="mh-brand"><span class="mh-brand-mark">M</span> MAGANGHUB</div>
+          <div class="site-nav"><span>Beranda</span><span class="active">Lowongan</span><span>Penyelenggara</span><span>FAQ</span></div>
+          <button class="site-login" type="button">Masuk</button>
+        </div>
+        <div class="site-content">
+          <p class="site-kicker">Program Magang Nasional</p>
+          <h2 class="site-title">Temukan Lowongan Magang</h2>
+          <p class="site-subtitle">Pilih kesempatan yang sesuai dengan minat dan keterampilanmu.</p>
+          <div class="site-filter-row">
+            <div class="site-filter search">Cari posisi atau perusahaan</div>
+            <div class="site-filter">Lokasi</div>
+            <div class="site-filter">Kategori</div>
+          </div>
+          <div class="site-cards">
+            <article class="site-job-card">
+              <div class="company-logo">PM</div>
+              <button class="list-star" type="button" aria-label="Hapus dari favorit"><svg aria-hidden="true" class="icon"><use href="#icon-star" /></svg></button>
+              <span class="stage-chip-site">Interview</span>
+              <h3>Magang Data Analyst</h3>
+              <p class="company">PT Maju Bersama</p>
+              <p class="location"><svg aria-hidden="true" class="icon"><use href="#icon-pin" /></svg> Jakarta, DKI Jakarta</p>
+              <div class="job-meta"><span>Kuota 5 · Pelamar 1</span><span class="opportunity">Peluang</span></div>
+            </article>
+            <article class="site-job-card">
+              <div class="company-logo">KO</div>
+              <button class="list-star" type="button" aria-label="Hapus dari favorit"><svg aria-hidden="true" class="icon"><use href="#icon-star" /></svg></button>
+              <span class="stage-chip-site">Dilamar</span>
+              <h3>Magang Software Engineer</h3>
+              <p class="company">Kementerian Komunikasi dan Informatika</p>
+              <p class="location"><svg aria-hidden="true" class="icon"><use href="#icon-pin" /></svg> Jakarta Pusat, DKI Jakarta</p>
+              <div class="job-meta"><span>Kuota 5 · Pelamar 4</span><span class="opportunity">Peluang</span></div>
+            </article>
+            <article class="site-job-card">
+              <div class="company-logo">KN</div>
+              <button class="list-star" type="button" aria-label="Hapus dari favorit"><svg aria-hidden="true" class="icon"><use href="#icon-star" /></svg></button>
+              <h3>Magang UI/UX Designer</h3>
+              <p class="company">PT Kreatif Nusantara</p>
+              <p class="location"><svg aria-hidden="true" class="icon"><use href="#icon-pin" /></svg> Bandung, Jawa Barat</p>
+              <div class="job-meta"><span>Kuota 2 · Pelamar 40</span><span class="opportunity">Peluang</span></div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="popup-shell scene-one-popup" aria-hidden="true">
+      <header class="popup-header">
+        <div class="popup-identity">
+          <div class="popup-brand">
+            <svg aria-hidden="true" class="route-mark small" viewBox="0 0 100 100" fill="none" >
+              <rect width="100" height="100" fill="#f4f3ed" />
+              <path d="M24 24h33c12 0 20 6 20 13s-8 13-20 13H43c-12 0-20 6-20 13s8 13 20 13h33" stroke="#0069a8" stroke-width="9" stroke-linecap="round" />
+              <rect x="15" y="15" width="18" height="18" fill="#0069a8" />
+              <rect x="67" y="67" width="18" height="18" fill="#0069a8" />
+            </svg>
+            <h2>SakuMagang</h2>
+          </div>
+          <button class="outline-button" type="button">Segarkan semua</button>
+        </div>
+        <div class="popup-controls">
+          <div class="popup-tabs"><button class="popup-tab active" type="button">Aktif</button><button class="popup-tab" type="button">Arsip (1)</button></div>
+          <div class="select-pair"><select class="under-select" aria-label="Urutkan"><option>Terbaru disimpan</option></select><select class="under-select" aria-label="Tahap"><option>Semua tahap</option></select></div>
+        </div>
+        <input class="popup-search" type="search" placeholder="Cari favorit..." aria-label="Cari favorit" />
+      </header>
+      <main class="popup-main">
+        <article class="favorite-card active-stage">
+          <button class="favorite-card-button" type="button">
+            <div class="favorite-title-row"><p class="favorite-title">Magang Data Analyst</p><span class="status-label interview">Interview</span></div>
+            <p class="favorite-meta">PT Maju Bersama · Jakarta</p>
+            <div class="signal-row"><span class="seats">sisa 4 kursi · 1 dari 5</span><span class="right-signals"><svg aria-hidden="true" class="icon note-mark"><use href="#icon-note" /></svg><span class="live-status">Buka</span><svg aria-hidden="true" class="icon chevron"><use href="#icon-chevron" /></svg></span></div>
+          </button>
+        </article>
+        <article class="favorite-card">
+          <button class="favorite-card-button" type="button">
+            <div class="favorite-title-row"><p class="favorite-title">Magang Software Engineer</p><span class="status-label">Dilamar</span></div>
+            <p class="favorite-meta">Kementerian Komunikasi dan Informatika · Jakarta Pusat</p>
+            <div class="signal-row"><span class="seats">sisa 1 kursi · 4 dari 5</span><span class="right-signals"><span class="live-status filling">Mengisi</span><svg aria-hidden="true" class="icon chevron"><use href="#icon-chevron" /></svg></span></div>
+          </button>
+        </article>
+      </main>
+    </div>
+  </section>
+
+  <section class="scene scene-two" data-scene="2" aria-label="Bintangi langsung di MagangHub">
+    <div class="browser-window">
+      <div class="browser-chrome">
+        <div class="traffic-lights"><span></span><span></span><span></span></div>
+        <div class="address-bar"><svg aria-hidden="true" class="icon"><use href="#icon-lock" /></svg> maganghub.kemnaker.go.id/magang-nasional/lowongan</div>
+        <div class="browser-actions"><span></span><span></span></div>
+      </div>
+      <div class="site-page">
+        <div class="site-header">
+          <div class="mh-brand"><span class="mh-brand-mark">M</span> MAGANGHUB</div>
+          <div class="site-nav"><span>Beranda</span><span class="active">Lowongan</span><span>Penyelenggara</span><span>FAQ</span></div>
+          <button class="site-login" type="button">Masuk</button>
+        </div>
+        <div class="site-content">
+          <p class="site-kicker">Program Magang Nasional</p>
+          <h2 class="site-title">Temukan Lowongan Magang</h2>
+          <p class="site-subtitle">Pilih kesempatan yang sesuai dengan minat dan keterampilanmu.</p>
+          <div class="site-filter-row">
+            <div class="site-filter search">Cari posisi atau perusahaan</div>
+            <div class="site-filter">Lokasi</div>
+            <div class="site-filter">Kategori</div>
+            <div class="site-filter">Pendidikan</div>
+          </div>
+          <div class="site-cards">
+            <article class="site-job-card">
+              <div class="company-logo">PM</div>
+              <button class="list-star" type="button" aria-label="Hapus dari favorit"><svg aria-hidden="true" class="icon"><use href="#icon-star" /></svg></button>
+              <span class="stage-chip-site">Interview</span>
+              <h3>Magang Data Analyst</h3>
+              <p class="company">PT Maju Bersama</p>
+              <p class="location"><svg aria-hidden="true" class="icon"><use href="#icon-pin" /></svg> Jakarta, DKI Jakarta</p>
+              <div class="job-meta"><span>Kuota 5 · Pelamar 1</span><span class="opportunity">Peluang</span></div>
+            </article>
+            <article class="site-job-card">
+              <div class="company-logo">KO</div>
+              <button class="list-star" type="button" aria-label="Hapus dari favorit"><svg aria-hidden="true" class="icon"><use href="#icon-star" /></svg></button>
+              <span class="stage-chip-site">Dilamar</span>
+              <h3>Magang Software Engineer</h3>
+              <p class="company">Kementerian Komunikasi dan Informatika</p>
+              <p class="location"><svg aria-hidden="true" class="icon"><use href="#icon-pin" /></svg> Jakarta Pusat, DKI Jakarta</p>
+              <div class="job-meta"><span>Kuota 5 · Pelamar 4</span><span class="opportunity">Peluang</span></div>
+            </article>
+            <article class="site-job-card">
+              <div class="company-logo">KN</div>
+              <button class="list-star" type="button" aria-label="Hapus dari favorit"><svg aria-hidden="true" class="icon"><use href="#icon-star" /></svg></button>
+              <span class="stage-chip-site">Diterima</span>
+              <h3>Magang UI/UX Designer</h3>
+              <p class="company">PT Kreatif Nusantara</p>
+              <p class="location"><svg aria-hidden="true" class="icon"><use href="#icon-pin" /></svg> Bandung, Jawa Barat</p>
+              <div class="job-meta"><span>Kuota 2 · Pelamar 40</span><span class="opportunity">Peluang</span></div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="scene-two-title">
+      <h1>Bintangi tanpa meninggalkan MagangHub.</h1>
+      <p>Satu klik menyimpan snapshot Lowongan. Status Lamar tetap terlihat langsung di kartu.</p>
+    </div>
+    <div class="annotation star-note">Favorite lokal</div>
+    <div class="annotation stage-note">Tahap lamaranmu</div>
+  </section>
+
+  <section class="scene scene-three" data-scene="3" aria-label="Kelola shortlist dari popup">
+    <svg aria-hidden="true" class="route-watermark" viewBox="0 0 100 100" fill="none" >
+      <path d="M24 24h33c12 0 20 6 20 13s-8 13-20 13H43c-12 0-20 6-20 13s8 13 20 13h33" stroke="currentColor" stroke-width="9" stroke-linecap="round" />
+      <rect x="15" y="15" width="18" height="18" fill="currentColor" />
+      <rect x="67" y="67" width="18" height="18" fill="currentColor" />
+    </svg>
+    <div class="scene-three-copy">
+      <p class="eyebrow">Popup 360 px yang nyata</p>
+      <h1 class="display-title">Shortlist yang tenang,&nbsp;<span class="blue">bukan tab yang menumpuk.</span></h1>
+      <p class="lede">Cari, filter tahap, urutkan urgensi, tulis Catatan, dan arsipkan Lowongan yang tidak lagi aktif.</p>
+      <div class="feature-index">
+        <div class="feature-index-row"><strong>01</strong><p>Bandingkan Kuota dan Pelamar tanpa membuka setiap detail.</p></div>
+        <div class="feature-index-row"><strong>02</strong><p>Status Lamar manual: Dilamar, Interview, Diterima, atau Ditolak.</p></div>
+        <div class="feature-index-row"><strong>03</strong><p>Ekspor dan impor Favorite sebagai cadangan JSON.</p></div>
+      </div>
+    </div>
+
+    <div class="popup-shell scene-three-popup">
+      <header class="popup-header">
+        <div class="popup-identity">
+          <div class="popup-brand">
+            <svg aria-hidden="true" class="route-mark small" viewBox="0 0 100 100" fill="none" >
+              <rect width="100" height="100" fill="#f4f3ed" />
+              <path d="M24 24h33c12 0 20 6 20 13s-8 13-20 13H43c-12 0-20 6-20 13s8 13 20 13h33" stroke="#0069a8" stroke-width="9" stroke-linecap="round" />
+              <rect x="15" y="15" width="18" height="18" fill="#0069a8" />
+              <rect x="67" y="67" width="18" height="18" fill="#0069a8" />
+            </svg>
+            <h2>SakuMagang</h2>
+          </div>
+          <button class="outline-button" type="button">Segarkan semua</button>
+        </div>
+        <div class="popup-controls">
+          <div class="popup-tabs"><button class="popup-tab active" type="button">Aktif</button><button class="popup-tab" type="button">Arsip (2)</button></div>
+          <div class="select-pair"><select class="under-select" aria-label="Urutkan"><option>Urgensi</option></select><select class="under-select" aria-label="Tahap"><option>Semua tahap</option></select></div>
+        </div>
+        <input class="popup-search" type="search" placeholder="Cari favorit..." aria-label="Cari favorit" />
+      </header>
+      <main class="popup-main">
+        <article class="favorite-card active-stage">
+          <button class="favorite-card-button" type="button">
+            <div class="favorite-title-row"><p class="favorite-title">Magang Data Analyst</p><span class="status-label interview">Interview</span></div>
+            <p class="favorite-meta">PT Maju Bersama · Jakarta</p>
+            <div class="signal-row"><span class="seats">sisa 4 kursi · 1 dari 5</span><span class="right-signals"><svg aria-hidden="true" class="icon note-mark"><use href="#icon-note" /></svg><span class="live-status">Buka</span><svg aria-hidden="true" class="icon chevron"><use href="#icon-chevron" /></svg></span></div>
+          </button>
+          <p class="change-notice">sisa 1 kursi, tadinya 4</p>
+        </article>
+        <article class="favorite-card active-stage">
+          <button class="favorite-card-button" type="button">
+            <div class="favorite-title-row"><p class="favorite-title">Magang Software Engineer</p><span class="status-label">Dilamar</span></div>
+            <p class="favorite-meta">Kementerian Komunikasi dan Informatika · Jakarta Pusat</p>
+            <div class="signal-row"><span class="seats">sisa 1 kursi · 4 dari 5</span><span class="right-signals"><span class="live-status filling">Mengisi</span><svg aria-hidden="true" class="icon chevron"><use href="#icon-chevron" /></svg></span></div>
+          </button>
+        </article>
+        <article class="favorite-card">
+          <button class="favorite-card-button" type="button">
+            <div class="favorite-title-row"><p class="favorite-title">Magang UI/UX Designer</p><span class="status-label accepted">Diterima</span></div>
+            <p class="favorite-meta">PT Kreatif Nusantara · Bandung</p>
+            <div class="signal-row"><span class="seats">penuh · 40 dari 2</span><span class="right-signals"><svg aria-hidden="true" class="icon note-mark"><use href="#icon-note" /></svg><span class="live-status closed">Tutup</span><svg aria-hidden="true" class="icon chevron"><use href="#icon-chevron" /></svg></span></div>
+          </button>
+        </article>
+      </main>
+      <footer class="popup-footer">
+        <div class="popup-footer-row"><button class="outline-button" type="button">Ekspor cadangan</button><button class="outline-button" type="button">Impor</button><a class="safe-link" href="#scene-5">Mengapa aman?</a></div>
+        <p class="popup-trust">Favorit tersimpan hanya di browser kamu; extension ini tidak pernah minta password SiapKerja.</p>
+      </footer>
+    </div>
+    <div class="scene-three-callout"><strong>Sama seperti UI produksi</strong>Sudut tajam, Geist, satu aksen biru, dan kartu ringkas tiga baris.</div>
+  </section>
+
+  <section class="scene scene-four" data-scene="4" aria-label="Pantau Status Lowongan dan Status Lamar">
+    <div class="scene-four-copy">
+      <p class="eyebrow">Sinyal yang bisa ditindaklanjuti</p>
+      <h1 class="display-title">Tahu kapan <span class="blue">harus bergerak.</span></h1>
+      <p class="lede">Segarkan Status Lowongan dari halaman publik dan catat tahap lamaranmu sendiri—tanpa membaca sesi login.</p>
+      <div class="signal-list">
+        <div class="signal-list-item"><span class="dot"></span> Kuota dan Pelamar terkini</div>
+        <div class="signal-list-item"><span class="dot"></span> Badge toolbar saat angka berubah</div>
+        <div class="signal-list-item"><span class="dot"></span> Status Lamar selalu di bawah kendalimu</div>
+      </div>
+    </div>
+
+    <div class="browser-window scene-four-browser">
+      <div class="browser-chrome">
+        <div class="traffic-lights"><span></span><span></span><span></span></div>
+        <div class="address-bar"><svg aria-hidden="true" class="icon"><use href="#icon-lock" /></svg> maganghub.kemnaker.go.id/magang-nasional/lowongan/data-analyst</div>
+        <div class="browser-actions"><span></span><span></span></div>
+      </div>
+      <div class="site-page">
+        <div class="site-header">
+          <div class="mh-brand"><span class="mh-brand-mark">M</span> MAGANGHUB</div>
+          <div class="site-nav"><span>Beranda</span><span class="active">Lowongan</span><span>Penyelenggara</span></div>
+          <button class="site-login" type="button">Masuk</button>
+        </div>
+        <div class="detail-layout">
+          <main class="detail-main">
+            <div class="detail-top">
+              <div><div class="company-logo">PM</div><h3>Magang Data Analyst</h3><p class="company">PT Maju Bersama · Jakarta, DKI Jakarta</p></div>
+              <div class="detail-actions">
+                <button class="detail-action" type="button" aria-label="Bagikan"><svg aria-hidden="true" class="icon"><use href="#icon-share" /></svg></button>
+                <button class="detail-action favorite" type="button" aria-label="Hapus dari favorit"><svg aria-hidden="true" class="icon"><use href="#icon-star" /></svg></button>
+              </div>
+            </div>
+            <div class="detail-facts">
+              <div class="detail-fact"><span>Kuota</span><strong>5 peserta</strong></div>
+              <div class="detail-fact"><span>Pelamar</span><strong>1 orang</strong></div>
+              <div class="detail-fact"><span>Periode</span><strong>6 bulan</strong></div>
+              <div class="detail-fact"><span>Batch</span><strong>Batch 1 · 2026</strong></div>
+            </div>
+            <div class="detail-copy-lines"><span></span><span></span><span></span></div>
+          </main>
+          <aside class="detail-sidebar">
+            <div class="detail-sidebar-card"><h4>Alur Lamaran</h4><p>Lengkapi profil dan kirim lamaran melalui situs resmi.</p></div>
+            <div class="stage-card">
+              <h4>Lamaranku · catatan pribadi</h4>
+              <p>Bukan fitur MagangHub — disimpan di browser kamu.</p>
+              <label>Status Lamar<select aria-label="Status Lamar"><option>Interview</option></select></label>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+
+    <div class="popup-shell scene-four-popup">
+      <main class="popup-main">
+        <article class="favorite-card active-stage">
+          <button class="favorite-card-button" type="button">
+            <div class="favorite-title-row"><p class="favorite-title">Magang Data Analyst</p><span class="status-label interview">Interview</span></div>
+            <p class="favorite-meta">PT Maju Bersama · Jakarta</p>
+            <div class="signal-row"><span class="seats">sisa 4 kursi · 1 dari 5</span><span class="right-signals"><svg aria-hidden="true" class="icon note-mark"><use href="#icon-note" /></svg><span class="live-status">Buka</span><svg aria-hidden="true" class="icon chevron up"><use href="#icon-chevron" /></svg></span></div>
+          </button>
+          <p class="change-notice">sisa 1 kursi, tadinya 4</p>
+          <div class="favorite-tray">
+            <label class="stage-field">Status Lamar<select aria-label="Status Lamar"><option>Interview</option></select></label>
+            <div class="note-field">Fokus pada pengalaman SQL dan visualisasi data saat interview.</div>
+            <div class="card-actions"><button class="outline-button" type="button"><svg aria-hidden="true" class="icon" style="width:14px;height:14px"><use href="#icon-refresh" /></svg> Segarkan</button><button class="outline-button" type="button"><svg aria-hidden="true" class="icon" style="width:14px;height:14px"><use href="#icon-archive" /></svg> Arsipkan</button><a class="popup-link" href="https://maganghub.kemnaker.go.id/magang-nasional/lowongan">Buka di MagangHub</a></div>
+            <p class="provenance">Terakhir dicek 2 menit lalu · Batch 1 · 2026</p>
+          </div>
+        </article>
+      </main>
+    </div>
+  </section>
+
+  <section class="scene scene-five" data-scene="5" aria-label="Privasi local-first yang bisa diverifikasi">
+    <svg aria-hidden="true" class="route-watermark" viewBox="0 0 100 100" fill="none" >
+      <path d="M24 24h33c12 0 20 6 20 13s-8 13-20 13H43c-12 0-20 6-20 13s8 13 20 13h33" stroke="currentColor" stroke-width="9" stroke-linecap="round" />
+      <rect x="15" y="15" width="18" height="18" fill="currentColor" />
+      <rect x="67" y="67" width="18" height="18" fill="currentColor" />
+    </svg>
+    <div class="scene-five-copy">
+      <p class="eyebrow">Aman karena arsitekturnya</p>
+      <h1 class="display-title">Lowonganmu tetap lokal.&nbsp;<span class="blue">Passwordmu tetap milikmu.</span></h1>
+      <p class="lede">SakuMagang tidak punya akun, backend, atau telemetry. Refresh hanya membaca halaman detail Lowongan yang publik.</p>
+      <div class="permission-card">
+        <div class="permission-row"><code>storage</code><span>Menyimpan Favorite, Catatan, dan tahap di browser.</span></div>
+        <div class="permission-row"><code>offscreen</code><span>Memproses HTML publik untuk memperbarui Status Lowongan.</span></div>
+        <div class="permission-row"><code>host</code><span>Terbatas ke maganghub.kemnaker.go.id.</span></div>
+      </div>
+      <p class="not-requested"><strong>Tidak meminta:</strong> cookies, identity, &lt;all_urls&gt;, atau password SiapKerja.</p>
+    </div>
+
+    <aside class="scene-five-panel">
+      <div class="brand-lockup">
+        <svg aria-hidden="true" class="route-mark" viewBox="0 0 100 100" fill="none" >
+          <rect width="100" height="100" fill="#f4f3ed" />
+          <path d="M24 24h33c12 0 20 6 20 13s-8 13-20 13H43c-12 0-20 6-20 13s8 13 20 13h33" stroke="#0069a8" stroke-width="9" stroke-linecap="round" />
+          <rect x="15" y="15" width="18" height="18" fill="#0069a8" />
+          <rect x="67" y="67" width="18" height="18" fill="#0069a8" />
+          <rect x="22" y="22" width="4" height="4" fill="#f4f3ed" />
+          <rect x="74" y="74" width="4" height="4" fill="#f4f3ed" />
+        </svg>
+        SakuMagang
+      </div>
+      <p class="trust-statement">tanpa akun, tanpa server, tanpa telemetri<span>.</span></p>
+      <div class="trust-checks">
+        <div class="trust-check"><svg aria-hidden="true" class="icon"><use href="#icon-check" /></svg><div><strong>Favorite local-first</strong><p>Data disimpan di chrome.storage.local dan bisa dicadangkan sebagai JSON.</p></div></div>
+        <div class="trust-check"><svg aria-hidden="true" class="icon"><use href="#icon-check" /></svg><div><strong>Status Lamar sengaja manual</strong><p>Tidak membaca sesi login hanya demi otomatisasi.</p></div></div>
+        <div class="trust-check"><svg aria-hidden="true" class="icon"><use href="#icon-check" /></svg><div><strong>Melamar tetap di situs resmi</strong><p>Setiap Favorite menyediakan tautan Buka di MagangHub.</p></div></div>
+      </div>
+      <p class="trust-footer">SakuMagang adalah extension pihak ketiga independen dan tidak berafiliasi, didukung, atau dibuat oleh Kemnaker maupun program MagangHub.</p>
+    </aside>
+  </section>
+
+  <nav id="scene-picker" aria-label="Pilih tampilan screenshot">
+    <button type="button" data-target="1" aria-label="Tampilkan scene 1" aria-pressed="true">1</button>
+    <button type="button" data-target="2" aria-label="Tampilkan scene 2" aria-pressed="false">2</button>
+    <button type="button" data-target="3" aria-label="Tampilkan scene 3" aria-pressed="false">3</button>
+    <button type="button" data-target="4" aria-label="Tampilkan scene 4" aria-pressed="false">4</button>
+    <button type="button" data-target="5" aria-label="Tampilkan scene 5" aria-pressed="false">5</button>
+  </nav>
+
+  <script>
+    function initializeShowcase() {
+      const params = new URLSearchParams(window.location.search);
+      const scenes = Array.from(document.querySelectorAll(".scene"));
+      const buttons = Array.from(document.querySelectorAll("#scene-picker [data-target]"));
+      const requested = Number(params.get("scene"));
+      let current = Number.isInteger(requested) && requested >= 1 && requested <= scenes.length ? requested : 1;
+
+      if (params.get("controls") === "1") {
+        document.body.classList.add("show-controls");
+      }
+
+      function showScene(number) {
+        current = Math.min(scenes.length, Math.max(1, number));
+        scenes.forEach((scene, index) => {
+          const active = index + 1 === current;
+          scene.classList.toggle("is-active", active);
+          scene.setAttribute("aria-hidden", String(!active));
+        });
+        buttons.forEach((button) => {
+          button.setAttribute("aria-pressed", String(Number(button.dataset.target) === current));
+        });
+        document.title = `SakuMagang — Screenshot ${current} dari ${scenes.length}`;
+      }
+
+      buttons.forEach((button) => {
+        button.addEventListener("click", () => showScene(Number(button.dataset.target)));
+      });
+
+      window.addEventListener("keydown", (event) => {
+        if (event.key >= "1" && event.key <= String(scenes.length)) {
+          showScene(Number(event.key));
+          return;
+        }
+        if (event.key === "ArrowRight") showScene(current + 1);
+        if (event.key === "ArrowLeft") showScene(current - 1);
+      });
+
+      showScene(current);
+    }
+
+    initializeShowcase();
+  </script>
+</body>
+</html>

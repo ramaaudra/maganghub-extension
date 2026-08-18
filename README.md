@@ -17,11 +17,12 @@
 </div>
 
 > [!IMPORTANT]
-> **Tidak resmi, tidak dipublikasikan di Web Store.** SakuMagang adalah proyek
+> **Tidak resmi, belum dipublikasikan di Chrome Web Store.** SakuMagang adalah proyek
 > pihak ketiga independen. **Tidak** berafiliasi, didukung, atau dibuat oleh
-> **Kemnaker** maupun program MagangHub. **Tidak ada listing Chrome Web Store.**
-> Satu-satunya cara memasang adalah sideload. Nama produk sengaja tidak diawali
-> "MagangHub …" (bisa terbaca seperti produk Kemnaker; lihat ADR-0009).
+> **Kemnaker** maupun program MagangHub. Listing Chrome Web Store sedang
+> disiapkan; sampai disetujui, cara memasang yang tersedia adalah sideload.
+> Nama produk sengaja tidak diawali "MagangHub …" (bisa terbaca seperti produk
+> Kemnaker; lihat ADR-0009).
 
 Ekstensi browser yang menambahkan fitur shortlist dan pantauan yang tidak
 ada di MagangHub. Bintangi Lowongan sambil browsing, tulis Catatan kenapa
@@ -46,7 +47,9 @@ Ekstensi ini adalah alternatif aman **by construction**, bukan sekadar janji.
 
 ## Instalasi
 
-Tidak ada build Web Store. Sideload lewat **rilis siap pakai** atau **build dari sumber**.
+Untuk saat ini, sideload lewat **rilis siap pakai** atau **build dari sumber**.
+Listing Chrome Web Store sedang disiapkan dan link instalasi resmi akan ditambahkan
+setelah listing disetujui.
 
 ### Opsi A: Rilis siap pakai (disarankan)
 
@@ -85,6 +88,13 @@ Untuk update: tarik sumber terbaru, jalankan ulang `npm run build`, lalu **Reloa
 
 > [!NOTE]
 > Target build Firefox tersedia (`npm run build:firefox` / `npm run zip:firefox`) tetapi **bukan** kanal rilis yang dikonfirmasi.
+
+### Opsi C: Chrome Web Store (segera)
+
+SakuMagang sedang dipersiapkan untuk publikasi di Chrome Web Store. Listing belum
+live, jadi belum ada link instalasi Web Store yang bisa digunakan. Gunakan
+[rilis GitHub](https://github.com/ramaaudra/maganghub-extension/releases/latest)
+atau build dari sumber sampai proses review selesai.
 
 ## Pengembangan
 
