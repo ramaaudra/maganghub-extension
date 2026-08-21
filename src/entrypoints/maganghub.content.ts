@@ -164,19 +164,19 @@ function scanDetail(uuid: string): HealthStatus {
  * back/forward) and patch our own world's `history` for completeness, but
  * correctness rests on the observer.
  *
- * Scans are debounced to one per animation frame's worth of mutations: a
- * re-render fires hundreds of records, and injecting is DOM work we don't want
- * to repeat per record (AC: "must not slow down MagangHub page loads").
+ * Scans are batched with requestAnimationFrame: a re-render fires hundreds of
+ * records, and injecting is DOM work we do not want to repeat per record
+ * (AC: "must not slow down MagangHub page loads").
  */
 function watchForChanges(): void {
 	let scheduled = false;
 	const scheduleScan = (): void => {
 		if (scheduled) return;
 		scheduled = true;
-		setTimeout(() => {
+		requestAnimationFrame(() => {
 			scheduled = false;
 			safeScan();
-		}, SCAN_DEBOUNCE_MS);
+		});
 	};
 
 	new MutationObserver(scheduleScan).observe(document.body, {
@@ -200,9 +200,6 @@ function watchForChanges(): void {
 		};
 	}
 }
-
-/** Coalesce a burst of mutations from one re-render into a single scan. */
-const SCAN_DEBOUNCE_MS = 50;
 
 interface StarState {
 	/** True once the user has clicked this toggle; gates the initial reflect. */

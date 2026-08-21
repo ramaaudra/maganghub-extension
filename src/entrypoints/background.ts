@@ -176,15 +176,25 @@ export default defineBackground(() => {
 			sendResponse: (r: RefreshResponse) => void,
 		) => {
 			if (message?.type === "refresh") {
-				refreshOne(message.uuid, message.detailUrl)
-					.then(() => sendResponse({ ok: true }))
-					.catch((err) => sendResponse({ ok: false, error: String(err) }));
+				void (async () => {
+					try {
+						await refreshOne(message.uuid, message.detailUrl);
+						sendResponse({ ok: true });
+					} catch (err) {
+						sendResponse({ ok: false, error: String(err) });
+					}
+				})();
 				return true; // async
 			}
 			if (message?.type === "refreshAll") {
-				refreshAll()
-					.then(() => sendResponse({ ok: true }))
-					.catch((err) => sendResponse({ ok: false, error: String(err) }));
+				void (async () => {
+					try {
+						await refreshAll();
+						sendResponse({ ok: true });
+					} catch (err) {
+						sendResponse({ ok: false, error: String(err) });
+					}
+				})();
 				return true; // async
 			}
 			return false; // not a refresh message — let another listener handle it

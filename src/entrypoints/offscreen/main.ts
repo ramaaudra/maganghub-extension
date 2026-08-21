@@ -24,13 +24,17 @@ browser.runtime.onMessage.addListener(
 		sendResponse: (r: OffscreenResponse) => void,
 	) => {
 		if (message?.type !== "fetchAndParse") return false; // not for us
-		void handleFetchAndParse(message).then(sendResponse, (err) =>
-			sendResponse({
-				ok: false,
-				uuid: message.uuid,
-				error: `offscreen crash: ${String(err)}`,
-			}),
-		);
+		void (async () => {
+			try {
+				sendResponse(await handleFetchAndParse(message));
+			} catch (err) {
+				sendResponse({
+					ok: false,
+					uuid: message.uuid,
+					error: `offscreen crash: ${String(err)}`,
+				});
+			}
+		})();
 		return true; // keep the message channel open for the async response
 	},
 );
