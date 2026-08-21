@@ -39,6 +39,7 @@ test("archiving a favorite moves it to the Arsip tab and keeps the star filled o
 
 	// The Aktif tab is now empty (no Arsipkan button, empty state shown).
 	await expect(popup.getByRole("button", { name: "Arsipkan" })).toHaveCount(0);
+	await expect(popup.locator("[data-empty-state-icon] svg")).toHaveCount(1);
 
 	// The Arsip tab shows a count of 1.
 	await expect(popup.getByRole("tab", { name: /Arsip/ })).toContainText("(1)");

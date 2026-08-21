@@ -250,7 +250,8 @@ One form: the sharp rectangle (radius `0rem`, the preset's `--radius: 0rem`). Ca
 - A full-width **label**, not a container: no fill and no rule (`px-1 py-2`), with `aria-expanded` and a rotating `▾` glyph. Organizer name (`text-xs font-semibold`) at the start, stage summary (`text-xs text-muted-foreground`) at the end, on one row. The only "section header" in the popup. It gave up its box, then its rule (Cards line language): the cards below already carry borders, and a hairline above them made a screen of grouped Favorites alternate rule and box down a 360px column.
 
 ### Empty states
-- **Borderless.** Centered text on the panel (`px-4 py-10`): a `text-sm font-medium` line, then a `text-xs text-muted-foreground` line capped at ~15rem so it wraps to two lines, not five. A Card frame around a "nothing here" message draws a box that reads as a broken row. The no-Favorites state adds a standalone muted `★`; the others carry no ornament.
+- **Borderless.** Centered text on the panel (`px-4 py-10`): a `text-sm font-medium` line, then a `text-xs text-muted-foreground` line capped at ~15rem so it wraps to two lines, not five. A Card frame around a "nothing here" message draws a box that reads as a broken row.
+- Every empty state uses a relevant muted line icon in a fixed 20px slot with a 12px gap. Star marks a first-run active list, Archive marks the archive view, and Search marks a filtered result with no match. The shared region has a 175px minimum so changing tabs changes the message, not the popup shell height. This slot is a layout contract, not decoration.
 
 ### Trust explainer (signature)
 - A `<details>` with an underlined `text-primary` summary (*Mengapa aman?*) and muted body copy. The disclosure pattern keeps the credential-free promise available without forcing it into the first viewport — matches PRODUCT.md principle 1 (trust is a construction, surfaced on demand).

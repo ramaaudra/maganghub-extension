@@ -86,6 +86,7 @@
 	--chart-4: oklch(0.532 0.157 131.589);
 	--chart-5: oklch(0.453 0.124 130.933);
 	--radius: 0rem;
+	--popup-empty-state-height: 175px;
 	--sidebar: oklch(0.985 0 0);
 	--sidebar-foreground: oklch(0.145 0 0);
 	--sidebar-primary: oklch(0.588 0.158 241.966);
@@ -146,6 +147,12 @@ body {
 	overflow-y: auto;
 	scrollbar-width: thin;
 	scrollbar-color: oklch(0.85 0 0) transparent;
+}
+
+/* Empty states are a shared layout region. The minimum keeps copy readable
+ * while the common icon slot keeps Aktif and Arsip on the same baseline. */
+.mh-empty-state {
+	min-height: var(--popup-empty-state-height);
 }
 
 #app > main::-webkit-scrollbar {

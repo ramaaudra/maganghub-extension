@@ -1,7 +1,9 @@
 <script lang="ts">
 import {
+	Archive02Icon,
 	ArrowDown01Icon,
 	Loading03Icon,
+	Search01Icon,
 	StarIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/svelte";
@@ -24,11 +26,13 @@ import {
 } from "@/lib/group";
 import { type HealthStatus, readHealth } from "@/lib/health";
 import { type ExportFile, exportFavorites, importFavorites } from "@/lib/io";
+import { shouldRefreshPopupForStorageKey } from "@/lib/popup-state";
 import type { RefreshRequest, RefreshResponse } from "@/lib/refresh";
 import { STAGE_LABEL } from "@/lib/stage";
 import { listFavorites } from "@/lib/storage";
 import type { Favorite, StatusLamar } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import EmptyState from "./EmptyState.svelte";
 import FavoriteCard from "./FavoriteCard.svelte";
 
 let favorites = $state<Favorite[]>([]);
@@ -45,23 +49,25 @@ let fileInput: HTMLInputElement | null = null;
 /** Injection health, reported by the content script (issue #8). */
 let health = $state<HealthStatus>("ok");
 
-async function refresh(): Promise<void> {
+async function refresh(markOpened = false): Promise<void> {
 	favorites = await listFavorites();
 	health = await readHealth();
 	loading = false;
-	// B1: while the popup is open the badge stays cleared. Each re-read also
-	// advances `popupLastOpenedAt`, so a refresh that lands mid-view does not
-	// re-raise the badge; only changes after the popup closes count as unseen.
-	const openedAt = new Date().toISOString();
-	await markPopupOpened(openedAt);
-	await syncToolbarBadge([], openedAt);
+	// B1: mark the browser-level open once. Storage changes while the popup is
+	// visible still clear the badge, but must not write the same bookkeeping key
+	// that the listener observes.
+	if (markOpened) await markPopupOpened();
+	await syncToolbarBadge([], undefined);
 }
 
 // Live-update when a favorite is starred/refreshed from anywhere — the
 // background writes each liveStatus to storage as it lands, so a "refresh
 // all" re-renders the list progressively here.
-function onChanged(_changes: Record<string, unknown>, areaName: string): void {
-	if (areaName === "local") void refresh();
+function onChanged(changes: Record<string, unknown>, areaName: string): void {
+	if (areaName !== "local") return;
+	if (Object.keys(changes).some(shouldRefreshPopupForStorageKey)) {
+		void refresh();
+	}
 }
 
 $effect(() => {
@@ -73,7 +79,7 @@ $effect(() => {
 		const stored = await browser.storage.session.get(sortStorageKey("aktif"));
 		const key = stored[sortStorageKey("aktif")] as SortKey | undefined;
 		if (key) sortKey = key;
-		void refresh();
+		void refresh(true);
 	})();
 	browser.storage.onChanged.addListener(onChanged);
 	return () => browser.storage.onChanged.removeListener(onChanged);
@@ -586,47 +592,39 @@ function tabClass(selected: boolean): string {
       <div class="h-[76px] rounded-none bg-muted/60"></div>
     </div>
   {:else if tabEmpty}
-    <!-- Empty states are borderless: a card frame around a "nothing here"
-         message draws a box that reads as a broken row. Centered text on the
-         panel itself says the same thing with less furniture. -->
+    <!-- Empty states are borderless and share one fixed-height component so a
+         tab switch changes the message, not the popup shell. -->
     {#if tab === 'aktif'}
       {#if archivedCount > 0}
         <!-- The user has archived Favorites but none active. Point them to the
              Arsip tab rather than implying the store is empty. -->
-        <div class="px-4 py-10 text-center">
-          <p class="text-sm font-medium">Tidak ada favorit aktif</p>
-          <p class="mx-auto mt-1 max-w-[15rem] text-xs leading-relaxed text-muted-foreground">
-            Semua favorit kamu sudah diarsip. Lihat tab Arsip untuk memulihkannya.
-          </p>
-        </div>
+        <EmptyState
+          icon={Archive02Icon}
+          title="Tidak ada favorit aktif"
+          description="Semua favorit kamu sudah diarsip. Lihat tab Arsip untuk memulihkannya."
+        />
       {:else}
-        <div class="px-4 py-10 text-center">
-          <div class="mx-auto mb-3 text-muted-foreground" aria-hidden="true" data-empty-state-icon>
-            <HugeiconsIcon icon={StarIcon} strokeWidth={2} class="mx-auto size-5" />
-          </div>
-          <p class="text-sm font-medium">Belum ada favorit</p>
-          <p class="mx-auto mt-1 max-w-[15rem] text-xs leading-relaxed text-muted-foreground">
-            Bintangi Lowongan di MagangHub untuk menyimpannya di sini.
-          </p>
-        </div>
+        <EmptyState
+          icon={StarIcon}
+          title="Belum ada favorit"
+          description="Bintangi Lowongan di MagangHub untuk menyimpannya di sini."
+        />
       {/if}
     {:else}
-      <div class="px-4 py-10 text-center">
-        <p class="text-sm font-medium">Belum ada arsip</p>
-        <p class="mx-auto mt-1 max-w-[16rem] text-xs leading-relaxed text-muted-foreground">
-          Favorit yang kamu arsipkan tampil di sini, tanpa terhapus.
-        </p>
-      </div>
+      <EmptyState
+        icon={Archive02Icon}
+        title="Belum ada arsip"
+        description="Favorit yang kamu arsipkan tampil di sini, tanpa terhapus."
+      />
     {/if}
   {:else if noMatches}
     <!-- Distinct from the empty state above: the user HAS favorites, this
          query/filter just matches none of them. -->
-    <div class="px-4 py-10 text-center">
-      <p class="text-sm font-medium">Tidak ada favorit yang cocok</p>
-      <p class="mx-auto mt-1 max-w-[15rem] text-xs leading-relaxed text-muted-foreground">
-        Coba kata kunci lain atau ubah filter.
-      </p>
-    </div>
+    <EmptyState
+      icon={Search01Icon}
+      title="Tidak ada favorit yang cocok"
+      description="Coba kata kunci lain atau ubah filter."
+    />
   {:else}
     {#each groups as item (item.kind === "group" ? `group:${item.organizer}` : `solo:${item.favorite.uuid}`)}
       {#if item.kind === "solo"}
