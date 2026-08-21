@@ -15,7 +15,7 @@ export default defineConfig({
 		name: "SakuMagang",
 		description:
 			"Tandai Lowongan MagangHub sebagai favorit — tersimpan lokal, tanpa menyentuh akun SiapKerja Anda.",
-		version: "0.3.0",
+		version: "0.3.1",
 		// Route mark, rendered by scripts/render-icon.mjs from the canonical
 		// SVG source. Without these Chrome shows the grey puzzle default, which
 		// reads as an unvetted sideload — the wrong first impression for a

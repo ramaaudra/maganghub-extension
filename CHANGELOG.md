@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.1] — 2026-08-21
+
+### Popup
+
+- Menyamakan tinggi region empty state pada tab Aktif dan Arsip agar pergantian
+  tab tidak mengubah ukuran popup.
+- Menyatukan icon empty state dan menambahkan state khusus Arsip serta pencarian.
+- Membatasi refresh popup pada perubahan storage yang memang memengaruhi daftar.
+
+### Verifikasi dan rilis
+
+- Menambahkan gate unit test, Svelte check, E2E, build, dan verifikasi package
+  sebelum rilis bertag.
+- Menyiapkan publish otomatis ke Chrome Web Store API v2 melalui GitHub Actions.
+
 ## [0.3.0] — 2026-08-10
 
 Release ini merapikan identitas visual SakuMagang sekaligus mematangkan

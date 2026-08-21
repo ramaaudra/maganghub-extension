@@ -96,6 +96,11 @@ live, jadi belum ada link instalasi Web Store yang bisa digunakan. Gunakan
 [rilis GitHub](https://github.com/ramaaudra/maganghub-extension/releases/latest)
 atau build dari sumber sampai proses review selesai.
 
+Setelah item pertama dibuat dan secrets GitHub dikonfigurasi, update berikutnya
+dipublish otomatis melalui tag `vX.Y.Z`. CI menjalankan test, build, dan verifikasi
+ZIP sebelum mengirim package ke Chrome Web Store. Detail setup ada di
+[`CHROMEWEBSTORE.md`](CHROMEWEBSTORE.md).
+
 ## Pengembangan
 
 ```sh

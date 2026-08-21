@@ -1,0 +1,141 @@
+name: Publish to Chrome Web Store
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chrome-web-store-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Validate, package, and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate release version
+        env:
+          TAG_VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${TAG_VERSION#v}"
+          PACKAGE_VERSION="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version")"
+
+          if [[ ! "$TAG_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag must use numeric semver: vX.Y.Z"
+            exit 1
+          fi
+          if [[ "$TAG_VERSION" != "$PACKAGE_VERSION" ]]; then
+            echo "::error::Tag version ($TAG_VERSION) does not match package.json ($PACKAGE_VERSION)"
+            exit 1
+          fi
+
+          echo "Release version: $PACKAGE_VERSION"
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Run Svelte checks
+        run: npm run check
+
+      - name: Install Chromium for E2E tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+
+      - name: Build Chrome extension
+        run: npm run build
+
+      - name: Package and verify Chrome ZIP
+        id: package
+        env:
+          TAG_VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${TAG_VERSION#v}"
+          ZIP_PATH="$GITHUB_WORKSPACE/sakumagang-${TAG_VERSION}-chrome.zip"
+
+          (
+            cd .output/chrome-mv3
+            zip -qr "$ZIP_PATH" .
+          )
+
+          ZIP_ENTRIES="$(unzip -Z1 "$ZIP_PATH")"
+          if ! grep -Fxq "manifest.json" <<< "$ZIP_ENTRIES"; then
+            echo "::error::manifest.json is not at the root of the Chrome ZIP"
+            exit 1
+          fi
+          if grep -Eq '(^|/)(node_modules|\.git)/' <<< "$ZIP_ENTRIES"; then
+            echo "::error::Development dependencies or Git files leaked into the Chrome ZIP"
+            exit 1
+          fi
+
+          MANIFEST_PATH="$(mktemp)"
+          trap 'rm -f "$MANIFEST_PATH"' EXIT
+          unzip -p "$ZIP_PATH" manifest.json > "$MANIFEST_PATH"
+          node - "$MANIFEST_PATH" "$TAG_VERSION" <<'NODE'
+          const { readFileSync } = require("node:fs");
+
+          const [manifestPath, expectedVersion] = process.argv.slice(2);
+          const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+
+          if (manifest.manifest_version !== 3) {
+            throw new Error(`Expected Manifest V3, received ${manifest.manifest_version}`);
+          }
+          if (manifest.version !== expectedVersion) {
+            throw new Error(`ZIP manifest version ${manifest.version} does not match ${expectedVersion}`);
+          }
+          console.log(`Verified Manifest V3 package ${manifest.name} ${manifest.version}`);
+          NODE
+
+          echo "zip_path=$ZIP_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Validate Web Store credentials
+        env:
+          CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+        run: |
+          set -euo pipefail
+          for variable in \
+            CHROME_PUBLISHER_ID \
+            CHROME_EXTENSION_ID \
+            CHROME_CLIENT_ID \
+            CHROME_CLIENT_SECRET \
+            CHROME_REFRESH_TOKEN; do
+            if [[ -z "${!variable:-}" ]]; then
+              echo "::error::Missing GitHub secret: $variable"
+              exit 1
+            fi
+          done
+
+      - name: Upload and submit to Chrome Web Store
+        env:
+          CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          ZIP_PATH: ${{ steps.package.outputs.zip_path }}
+        run: node scripts/publish-chrome-web-store.mjs "$ZIP_PATH"
