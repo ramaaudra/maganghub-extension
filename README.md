@@ -4,12 +4,13 @@
 
 # SakuMagang
 
-**Favorite, Catatan, dan Status Lamar yang tersimpan lokal untuk [MagangHub](https://maganghub.kemnaker.go.id) — tanpa pernah menyentuh kredensial SiapKerja.**
+**Favorite, Catatan, dan Status Lamar yang tersimpan lokal untuk [MagangHub](https://maganghub.kemnaker.go.id), tanpa pernah menyentuh kredensial SiapKerja.**
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Svelte](https://img.shields.io/badge/Svelte_5-FF3E00?style=flat-square&logo=svelte&logoColor=white)](https://svelte.dev)
 [![WXT](https://img.shields.io/badge/WXT-MV3-0ea5e9?style=flat-square)](https://wxt.dev)
 [![Node.js](https://img.shields.io/badge/Node.js->=20-3c873a?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/innmoppneghgcciphiddhlgaakoenppf?style=flat-square&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/sakumagang/innmoppneghgcciphiddhlgaakoenppf)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
 [Fitur](#fitur) · [Instalasi](#instalasi) · [Pengembangan](#pengembangan) · [Keamanan](#mengapa-ini-aman) · [Arsitektur](#arsitektur) · [Dokumentasi](#dokumentasi)
@@ -17,11 +18,9 @@
 </div>
 
 > [!IMPORTANT]
-> **Tidak resmi, belum dipublikasikan di Chrome Web Store.** SakuMagang adalah proyek
-> pihak ketiga independen. **Tidak** berafiliasi, didukung, atau dibuat oleh
-> **Kemnaker** maupun program MagangHub. Listing Chrome Web Store sedang
-> disiapkan; sampai disetujui, cara memasang yang tersedia adalah sideload.
-> Nama produk sengaja tidak diawali "MagangHub …" (bisa terbaca seperti produk
+> **SakuMagang adalah proyek pihak ketiga independen.** **Tidak** berafiliasi,
+> didukung, atau dibuat oleh **Kemnaker** maupun program MagangHub. Nama produk
+> sengaja tidak diawali "MagangHub …" (bisa terbaca seperti produk
 > Kemnaker; lihat ADR-0009).
 
 Ekstensi browser yang menambahkan fitur shortlist dan pantauan yang tidak
@@ -37,7 +36,7 @@ Ekstensi ini adalah alternatif aman **by construction**, bukan sekadar janji.
 
 - **Bintangi Lowongan** dari halaman daftar atau detail, disimpan lokal sebagai Favorite
 - **Catatan**: catatan teks bebas per Favorite (alasan menyimpan); juga tampil di tooltip bintang
-- **Status Lamar**: pelacak tahap manual — Belum dilamar → Dilamar → Interview → Diterima / Ditolak  
+- **Status Lamar**: pelacak tahap manual dengan tahap Belum dilamar → Dilamar → Interview → Diterima / Ditolak  
   Selalu diisi pengguna; ekstensi tidak pernah mendeteksi status lamaran secara otomatis. Bisa diedit lewat kartu tahap di halaman detail dan chip di kartu daftar
 - **Status Lowongan**: refresh Kuota/Pelamar live dari halaman detail publik, untuk satu Favorite atau sekaligus semua (dibatasi throttle, lewat offscreen document). Perubahan ditandai badge di popup
 - **Warna urgensi** pada kartu daftar berdasarkan sisa kursi / tekanan Kuota
@@ -47,11 +46,18 @@ Ekstensi ini adalah alternatif aman **by construction**, bukan sekadar janji.
 
 ## Instalasi
 
-Untuk saat ini, sideload lewat **rilis siap pakai** atau **build dari sumber**.
-Listing Chrome Web Store sedang disiapkan dan link instalasi resmi akan ditambahkan
-setelah listing disetujui.
+Cara termudah: pasang langsung dari
+[Chrome Web Store](https://chromewebstore.google.com/detail/sakumagang/innmoppneghgcciphiddhlgaakoenppf).
+Update berikutnya masuk otomatis lewat Chrome. Sideload dan build dari sumber
+tetap tersedia kalau kamu mau memverifikasi sendiri isi package.
 
-### Opsi A: Rilis siap pakai (disarankan)
+### Opsi A: Chrome Web Store (disarankan)
+
+1. Buka [listing SakuMagang di Chrome Web Store](https://chromewebstore.google.com/detail/sakumagang/innmoppneghgcciphiddhlgaakoenppf)
+2. Klik **Add to Chrome** lalu konfirmasi **Add extension**
+3. Kunjungi [`https://maganghub.kemnaker.go.id/magang-nasional/lowongan`](https://maganghub.kemnaker.go.id/magang-nasional/lowongan) lalu bintangi Lowongan, atau buka popup untuk mengelola Favorite
+
+### Opsi B: Sideload rilis siap pakai
 
 1. Buka [GitHub Release](https://github.com/ramaaudra/maganghub-extension/releases/latest) terbaru
 2. Unduh `sakumagang-<version>-chrome.zip` (atau aset zip Chrome yang terlampir)
@@ -63,7 +69,7 @@ setelah listing disetujui.
 
 Untuk update: unduh zip yang lebih baru, ganti isi folder ekstrak, lalu klik **Reload** pada kartu ekstensi.
 
-### Opsi B: Build dari sumber
+### Opsi C: Build dari sumber
 
 #### Prasyarat
 
@@ -89,17 +95,9 @@ Untuk update: tarik sumber terbaru, jalankan ulang `npm run build`, lalu **Reloa
 > [!NOTE]
 > Target build Firefox tersedia (`npm run build:firefox` / `npm run zip:firefox`) tetapi **bukan** kanal rilis yang dikonfirmasi.
 
-### Opsi C: Chrome Web Store (segera)
-
-SakuMagang sedang dipersiapkan untuk publikasi di Chrome Web Store. Listing belum
-live, jadi belum ada link instalasi Web Store yang bisa digunakan. Gunakan
-[rilis GitHub](https://github.com/ramaaudra/maganghub-extension/releases/latest)
-atau build dari sumber sampai proses review selesai.
-
-Setelah item pertama dibuat dan secrets GitHub dikonfigurasi, update berikutnya
-dipublish otomatis melalui tag `vX.Y.Z`. CI menjalankan test, build, dan verifikasi
-ZIP sebelum mengirim package ke Chrome Web Store. Detail setup ada di
-[`CHROMEWEBSTORE.md`](CHROMEWEBSTORE.md).
+Rilis baru ke Chrome Web Store dipublish otomatis melalui tag `vX.Y.Z`. CI
+menjalankan test, build, dan verifikasi ZIP sebelum mengirim package untuk
+review. Detail setup ada di [`CHROMEWEBSTORE.md`](CHROMEWEBSTORE.md).
 
 ## Pengembangan
 
@@ -137,7 +135,7 @@ Ini bisa diverifikasi dari prompt permission saat instalasi:
 **Yang sengaja tidak diminta:** `cookies`, `identity`, `<all_urls>`, backend, analytics.
 
 Situs pencuri kredensial tidak bisa meniru postur ini secara jujur. Mendeteksi
-otomatis "sudah dilamar" berarti harus membaca sesi login — permukaan serangan yang
+otomatis "sudah dilamar" berarti harus membaca sesi login, permukaan serangan yang
 justru dihindari produk ini. Itulah kenapa **Status Lamar sengaja manual**.
 Dasar keputusan lengkap: [`docs/adr/0001`](docs/adr/).
 
