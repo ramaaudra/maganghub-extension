@@ -737,21 +737,24 @@ function tabClass(selected: boolean): string {
            link the moment the row paints (the *Buka di MagangHub* exit link is
            the hover-underline one; this one signals "open for more"). -->
       <CollapsibleTrigger class="ml-auto -my-2 inline-flex shrink-0 items-center py-2 text-xs font-medium text-primary underline underline-offset-2 hover:decoration-primary/40">
-        Mengapa aman?
+        Kenapa tidak minta password?
       </CollapsibleTrigger>
     </div>
     <CollapsibleContent>
       <p class="mt-2 text-xs leading-relaxed text-muted-foreground">
-        Situs bantuan pihak ketiga yang minta login SiapKerja bisa mencatat
-        password kamu. Extension ini hanya menyimpan Lowongan yang kamu bintangi
-        di browser ini — tanpa akun, tanpa server, tanpa telemetri. Kalau mau
-        melamar, klik "Buka di MagangHub" di setiap favorit dan lamar sendiri di
-        situs resmi.
+        Situs pihak ketiga yang meminta kamu login ke SiapKerja dapat mencatat
+        password yang kamu masukkan. Masukkan password hanya melalui alur resmi
+        MagangHub dan SiapKerja. MagangHub hanya menyimpan Lowongan yang kamu
+        bintangi di browser ini. Extension ini tidak memerlukan akun, tidak
+        menyimpan daftar favorit di server, tidak mengumpulkan telemetri, dan tidak
+        meminta password SiapKerja. Untuk melamar, klik "Buka di MagangHub"
+        pada lowongan favorit. Setelah itu, lanjutkan lamaran sendiri di situs
+        resmi MagangHub.
       </p>
     </CollapsibleContent>
   </Collapsible>
 
   <p class="mt-1.5 text-xs leading-snug text-muted-foreground">
-    Favorit tersimpan hanya di browser kamu; extension ini tidak pernah minta password SiapKerja.
+    Favorit hanya tersimpan di browser ini. Extension ini tidak pernah meminta password SiapKerja.
   </p>
 </footer>

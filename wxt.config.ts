@@ -14,8 +14,8 @@ export default defineConfig({
 		// would read as a product Kemnaker made.
 		name: "SakuMagang",
 		description:
-			"Tandai Lowongan MagangHub sebagai favorit — tersimpan lokal, tanpa menyentuh akun SiapKerja Anda.",
-		version: "0.3.1",
+			"Simpan Favorite, Catatan, dan Status Lamar di MagangHub. Semuanya tersimpan lokal tanpa mengakses kredensial SiapKerja.",
+		version: "0.3.2",
 		// Route mark, rendered by scripts/render-icon.mjs from the canonical
 		// SVG source. Without these Chrome shows the grey puzzle default, which
 		// reads as an unvetted sideload — the wrong first impression for a

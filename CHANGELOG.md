@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.2] (2026-08-27)
+
+### Popup dan listing
+
+- Memperjelas penjelasan bahwa password SiapKerja hanya digunakan melalui
+  alur resmi MagangHub dan SiapKerja.
+- Menyelaraskan copy listing Chrome Web Store dengan fitur dan batasan
+  SakuMagang.
+
+### Packaging
+
+- Menetapkan ringkasan manifest dalam bahasa Indonesia dengan panjang 119
+  karakter.
+- Menaikkan versi extension ke `0.3.2`.
+
 ## [0.3.1] — 2026-08-21
 
 ### Popup

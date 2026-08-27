@@ -17,7 +17,7 @@ SakuMagang
 ## 2. Deskripsi Singkat
 
 ```
-Favorite, Catatan, dan Status Lamar untuk MagangHub — tersimpan lokal, tanpa kredensial.
+Simpan Favorite, Catatan, dan Status Lamar di MagangHub. Semuanya tersimpan lokal tanpa mengakses kredensial SiapKerja.
 ```
 
 > Maks. 132 karakter.
@@ -27,29 +27,37 @@ Favorite, Catatan, dan Status Lamar untuk MagangHub — tersimpan lokal, tanpa k
 ## 3. Deskripsi
 
 ```
-SakuMagang adalah ekstensi browser yang menambahkan fitur shortlist dan pantauan pada situs resmi MagangHub (maganghub.kemnaker.go.id) — fitur yang tidak tersedia di platform aslinya.
+SakuMagang membantu kamu menyimpan dan memantau Lowongan di MagangHub. Bintangi Lowongan saat browsing, tambahkan Catatan, atur Status Lamar, dan periksa ulang Status Lowongan dari halaman detail publik.
 
-Bintangi Lowongan favoritmu sambil browsing, tulis Catatan kenapa Lowongan itu penting, lacak tahap lamaran lewat Status Lamar, dan refresh kuota serta jumlah pelamar secara live. Semuanya tersimpan lokal di browser kamu — tidak ada server, tidak ada akun, tidak ada data yang dikirim ke mana pun.
+Fitur utama
+• Bintangi Lowongan dari halaman daftar atau detail sebagai Favorite.
+• Tulis Catatan tentang alasan menyimpan sebuah Lowongan.
+• Atur Status Lamar secara manual: Belum dilamar, Dilamar, Interview, Diterima, atau Ditolak.
+• Periksa ulang Kuota, Pelamar, dan Status Lowongan dari halaman detail publik.
+• Cari, urutkan, dan kelompokkan Favorite.
+• Arsipkan Favorite tanpa menghapus data, lalu pulihkan kapan saja.
+• Ekspor dan impor Favorite sebagai cadangan JSON.
 
-Kenapa SakuMagang aman:
-• Tidak pernah membaca, menyimpan, atau mengirim password SiapKerja maupun sesi login MagangHub.
-• Tidak ada permission cookies, identity, atau <all_urls>.
-• Sumber kode terbuka dan bisa diverifikasi: github.com/ramaaudra/maganghub-extension
+Cara menggunakan
+1. Buka halaman Lowongan di MagangHub.
+2. Klik ikon bintang pada Lowongan yang ingin kamu simpan.
+3. Buka popup SakuMagang untuk menulis Catatan, mengatur Status Lamar, atau mengarsipkan Favorite.
+4. Untuk melamar, klik "Buka di MagangHub" pada Favorite. Lanjutkan lamaran di situs resmi MagangHub.
 
-Fitur utama:
-★ Bintangi Lowongan — simpan dari halaman daftar atau detail sebagai Favorite
-📝 Catatan — tulis alasan menyimpan tiap Favorite, tampil di tooltip bintang
-📋 Status Lamar — lacak tahap: Belum dilamar → Dilamar → Interview → Diterima / Ditolak
-🔄 Status Lowongan — refresh kuota dan jumlah pelamar live dari halaman detail publik
-🔍 Cari & urutkan — termasuk berdasarkan Status Lamar dan sisa kuota
-📦 Ekspor / impor — backup Favorite sebagai JSON, bisa dipindah antar perangkat
-📁 Arsip — sembunyikan Favorite dari daftar aktif tanpa menghapus datanya
+Privasi
+SakuMagang adalah ekstensi pihak ketiga yang tidak berafiliasi dengan Kemnaker atau MagangHub. SakuMagang tidak membaca, menyimpan, atau mengirim password SiapKerja maupun sesi login MagangHub. Favorite, Catatan, dan Status Lamar hanya tersimpan di perangkatmu dan tidak dikirim ke server SakuMagang.
 
-SakuMagang bukan produk resmi Kemnaker atau MagangHub. Ekstensi pihak ketiga independen yang dibuat karena banyak situs "bantuan" pihak ketiga meminta password SiapKerja asli — kredensial pemerintah yang seharusnya tidak pernah diberikan ke pihak manapun selain situs resmi.
+SakuMagang menyimpan URL Lowongan yang kamu pilih sebagai Favorite dan membaca konten publik halaman MagangHub yang didukung untuk menampilkan Kuota, Pelamar, dan Status Lowongan. Ekstensi ini tidak memerlukan akun dan tidak mengumpulkan data penggunaan untuk analitik atau telemetri.
 
-Status Lamar sengaja dibuat manual. Mendeteksi status lamaran secara otomatis berarti harus membaca sesi login — permukaan serangan yang justru dihindari produk ini.
+Kenapa tidak meminta password?
+Situs pihak ketiga yang meminta kamu login ke SiapKerja dapat mencatat password yang kamu masukkan. Gunakan hanya alur resmi MagangHub dan SiapKerja untuk login atau melamar.
 
-Semua data tersimpan hanya di browser kamu melalui chrome.storage.local. Tidak ada backend, tidak ada telemetry, tidak ada analytics. Kamu bisa memverifikasi ini dari prompt permission saat instalasi.
+Status Lamar kamu isi sendiri. Mendeteksi Status Lamar secara otomatis memerlukan akses ke sesi login, sedangkan SakuMagang tidak mengambil akses tersebut.
+
+Permission yang diminta adalah storage, offscreen, dan akses ke halaman MagangHub yang didukung. SakuMagang tidak meminta izin cookies, identity, atau akses ke semua situs.
+
+Sumber kode tersedia dan dapat diverifikasi:
+https://github.com/ramaaudra/maganghub-extension
 ```
 
 ---
@@ -76,7 +84,7 @@ Indonesian
 |---|---|
 | URL Halaman Beranda | `https://ramaaudra.github.io/sakumagang-site/` |
 | URL Kebijakan Privasi | `https://ramaaudra.github.io/sakumagang-site/privacy/` |
-| URL Dukungan | `https://github.com/ramaaudra/sakumagang-site/issues` |
+| URL Dukungan | `https://github.com/ramaaudra/maganghub-extension/issues` |
 
 ---
 
@@ -101,4 +109,4 @@ Jangan centang yang lain.
 
 ---
 
-Catatan: Copy di atas sudah memuat semua elemen yang diminta CWS — deskripsi jujur tentang data yang diproses, penafian tidak berafiliasi, dan penjelasan mengapa fitur tertentu manual. Tinggal paste langsung ke dashboard.
+Catatan: Deskripsi di atas mencantumkan data yang diproses, penafian tidak berafiliasi, dan alasan Status Lamar dibuat manual. Chrome Web Store API v2 belum menyediakan endpoint untuk memperbarui deskripsi, jadi salin copy ini secara manual ke tab Store listing sebelum submission.

@@ -1,6 +1,6 @@
 # Chrome Web Store Listing — SakuMagang
 
-> Last Updated: 2026-08-21
+> Last Updated: 2026-08-27
 
 Dokumen ini adalah sumber kebenaran untuk listing, disclosure, dan alur rilis
 SakuMagang ke Chrome Web Store. Isi yang masih bertanda `TODO` wajib diselesaikan
@@ -14,35 +14,48 @@ sebelum submission pertama.
 
 **Short Description**
 
-`Favorite, Catatan, dan Status Lamar untuk MagangHub — tersimpan lokal, tanpa kredensial.`
+`Simpan Favorite, Catatan, dan Status Lamar di MagangHub. Semuanya tersimpan lokal tanpa mengakses kredensial SiapKerja.`
 
 **Detailed Description**
 
 ```text
-SakuMagang menambahkan fitur shortlist dan pantauan pada MagangHub agar kamu bisa menyimpan Lowongan yang menarik dan kembali memeriksanya dengan mudah.
+SakuMagang membantu kamu menyimpan dan memantau Lowongan di MagangHub. Bintangi Lowongan saat browsing, tambahkan Catatan, atur Status Lamar, dan periksa ulang Status Lowongan dari halaman detail publik.
 
-FITUR UTAMA
+Fitur utama
 • Bintangi Lowongan dari halaman daftar atau detail sebagai Favorite.
 • Tulis Catatan tentang alasan menyimpan sebuah Lowongan.
-• Lacak Status Lamar secara manual: Belum dilamar, Dilamar, Interview, Diterima, atau Ditolak.
-• Periksa Kuota, Pelamar, dan Status Lowongan dari halaman detail publik.
-• Cari, urutkan, dan kelompokkan Favorite berdasarkan kebutuhanmu.
+• Atur Status Lamar secara manual: Belum dilamar, Dilamar, Interview, Diterima, atau Ditolak.
+• Periksa ulang Kuota, Pelamar, dan Status Lowongan dari halaman detail publik.
+• Cari, urutkan, dan kelompokkan Favorite.
 • Arsipkan Favorite tanpa menghapus data, lalu pulihkan kapan saja.
 • Ekspor dan impor Favorite sebagai cadangan JSON.
 
-CARA MENGGUNAKAN
+Cara menggunakan
 1. Buka halaman Lowongan di MagangHub.
 2. Klik ikon bintang pada Lowongan yang ingin kamu simpan.
 3. Buka popup SakuMagang untuk menulis Catatan, mengatur Status Lamar, atau mengarsipkan Favorite.
+4. Untuk melamar, klik "Buka di MagangHub" pada Favorite. Lanjutkan lamaran di situs resmi MagangHub.
 
-PRIVASI
-SakuMagang adalah ekstensi pihak ketiga independen dan tidak berafiliasi dengan Kemnaker atau MagangHub. Ekstensi ini tidak membaca, menyimpan, atau mengirim password SiapKerja maupun sesi login. Favorite, Catatan, dan Status Lamar disimpan di perangkatmu dan tidak dikirim ke server SakuMagang.
+Privasi
+SakuMagang adalah ekstensi pihak ketiga yang tidak berafiliasi dengan Kemnaker atau MagangHub. SakuMagang tidak membaca, menyimpan, atau mengirim password SiapKerja maupun sesi login MagangHub. Favorite, Catatan, dan Status Lamar hanya tersimpan di perangkatmu dan tidak dikirim ke server SakuMagang.
 
-SakuMagang hanya bekerja pada halaman publik MagangHub yang didukung. Tidak ada akun, backend, analytics, atau telemetry.
+SakuMagang menyimpan URL Lowongan yang kamu pilih sebagai Favorite dan membaca konten publik halaman MagangHub yang didukung untuk menampilkan Kuota, Pelamar, dan Status Lowongan. Ekstensi ini tidak memerlukan akun dan tidak mengumpulkan data penggunaan untuk analitik atau telemetri.
+
+Kenapa tidak meminta password?
+Situs pihak ketiga yang meminta kamu login ke SiapKerja dapat mencatat password yang kamu masukkan. Gunakan hanya alur resmi MagangHub dan SiapKerja untuk login atau melamar.
+
+Status Lamar kamu isi sendiri. Mendeteksi Status Lamar secara otomatis memerlukan akses ke sesi login, sedangkan SakuMagang tidak mengambil akses tersebut.
+
+Permission yang diminta adalah storage, offscreen, dan akses ke halaman MagangHub yang didukung. SakuMagang tidak meminta izin cookies, identity, atau akses ke semua situs.
+
+Sumber kode tersedia dan dapat diverifikasi:
+https://github.com/ramaaudra/maganghub-extension
 
 SUPPORT
 Laporkan masalah atau kirim saran melalui GitHub Issues: https://github.com/ramaaudra/maganghub-extension/issues
 ```
+
+> Catatan otomasi: `scripts/publish-chrome-web-store.mjs` hanya mengunggah ZIP dan mengirim item untuk review. Chrome Web Store API v2 belum menyediakan endpoint untuk memperbarui metadata listing seperti deskripsi. `CHROMEWEBSTORE.md` menjadi sumber kebenaran, sedangkan `store-assets/cws-listing-copy.md` adalah salinan siap tempel ke tab Store listing di Developer Dashboard.
 
 **Category**
 
@@ -129,6 +142,7 @@ berubah, URL dan disclosure CWS harus diperbarui bersama.
 
 | Version | Date | Changes | Status |
 |---|---|---|---|
+| 0.3.2 | 2026-08-27 | Copy trust popup, ringkasan manifest, dan listing diselaraskan dengan batasan kredensial serta penyimpanan lokal. | Draft |
 | 0.3.1 | 2026-08-21 | Empty state Aktif dan Arsip memakai region layout yang sama; refresh popup lebih terarah; CI release tag disiapkan. | Draft |
 | 0.3.0 | 2026-08-10 | Route mark, konsistensi icon, filter/sort popup, dan Favorite archive. | Draft |
 

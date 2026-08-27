@@ -14,22 +14,24 @@ test("the popup shows the one-line trust statement", async ({
 	const popup = await openPopup(context, extensionId);
 	// The credential-free promise, in plain Indonesian.
 	await expect(
-		popup.getByText(/tidak pernah minta password SiapKerja/i),
+		popup.getByText(/tidak pernah meminta password SiapKerja/i),
 	).toBeVisible();
 });
 
-test("the popup includes a short explainer on why handing SiapKerja credentials to random sites is dangerous", async ({
+test("the popup includes a short explainer on why third-party login sites are risky", async ({
 	context,
 	extensionId,
 }) => {
 	const popup = await openPopup(context, extensionId);
-	const summary = popup.getByText(/Mengapa aman/i);
+	const summary = popup.getByText(/Kenapa tidak minta password/i);
 	await expect(summary).toBeVisible();
 	// Expanding reveals the educational body. Scope to the details' body text so
 	// we don't also match the one-line trust statement above (which also says
 	// "password SiapKerja").
 	await summary.click();
-	await expect(popup.getByText(/Situs bantuan pihak ketiga/i)).toBeVisible();
+	await expect(
+		popup.getByText(/Situs pihak ketiga yang meminta kamu login ke SiapKerja/i),
+	).toBeVisible();
 });
 
 test('each Favorite has an "open official detail" link to its MagangHub detail page', async ({
@@ -86,6 +88,6 @@ test("the trust statement is present even with no favorites (empty state)", asyn
 	const popup = await openPopup(context, extensionId);
 	await expect(popup.getByText("Belum ada favorit")).toBeVisible();
 	await expect(
-		popup.getByText(/tidak pernah minta password SiapKerja/i),
+		popup.getByText(/tidak pernah meminta password SiapKerja/i),
 	).toBeVisible();
 });
