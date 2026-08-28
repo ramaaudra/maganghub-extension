@@ -44,7 +44,7 @@ describe("Chrome Web Store showcase", () => {
 		expect(html).toContain("sisa 4 kursi · 1 dari 5");
 		expect(html).toContain("sisa 1 kursi · 4 dari 5");
 		expect(html).toContain("penuh · 40 dari 2");
-		expect(html).toContain("Bukan fitur MagangHub — disimpan di browser kamu.");
+		expect(html).toContain("Bukan fitur MagangHub. Disimpan di browser kamu.");
 	});
 
 	it("uses factual local-first claims and canonical brand tokens", async () => {
