@@ -693,16 +693,16 @@ function tabClass(selected: boolean): string {
   Issue #7 / #9: the credential-free promise stays visible; export/import remain
   real buttons for e2e and power users without owning the header.
 
-  Restructured to one row plus one line. It previously ran two buttons, a
-  two-line promise, and a link on four separate bands — ~100px of chrome under
-  a list that needed the room. The promise is now a single sentence sharing its
-  row with the explainer link, and the two backup controls sit opposite it.
+  Restructured to two compact rows plus one line. It previously put the two
+  backup buttons and the explainer trigger in one no-wrap row, so the trigger
+  could extend past the fixed 360px panel. The trigger now owns its own row;
+  the two backup controls stay together above it, and the promise remains below.
 -->
-<footer class="border-t px-4 py-2.5">
-  <!-- The Collapsible root wraps the row so its trigger can sit inline at the
-       row's end while its body still spans the full 360px below. -->
-  <Collapsible>
-    <div class="flex items-center gap-2">
+<footer class="min-w-0 border-t px-4 py-2.5">
+  <!-- The controls share a compact row; the trigger gets a full-width row below
+       it so its Indonesian label can never be pushed past the panel wall. -->
+  <Collapsible class="min-w-0 w-full">
+    <div class="flex min-w-0 items-center gap-2">
       <Button
         variant="outline"
         size="xs"
@@ -728,18 +728,14 @@ function tabClass(selected: boolean): string {
         aria-label="Impor file favorit"
         onchange={onImportFile}
       />
-      <!-- `py-2 -my-2` extends the tap target to 32px without moving the
-           baseline: the padding grows the box, the negative margin gives the
-           space back to the flex row. A bare 16px text node was the smallest
-           target in the popup. -->
-      <!-- DESIGN.md trust explainer: an underlined `text-primary` summary —
-           underlined at rest, not just on hover, so the disclosure reads as a
-           link the moment the row paints (the *Buka di MagangHub* exit link is
-           the hover-underline one; this one signals "open for more"). -->
-      <CollapsibleTrigger class="ml-auto -my-2 inline-flex shrink-0 items-center py-2 text-xs font-medium text-primary underline underline-offset-2 hover:decoration-primary/40">
-        Kenapa tidak minta password?
-      </CollapsibleTrigger>
     </div>
+    <!-- DESIGN.md trust explainer: an underlined `text-primary` summary —
+         underlined at rest, not just on hover, so the disclosure reads as a
+         link the moment the row paints (the *Buka di MagangHub* exit link is
+         the hover-underline one; this one signals "open for more"). -->
+    <CollapsibleTrigger class="mt-1 flex min-h-7 w-full min-w-0 items-center justify-start text-start text-xs font-medium text-primary underline underline-offset-2 hover:decoration-primary/40">
+      Kenapa tidak minta password?
+    </CollapsibleTrigger>
     <CollapsibleContent>
       <p class="mt-2 text-xs leading-relaxed text-muted-foreground">
         Situs pihak ketiga yang meminta kamu login ke SiapKerja dapat mencatat

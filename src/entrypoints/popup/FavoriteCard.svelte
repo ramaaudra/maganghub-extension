@@ -452,7 +452,11 @@ const actionClass =
            Arsip cards have no Segarkan (archived records are skipped by refresh).
            "Hapus permanen" is irreversible, so it is guarded by an inline
            confirm that replaces the row with "Yakin? [Ya, hapus] [Batal]". -->
-      <div class="flex items-center gap-2">
+      <!-- The official link gets its own full-width line. The two action buttons
+           nearly fill the tray already, and the loading label is wider than the
+           idle label; keeping the link on a stable second line prevents both
+           horizontal clipping and a state-change shift. -->
+      <div class="flex min-w-0 flex-wrap items-center gap-2">
         {#if view === 'aktif'}
           <button
             type="button"
@@ -535,11 +539,11 @@ const actionClass =
           </button>
         {/if}
         {#if favorite.detailUrl}
-          <!-- h-7 matches the action buttons it shares the row with: the link
-               was a 16px text node next to 28px controls, so it was both the
-               smallest target here and optically high against their centres. -->
+          <!-- Full-width flex item: right-align the link without making its text
+               box wider than the tray. It stays in this slot while Segarkan
+               changes to Memperbarui… so the list does not reflow sideways. -->
           <a
-            class="ml-auto inline-flex h-7 shrink-0 items-center text-xs font-medium text-primary underline-offset-2 hover:underline"
+            class="inline-flex h-7 min-w-0 max-w-full basis-full items-center justify-end whitespace-nowrap text-xs font-medium text-primary underline-offset-2 hover:underline"
             href={resolveDetailUrl(favorite.detailUrl)}
             target="_blank"
             rel="noopener noreferrer"
