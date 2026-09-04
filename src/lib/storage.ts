@@ -3,6 +3,7 @@ import type {
 	FavoriteV2,
 	FavoriteV3,
 	FavoriteV4,
+	FavoriteV5,
 } from "./migrations";
 import { migrateFavorite } from "./migrations";
 import type { Favorite, LiveStatus, StatusLamar } from "./types";
@@ -32,6 +33,7 @@ export async function getFavorite(uuid: string): Promise<Favorite | undefined> {
 		| FavoriteV2
 		| FavoriteV3
 		| FavoriteV4
+		| FavoriteV5
 		| undefined;
 	return stored ? migrateFavorite(stored) : undefined;
 }

@@ -106,7 +106,7 @@ function organizerOf(fav: Favorite): string {
 /**
  * Count a group's favorites into the four summary categories.
  *
- * A stage is the only input — Status Lowongan (open/closed) does NOT feed the
+ * A stage is the only input — Status Kuota does NOT feed the
  * summary, because the summary answers "where do my applications to this org
  * stand?", and a closed listing the user never applied to is not "ditolak".
  */

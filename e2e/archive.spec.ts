@@ -53,7 +53,7 @@ test("archiving a favorite moves it to the Arsip tab and keeps the star filled o
 		popup.getByRole("button", { name: "Pulihkan ke daftar aktif" }),
 	).toBeVisible();
 	await expect(
-		popup.getByRole("button", { name: "Segarkan Status Lowongan" }),
+		popup.getByRole("button", { name: "Segarkan Status Kuota" }),
 	).toHaveCount(0);
 
 	// The star on MagangHub's page is still filled — archiving never un-stars,
@@ -84,7 +84,7 @@ test("restoring an archived favorite returns it to the Aktif tab", async ({
 	await popup.getByRole("tab", { name: "Aktif" }).click();
 	await openFirstCard(popup);
 	await expect(
-		popup.getByRole("button", { name: "Segarkan Status Lowongan" }),
+		popup.getByRole("button", { name: "Segarkan Status Kuota" }),
 	).toBeVisible();
 	await expect(popup.getByRole("button", { name: "Arsipkan" })).toBeVisible();
 	// The Arsip tab count is gone (0 archived).

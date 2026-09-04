@@ -1,7 +1,7 @@
 /**
  * Toolbar badge for B1 change notification (D5).
  *
- * Counts Favorites whose Status Lowongan changed since the popup was last
+ * Counts Favorites whose Status Kuota changed since the popup was last
  * opened. Uses `browser.action.setBadgeText` — no new permission. The card
  * notice (`formatChangeNotice`) stays up as long as `previousSample` differs;
  * the badge is the unseen-count and clears on popup open.

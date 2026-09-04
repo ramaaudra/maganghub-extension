@@ -8,7 +8,7 @@ export const UUID_REGEX =
 	/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 
 /** Favorite record schema version. Bumped on breaking shape changes. */
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 /**
  * Status Lamar — the user's self-reported application stage for a Lowongan.
@@ -27,19 +27,34 @@ export const SCHEMA_VERSION = 5;
 export type StatusLamar = "dilamar" | "interview" | "diterima" | "ditolak";
 
 /**
- * Status Lowongan — the live state of a Lowongan, computed by refreshing from
- * the public detail page (ADR-0003). See `parseDetailHtml` for the rules.
+ * Status Kuota — the live quota signal of a Lowongan, computed by refreshing
+ * the public detail page (ADR-0003). The Kemnaker registration window controls
+ * whether registration is available; this status deliberately does not model
+ * an open/closed application state.
  *
- * - `open`: detail page exists and the "Lamar Sekarang" button is present.
- * - `filling`: Pelamar is at least ~80% of Kuota (Pelamar IS obtainable on the
- *   detail page — confirmed via camofox; see ADR-0006 — so this is reliable,
- *   not merely best-effort, whenever both numbers parse).
- * - `closed`: listing removed (HTTP 404/410), Kuota full, or Batch closed — all
- *   manifest on the detail page as the "Lamar Sekarang" button being absent.
- * - `unknown`: refresh failed (network error, Cloudflare challenge, parse
- *   breakage). The last-known snapshot + previous liveStatus are kept.
+ * - `belum_penuh`: Pelamar is below Kuota.
+ * - `penuh`: Pelamar is equal to or above Kuota. Registration can still be
+ *   submitted during the registration window; selection happens afterward.
+ * - `unknown`: the numbers are unavailable or the refresh failed. The
+ *   last-known snapshot + previous liveStatus are kept.
  */
-export type StatusLowongan = "open" | "filling" | "closed" | "unknown";
+export type StatusKuota = "belum_penuh" | "penuh" | "unknown";
+
+/** Derive the only per-Lowongan availability signal the UI should show. */
+export function statusKuotaFromCounts(
+	kuota: number | undefined,
+	pelamar: number | undefined,
+): StatusKuota {
+	if (
+		kuota === undefined ||
+		pelamar === undefined ||
+		kuota <= 0 ||
+		pelamar < 0
+	) {
+		return "unknown";
+	}
+	return pelamar >= kuota ? "penuh" : "belum_penuh";
+}
 
 /**
  * Mutable live status of a Favorite, updated by refresh only (ADR-0002: the
@@ -48,7 +63,7 @@ export type StatusLowongan = "open" | "filling" | "closed" | "unknown";
  * optional only when the page fails to expose it (it does on the live page).
  */
 export interface LiveStatus {
-	status: StatusLowongan;
+	status: StatusKuota;
 	kuota?: number;
 	pelamar?: number;
 	batch?: string;
@@ -84,7 +99,7 @@ export interface LiveStatusSample {
 	at: string;
 	pelamar?: number;
 	kuota?: number;
-	status: StatusLowongan;
+	status: StatusKuota;
 }
 
 /** A fresh liveStatus, before any refresh has run. */
@@ -120,9 +135,11 @@ export interface LowonganSnapshot {
  * (refresh updates it; the snapshot stays immutable — ADR-0002). v4 (issue
  * #15) widens `statusLamar` from a boolean flag to a stage enum (or no stage),
  * and adds an optional `previousSample` to `LiveStatus`. v5 (archive feature,
- * ADR-0010) adds `archivedAt`: `null` = active, an ISO timestamp = archived
- * (soft-hidden from the active list, restorable, data intact). Independent of
- * `statusLamar` terminal stages and of the unstar hard-delete.
+ * ADR-0010) adds `archivedAt`: `null` = active, an ISO timestamp = archived.
+ * (soft-hidden from the active list, restorable, data intact). v6 replaces the
+ * old open/filling/closed live-status taxonomy with Status Kuota, because
+ * registration remains possible while the Kemnaker registration window is open.
+ * Independent of `statusLamar` terminal stages and of the unstar hard-delete.
  */
 export interface Favorite {
 	schemaVersion: number;

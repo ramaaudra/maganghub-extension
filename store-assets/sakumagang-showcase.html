@@ -722,6 +722,8 @@
     }
 
     .signal-row .seats {
+      min-width: 0;
+      flex: 1 1 auto;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -743,6 +745,7 @@
 
     .live-status {
       display: inline-flex;
+      flex: 0 0 auto;
       align-items: center;
       gap: 5px;
       color: #059669;
@@ -750,14 +753,11 @@
       font-weight: 600;
       line-height: 1.3;
       text-transform: uppercase;
+      white-space: nowrap;
     }
 
-    .live-status.filling {
+    .live-status.full {
       color: #d97706;
-    }
-
-    .live-status.closed {
-      color: #e11d48;
     }
 
     .live-status::before {
@@ -1767,14 +1767,14 @@
           <button class="favorite-card-button" type="button">
             <div class="favorite-title-row"><p class="favorite-title">Magang Data Analyst</p><span class="status-label interview">Interview</span></div>
             <p class="favorite-meta">PT Maju Bersama · Jakarta</p>
-            <div class="signal-row"><span class="seats">sisa 4 kursi · 1 dari 5</span><span class="right-signals"><svg aria-hidden="true" class="icon note-mark"><use href="#icon-note" /></svg><span class="live-status">Buka</span><svg aria-hidden="true" class="icon chevron"><use href="#icon-chevron" /></svg></span></div>
+            <div class="signal-row"><span class="seats">sisa 4 kursi · 1 dari 5</span><span class="right-signals"><svg aria-hidden="true" class="icon note-mark"><use href="#icon-note" /></svg><span class="live-status">Kuota belum penuh</span><svg aria-hidden="true" class="icon chevron"><use href="#icon-chevron" /></svg></span></div>
           </button>
         </article>
         <article class="favorite-card">
           <button class="favorite-card-button" type="button">
             <div class="favorite-title-row"><p class="favorite-title">Magang Software Engineer</p><span class="status-label">Dilamar</span></div>
             <p class="favorite-meta">Kementerian Komunikasi dan Informatika · Jakarta Pusat</p>
-            <div class="signal-row"><span class="seats">sisa 1 kursi · 4 dari 5</span><span class="right-signals"><span class="live-status filling">Mengisi</span><svg aria-hidden="true" class="icon chevron"><use href="#icon-chevron" /></svg></span></div>
+            <div class="signal-row"><span class="seats">sisa 1 kursi · 4 dari 5</span><span class="right-signals"><span class="live-status">Kuota belum penuh</span><svg aria-hidden="true" class="icon chevron"><use href="#icon-chevron" /></svg></span></div>
           </button>
         </article>
       </main>
@@ -1886,7 +1886,7 @@
           <button class="favorite-card-button" type="button">
             <div class="favorite-title-row"><p class="favorite-title">Magang Data Analyst</p><span class="status-label interview">Interview</span></div>
             <p class="favorite-meta">PT Maju Bersama · Jakarta</p>
-            <div class="signal-row"><span class="seats">sisa 4 kursi · 1 dari 5</span><span class="right-signals"><svg aria-hidden="true" class="icon note-mark"><use href="#icon-note" /></svg><span class="live-status">Buka</span><svg aria-hidden="true" class="icon chevron"><use href="#icon-chevron" /></svg></span></div>
+            <div class="signal-row"><span class="seats">sisa 4 kursi · 1 dari 5</span><span class="right-signals"><svg aria-hidden="true" class="icon note-mark"><use href="#icon-note" /></svg><span class="live-status">Kuota belum penuh</span><svg aria-hidden="true" class="icon chevron"><use href="#icon-chevron" /></svg></span></div>
           </button>
           <p class="change-notice">sisa 1 kursi, tadinya 4</p>
         </article>
@@ -1894,14 +1894,14 @@
           <button class="favorite-card-button" type="button">
             <div class="favorite-title-row"><p class="favorite-title">Magang Software Engineer</p><span class="status-label">Dilamar</span></div>
             <p class="favorite-meta">Kementerian Komunikasi dan Informatika · Jakarta Pusat</p>
-            <div class="signal-row"><span class="seats">sisa 1 kursi · 4 dari 5</span><span class="right-signals"><span class="live-status filling">Mengisi</span><svg aria-hidden="true" class="icon chevron"><use href="#icon-chevron" /></svg></span></div>
+            <div class="signal-row"><span class="seats">sisa 1 kursi · 4 dari 5</span><span class="right-signals"><span class="live-status">Kuota belum penuh</span><svg aria-hidden="true" class="icon chevron"><use href="#icon-chevron" /></svg></span></div>
           </button>
         </article>
         <article class="favorite-card">
           <button class="favorite-card-button" type="button">
             <div class="favorite-title-row"><p class="favorite-title">Magang UI/UX Designer</p><span class="status-label accepted">Diterima</span></div>
             <p class="favorite-meta">PT Kreatif Nusantara · Bandung</p>
-            <div class="signal-row"><span class="seats">penuh · 40 dari 2</span><span class="right-signals"><svg aria-hidden="true" class="icon note-mark"><use href="#icon-note" /></svg><span class="live-status closed">Tutup</span><svg aria-hidden="true" class="icon chevron"><use href="#icon-chevron" /></svg></span></div>
+            <div class="signal-row"><span class="seats">penuh · 40 dari 2</span><span class="right-signals"><svg aria-hidden="true" class="icon note-mark"><use href="#icon-note" /></svg><span class="live-status full">Kuota penuh</span><svg aria-hidden="true" class="icon chevron"><use href="#icon-chevron" /></svg></span></div>
           </button>
         </article>
       </main>
@@ -1913,11 +1913,11 @@
     <div class="scene-three-callout"><strong>Sama seperti UI produksi</strong>Sudut tajam, Geist, satu aksen biru, dan kartu ringkas tiga baris.</div>
   </section>
 
-  <section class="scene scene-four" data-scene="4" aria-label="Pantau Status Lowongan dan Status Lamar">
+  <section class="scene scene-four" data-scene="4" aria-label="Pantau Status Kuota dan Status Lamar">
     <div class="scene-four-copy">
       <p class="eyebrow">Sinyal yang bisa ditindaklanjuti</p>
       <h1 class="display-title">Tahu kapan <span class="blue">harus bergerak.</span></h1>
-      <p class="lede">Segarkan Status Lowongan dari halaman publik dan catat tahap lamaranmu sendiri—tanpa membaca sesi login.</p>
+      <p class="lede">Segarkan Status Kuota dari halaman publik dan catat tahap lamaranmu sendiri—tanpa membaca sesi login.</p>
       <div class="signal-list">
         <div class="signal-list-item"><span class="dot"></span> Kuota dan Pelamar terkini</div>
         <div class="signal-list-item"><span class="dot"></span> Badge toolbar saat angka berubah</div>
@@ -1972,7 +1972,7 @@
           <button class="favorite-card-button" type="button">
             <div class="favorite-title-row"><p class="favorite-title">Magang Data Analyst</p><span class="status-label interview">Interview</span></div>
             <p class="favorite-meta">PT Maju Bersama · Jakarta</p>
-            <div class="signal-row"><span class="seats">sisa 4 kursi · 1 dari 5</span><span class="right-signals"><svg aria-hidden="true" class="icon note-mark"><use href="#icon-note" /></svg><span class="live-status">Buka</span><svg aria-hidden="true" class="icon chevron up"><use href="#icon-chevron" /></svg></span></div>
+            <div class="signal-row"><span class="seats">sisa 4 kursi · 1 dari 5</span><span class="right-signals"><svg aria-hidden="true" class="icon note-mark"><use href="#icon-note" /></svg><span class="live-status">Kuota belum penuh</span><svg aria-hidden="true" class="icon chevron up"><use href="#icon-chevron" /></svg></span></div>
           </button>
           <p class="change-notice">sisa 1 kursi, tadinya 4</p>
           <div class="favorite-tray">
@@ -1998,7 +1998,7 @@
       <p class="lede">SakuMagang tidak punya akun, backend, atau telemetry. Refresh hanya membaca halaman detail Lowongan yang publik.</p>
       <div class="permission-card">
         <div class="permission-row"><code>storage</code><span>Menyimpan Favorite, Catatan, dan tahap di browser.</span></div>
-        <div class="permission-row"><code>offscreen</code><span>Memproses HTML publik untuk memperbarui Status Lowongan.</span></div>
+        <div class="permission-row"><code>offscreen</code><span>Memproses HTML publik untuk memperbarui Status Kuota.</span></div>
         <div class="permission-row"><code>host</code><span>Terbatas ke maganghub.kemnaker.go.id.</span></div>
       </div>
       <p class="not-requested"><strong>Tidak meminta:</strong> cookies, identity, &lt;all_urls&gt;, atau password SiapKerja.</p>

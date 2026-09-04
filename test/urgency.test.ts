@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { FILLING_THRESHOLD } from "@/lib/parse";
+import { NEAR_FULL_THRESHOLD } from "@/lib/parse";
 import { urgencyBand } from "@/lib/urgency";
 
 /**
  * Banding rules (issue #16):
  *   remaining = kuota − pelamar
  *   lewat_kuota  → remaining ≤ 0
- *   hampir_penuh → remaining ≤ 1 OR pelamar ≥ FILLING_THRESHOLD × kuota
+ *   hampir_penuh → remaining ≤ 1 OR pelamar ≥ NEAR_FULL_THRESHOLD × kuota
  *   calm         → seats left and not near full
  *   undefined    → either number missing
  */
@@ -24,9 +24,9 @@ describe("urgencyBand", () => {
 		expect(urgencyBand(5, 4)).toBe("hampir_penuh");
 	});
 
-	it("returns hampir_penuh at the shared FILLING_THRESHOLD (80%)", () => {
-		// 40/50 = 0.8 exactly — same line parse.ts uses for `filling`
-		expect(FILLING_THRESHOLD).toBe(0.8);
+	it("returns hampir_penuh at the shared near-full threshold (80%)", () => {
+		// 40/50 = 0.8 exactly — this threshold only controls visual emphasis.
+		expect(NEAR_FULL_THRESHOLD).toBe(0.8);
 		expect(urgencyBand(50, 40)).toBe("hampir_penuh");
 	});
 

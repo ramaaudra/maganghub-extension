@@ -10,25 +10,25 @@ const openHtml = () => readFixture("lowongan-detail-open.html");
 const kuotaFullHtml = () => readFixture("lowongan-detail-kuota-full.html");
 
 describe("parseDetailHtml", () => {
-	it("parses an open detail page: open status + Kuota/Pelamar/Batch/Tunjangan", () => {
+	it("parses a detail page: quota is not full + Kuota/Pelamar/Batch/Tunjangan", () => {
 		const parsed = parseDetailHtml(openHtml());
-		expect(parsed.status).toBe("open");
+		expect(parsed.status).toBe("belum_penuh");
 		expect(parsed.kuota).toBe(50);
 		expect(parsed.pelamar).toBe(12);
 		expect(parsed.batch).toBe("Batch 1 · 2026");
 		expect(parsed.tunjangan).toBe("Dari Pemerintah");
 	});
 
-	it("reports closed when the Lamar Sekarang button is absent (kuota full)", () => {
-		// Pelamar (150) exceeds Kuota (50), but with no apply button the only
-		// honest status is closed — Filling never overrides a missing apply button.
+	it("reports penuh when Pelamar reaches Kuota, even without an apply button", () => {
+		// The registration window, not the button, determines whether a user can
+		// submit. The quota signal only describes Pelamar versus Kuota.
 		const parsed = parseDetailHtml(kuotaFullHtml());
-		expect(parsed.status).toBe("closed");
+		expect(parsed.status).toBe("penuh");
 		expect(parsed.kuota).toBe(50);
 		expect(parsed.pelamar).toBe(150);
 	});
 
-	it("reports filling when Pelamar >= 80% of Kuota and the apply button is present", () => {
+	it("reports belum_penuh while Pelamar is below Kuota, even at 90%", () => {
 		const html = `<main>
       <h1>Magang Backend</h1>
       <span class="mh-badge">Batch 1 · 2026</span>
@@ -43,12 +43,12 @@ describe("parseDetailHtml", () => {
       <button>Lamar Sekarang</button>
     </main>`;
 		const parsed = parseDetailHtml(html);
-		expect(parsed.status).toBe("filling");
+		expect(parsed.status).toBe("belum_penuh");
 		expect(parsed.kuota).toBe(50);
 		expect(parsed.pelamar).toBe(45);
 	});
 
-	it("treats Pelamar at exactly the 80% threshold as filling", () => {
+	it("treats Pelamar at exactly 80% as belum_penuh", () => {
 		const html = `<main>
       <h1>Magang Backend</h1>
       <div class="flex items-center justify-between text-sm">
@@ -61,10 +61,10 @@ describe("parseDetailHtml", () => {
       </div>
       <button>Lamar Sekarang</button>
     </main>`;
-		expect(parseDetailHtml(html).status).toBe("filling");
+		expect(parseDetailHtml(html).status).toBe("belum_penuh");
 	});
 
-	it("reports open just below the filling threshold", () => {
+	it("reports belum_penuh just below the quota", () => {
 		const html = `<main>
       <h1>Magang Backend</h1>
       <div class="flex items-center justify-between text-sm">
@@ -77,7 +77,7 @@ describe("parseDetailHtml", () => {
       </div>
       <button>Lamar Sekarang</button>
     </main>`;
-		expect(parseDetailHtml(html).status).toBe("open");
+		expect(parseDetailHtml(html).status).toBe("belum_penuh");
 	});
 
 	it("parses Indonesian thousands separators (1.234 orang → 1234)", () => {
@@ -96,11 +96,11 @@ describe("parseDetailHtml", () => {
 		const parsed = parseDetailHtml(html);
 		expect(parsed.kuota).toBe(1500);
 		expect(parsed.pelamar).toBe(1234);
-		// 1234 >= 80% of 1500 (1200) → filling.
-		expect(parsed.status).toBe("filling");
+		// 1234 is below the quota, so the quota is not full.
+		expect(parsed.status).toBe("belum_penuh");
 	});
 
-	it("reports open when Pelamar is absent (open without applicant count)", () => {
+	it("reports unknown when Pelamar is absent", () => {
 		const html = `<main>
       <h1>Magang Backend</h1>
       <div class="flex items-center justify-between text-sm">
@@ -110,12 +110,12 @@ describe("parseDetailHtml", () => {
       <button>Lamar Sekarang</button>
     </main>`;
 		const parsed = parseDetailHtml(html);
-		expect(parsed.status).toBe("open");
+		expect(parsed.status).toBe("unknown");
 		expect(parsed.kuota).toBe(50);
 		expect(parsed.pelamar).toBeUndefined();
 	});
 
-	it("reports closed for a recognisable Lowongan page with no apply button", () => {
+	it("reports unknown when Pelamar is unavailable, regardless of the apply button", () => {
 		const html = `<main>
       <h1>Magang Backend</h1>
       <span class="mh-badge">Batch 1 · 2026</span>
@@ -125,7 +125,7 @@ describe("parseDetailHtml", () => {
       </div>
       <div class="rounded-md bg-muted p-2 text-center">Batch Ditutup</div>
     </main>`;
-		expect(parseDetailHtml(html).status).toBe("closed");
+		expect(parseDetailHtml(html).status).toBe("unknown");
 	});
 
 	it("normalizes interior whitespace in values when markup is line-wrapped", () => {
@@ -162,7 +162,7 @@ describe("parseDetailHtml", () => {
       </button>
     </main>`;
 		const parsed = parseDetailHtml(html);
-		expect(parsed.status).toBe("open");
+		expect(parsed.status).toBe("unknown");
 		expect(parsed.kuota).toBe(50);
 		expect(parsed.batch).toBe("Batch 1 · 2026");
 		expect(parsed.tunjangan).toBe("Dari Pemerintah");

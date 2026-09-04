@@ -13,7 +13,7 @@
  * `seatLine` returns and adds no numbers of its own.
  */
 
-import { FILLING_THRESHOLD, parseCount } from "./parse";
+import { NEAR_FULL_THRESHOLD, parseCount } from "./parse";
 import type { Favorite, LiveStatus, LowonganSnapshot } from "./types";
 
 /** Where a seat reading came from — the popup labels cold data differently. */
@@ -116,14 +116,14 @@ export function seatLine(seats: Seats): string | null {
 
 /**
  * Pressure band for the seat line's emphasis — how close this Lowongan is to
- * closing by filling its Kuota.
+ * its Kuota. A full quota does not mean registration is closed.
  *
  * Distinct from `urgency.ts` (which reads a *card's* badge pills on the
  * MagangHub page and is currently unreferenced): this one reads an already
  * normalized {@link Seats} and drives popup type weight, not an injected ring.
- * Shares `FILLING_THRESHOLD` with the refresh parser rather than re-declaring
- * the number, so a card cannot read "sisa 1 kursi" in calm grey while its
- * Status Lowongan chip says Mengisi.
+ * Shares `NEAR_FULL_THRESHOLD` with the parser rather than re-declaring the
+ * number. This threshold only controls emphasis; the chip itself is based on
+ * `penuh` versus `belum_penuh`.
  */
 export type SeatPressure = "none" | "calm" | "tight" | "full";
 
@@ -135,6 +135,6 @@ export function seatPressure(seats: Seats): SeatPressure {
 	}
 	if (kuota <= 0) return "none";
 	if (remaining <= 0) return "full";
-	if (remaining <= 1 || pelamar >= kuota * FILLING_THRESHOLD) return "tight";
+	if (remaining <= 1 || pelamar >= kuota * NEAR_FULL_THRESHOLD) return "tight";
 	return "calm";
 }

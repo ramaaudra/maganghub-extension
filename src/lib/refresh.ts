@@ -4,7 +4,7 @@ import {
 	toLiveStatusSample,
 } from "./change";
 import type { ParsedDetail } from "./parse";
-import type { LiveStatus, StatusLowongan } from "./types";
+import type { LiveStatus } from "./types";
 
 /**
  * Refresh message protocol (ADR-0005). The popup asks the background to refresh
@@ -53,11 +53,6 @@ export type OffscreenResponse =
 	| { ok: true; uuid: string; parsed: ParsedDetail }
 	| { ok: false; uuid: string; error: string; httpStatus?: number };
 
-/** A non-OK HTTP status that means "the listing is gone" → closed. */
-function isGoneStatus(status: number): boolean {
-	return status === 404 || status === 410;
-}
-
 /**
  * Attach B1's one previous successful sample onto a newly built liveStatus.
  * Unchanged refreshes keep any existing previousSample so a later real change
@@ -97,11 +92,10 @@ function withPreviousSample(
  * Fold an offscreen response + the previous liveStatus into the liveStatus to
  * persist. On success, replace the live fields and, when the previous sample
  * was itself a successful refresh that differs in kuota/pelamar/status, keep
- * it on `previousSample` for B1's change notice (D5). On a "gone" HTTP status,
- * mark `closed`. On any other failure, mark `unknown` and keep the previous
- * kuota/pelamar/batch/tunjangan so the popup still shows the last-known numbers
- * ("no data loss", issue #5 AC) — failed refreshes never overwrite
- * `previousSample` and never count as changes.
+ * it on `previousSample` for B1's change notice (D5). Any failed refresh is
+ * `unknown` and keeps the previous kuota/pelamar/batch/tunjangan so the popup
+ * still shows the last-known numbers ("no data loss", issue #5 AC). A 404/410
+ * is a fetch failure, not evidence that the registration window is closed.
  */
 export function toLiveStatus(
 	response: OffscreenResponse,
@@ -121,23 +115,17 @@ export function toLiveStatus(
 		return withPreviousSample(live, previous, true);
 	}
 
-	const status: StatusLowongan = isGoneStatus(response.httpStatus ?? 0)
-		? "closed"
-		: "unknown";
-
-	// Closed-via-404 is a successful terminal sample for B1 (the listing is
-	// gone — that *is* a change). Unknown failures are not.
 	const live: LiveStatus = {
-		status,
+		status: "unknown",
 		lastChecked: now,
-		lastError: status === "unknown" ? response.error : undefined,
+		lastError: response.error,
 		// Preserve last-known numbers on failure (no data loss).
 		kuota: previous?.kuota,
 		pelamar: previous?.pelamar,
 		batch: previous?.batch,
 		tunjangan: previous?.tunjangan,
 	};
-	return withPreviousSample(live, previous, status === "closed");
+	return withPreviousSample(live, previous, false);
 }
 
 /**

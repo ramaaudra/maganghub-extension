@@ -1,8 +1,8 @@
-import type { StatusLowongan } from "./types";
+import { statusKuotaFromCounts, type StatusKuota } from "./types";
 
 /**
  * Pure refresh parser (ADR-0003). Turns a MagangHub Lowongan detail-page HTML
- * string into the fields that drive Status Lowongan — no browser, no network.
+ * string into the fields that drive Status Kuota — no browser, no network.
  * Unit-tested against fixture fragments; called from the offscreen document
  * (ADR-0005) on the fetched HTML.
  *
@@ -13,13 +13,14 @@ import type { StatusLowongan } from "./types";
  *     <span class="text-muted-foreground">Kuota</span>
  *     <span class="font-semibold">5 orang</span>
  *   </div>
- * Batch is a `<span class="mh-badge">Batch 1 · 2026</span>`, and "Lamar Sekarang"
- * is a `<button>` (its presence is the open signal; ADR-0006).
+ * Batch is a `<span class="mh-badge">Batch 1 · 2026</span>`. The presence of
+ * an apply button is intentionally not used: registration follows the global
+ * Kemnaker registration window, while the card only reports quota pressure.
  */
 
 /** Result of parsing a detail page (no lastChecked — the caller stamps that). */
 export interface ParsedDetail {
-	status: StatusLowongan;
+	status: StatusKuota;
 	kuota?: number;
 	pelamar?: number;
 	batch?: string;
@@ -28,7 +29,7 @@ export interface ParsedDetail {
 
 /** Thrown when the HTML doesn't look like a Lowongan detail page at all —
  *  e.g. a Cloudflare challenge or an empty 200. The caller treats this as a
- *  failed refresh (`status: "unknown"`), distinct from a real "closed" page. */
+ *  failed refresh (`status: "unknown"`). */
 export class NotALowonganError extends Error {
 	constructor(message = "not a Lowongan detail page") {
 		super(message);
@@ -45,12 +46,10 @@ const VALUE_SELECTOR = ".font-semibold";
 /** Batch badge (text starts with "Batch"). */
 const BATCH_BADGE_SELECTOR = ".mh-badge";
 
-const LAMAR_SEKARANG = "Lamar Sekarang";
-/** Pelamar ≥ this fraction of Kuota → Filling (issue #1 taxonomy).
- *  Exported so the list-card urgency band (issue #16) uses the same line — a
- *  card at 80% must not say "calm" while the popup's refresh badge says
- *  "Filling". */
-export const FILLING_THRESHOLD = 0.8;
+/** Pelamar ≥ this fraction of Kuota → tighter visual emphasis in the seat line.
+ * This is presentation-only; it is not a Status Kuota and never means that
+ * registration is closed. */
+export const NEAR_FULL_THRESHOLD = 0.8;
 
 /** Parse the first count out of a value string like "5 orang", "120 orang",
  *  "1.234 orang", or a card badge "Kuota: 5". Indonesian uses '.' as a
@@ -91,14 +90,6 @@ export function normalizeWhitespace(text: string): string {
 	return text.replace(/\s+/g, " ").trim();
 }
 
-/** True if any button or link's trimmed text contains "Lamar Sekarang". */
-function hasLamarSekarang(doc: Document): boolean {
-	// Normalized so a button rendered as "Lamar\n  Sekarang" still matches.
-	return [...doc.querySelectorAll("button, a")].some((el) =>
-		textOf(el).includes(LAMAR_SEKARANG),
-	);
-}
-
 /**
  * Build a label → value map from the detail page's info rows.
  *
@@ -129,7 +120,7 @@ function readBatch(doc: Document): string | undefined {
 }
 
 /** A page is recognisably a Lowongan detail page if it has a title, info rows,
- *  or a Batch badge — otherwise it's a challenge/empty page, not "closed". */
+ *  or a Batch badge — otherwise it's a challenge/empty page. */
 function looksLikeLowonganPage(
 	doc: Document,
 	info: Map<string, string>,
@@ -141,14 +132,12 @@ function looksLikeLowonganPage(
 /**
  * Parse a detail page's HTML into a {@link ParsedDetail}.
  *
- * Rules (issue #1 taxonomy, confirmed via camofox — ADR-0006):
- *  - `open`  : "Lamar Sekarang" present.
- *  - `filling`: "Lamar Sekarang" present AND Pelamar ≥ 80% of Kuota (both
- *    numbers must parse). Pelamar IS exposed on the detail page, so this is
- *    reliable whenever both numbers are available.
- *  - `closed`: the page is a recognisable Lowongan page but "Lamar Sekarang"
- *    is absent (listing removed-but-rendered, Kuota full, or Batch closed all
- *    surface this way). A 404 is handled by the caller as `closed` too.
+ * Rules (Status Kuota):
+ *  - `belum_penuh`: Pelamar is below Kuota.
+ *  - `penuh`: Pelamar is equal to or above Kuota. The apply button does not
+ *    override this: registration remains possible during the registration
+ *    window and selection happens afterward.
+ *  - `unknown`: Kuota or Pelamar is unavailable.
  *  - throws {@link NotALowonganError} for a non-Lowongan page (challenge/empty)
  *    → caller records `unknown` (refresh failed), preserving the last-known
  *    liveStatus.
@@ -166,25 +155,7 @@ export function parseDetailHtml(html: string): ParsedDetail {
 	const pelamar = parseCount(info.get("pelamar") ?? "");
 	const tunjangan = info.get("tunjangan") || undefined;
 
-	const lamarPresent = hasLamarSekarang(doc);
-
-	let status: StatusLowongan;
-	if (lamarPresent) {
-		if (
-			kuota !== undefined &&
-			pelamar !== undefined &&
-			kuota > 0 &&
-			pelamar >= kuota * FILLING_THRESHOLD
-		) {
-			status = "filling";
-		} else {
-			status = "open";
-		}
-	} else {
-		// Recognisable Lowongan page with no apply button → closed (kuota full /
-		// batch closed / listing removed-but-rendered). A hard 404 is closed too.
-		status = "closed";
-	}
+	const status = statusKuotaFromCounts(kuota, pelamar);
 
 	const result: ParsedDetail = { status };
 	if (kuota !== undefined) result.kuota = kuota;

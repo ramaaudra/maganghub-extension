@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { searchFavorites, sortFavorites } from "@/lib/filter";
-import { type Favorite, SCHEMA_VERSION, type StatusLamar } from "@/lib/types";
+import {
+	statusKuotaFromCounts,
+	type Favorite,
+	SCHEMA_VERSION,
+	type StatusLamar,
+} from "@/lib/types";
 
 /**
  * Contract tests for the popup's search + sort helpers (issue #6). These are
@@ -259,7 +264,8 @@ const stageFav = (over: {
 	catatan: "",
 	statusLamar: over.stage,
 	liveStatus: {
-		status: over.status ?? "unknown",
+		status: statusKuotaFromCounts(over.kuota, over.pelamar),
+		...(over.status ? { status: over.status } : {}),
 		lastChecked:
 			over.kuota !== undefined || over.pelamar !== undefined
 				? "2026-01-01T00:00:00Z"
@@ -448,8 +454,9 @@ describe("sortFavorites(stageSeats)", () => {
 		expect(result.map((f) => f.uuid)).toEqual([S.b, S.a]);
 	});
 
-	it("terminal stages (Diterima/Ditolak) sort above Closed Status Lowongan only by saved date", () => {
-		// All terminal regardless of seats/closed — terminal-stage wins even if seats remain.
+	it("terminal stages sort below a full quota, but only stages are terminal", () => {
+		// A full quota remains actionable during the registration window; only the
+		// user's Diterima/Ditolak stages are terminal.
 		const list = [
 			stageFav({
 				uuid: S.a,
@@ -469,8 +476,8 @@ describe("sortFavorites(stageSeats)", () => {
 			}),
 			stageFav({
 				uuid: S.c,
-				title: "ClosedNoStage",
-				status: "closed",
+				title: "FullNoStage",
+				status: "penuh",
 				kuota: 50,
 				pelamar: 50,
 				savedAt: "2026-03-01T00:00:00Z",
@@ -486,24 +493,24 @@ describe("sortFavorites(stageSeats)", () => {
 
 		const result = sortFavorites(list, "stageSeats");
 
-		// ActiveWithSeats is the only non-terminal → first. Terminal three sort newest-saved.
+		// ActiveWithSeats first, then the full quota, then terminal stages by saved date.
 		expect(result.map((f) => f.uuid)).toEqual([S.d, S.c, S.b, S.a]);
 	});
 
-	it("a Closed Status Lowongan is terminal even with an active stage", () => {
+	it("a full quota is not terminal even with an active Status Lamar", () => {
 		const list = [
 			stageFav({
 				uuid: S.a,
-				title: "DilamarClosed",
+				title: "DilamarFull",
 				stage: "dilamar",
-				status: "closed",
+				status: "penuh",
 				kuota: 50,
 				pelamar: 50,
 				savedAt: "2026-01-01T00:00:00Z",
 			}),
 			stageFav({
 				uuid: S.b,
-				title: "DilamarOpen",
+				title: "DilamarNotFull",
 				stage: "dilamar",
 				kuota: 50,
 				pelamar: 1,

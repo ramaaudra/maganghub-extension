@@ -24,6 +24,7 @@ import type {
 	FavoriteV2,
 	FavoriteV3,
 	FavoriteV4,
+	FavoriteV5,
 } from "./migrations";
 import { migrateFavorite } from "./migrations";
 import { getFavorite, listFavorites, setFavorite } from "./storage";
@@ -42,7 +43,7 @@ export interface ExportFile {
 	count: number;
 	/** The favorites. Each is migrated individually on import. */
 	favorites: Array<
-		Favorite | FavoriteV1 | FavoriteV2 | FavoriteV3 | FavoriteV4
+		Favorite | FavoriteV1 | FavoriteV2 | FavoriteV3 | FavoriteV4 | FavoriteV5
 	>;
 }
 

@@ -27,13 +27,13 @@ Simpan Favorite, Catatan, dan Status Lamar di MagangHub. Semuanya tersimpan loka
 ## 3. Deskripsi
 
 ```
-SakuMagang membantu kamu menyimpan dan memantau Lowongan di MagangHub. Bintangi Lowongan saat browsing, tambahkan Catatan, atur Status Lamar, dan periksa ulang Status Lowongan dari halaman detail publik.
+SakuMagang membantu kamu menyimpan dan memantau Lowongan di MagangHub. Bintangi Lowongan saat browsing, tambahkan Catatan, atur Status Lamar, dan periksa ulang Status Kuota dari halaman detail publik.
 
 Fitur utama
 • Bintangi Lowongan dari halaman daftar atau detail sebagai Favorite.
 • Tulis Catatan tentang alasan menyimpan sebuah Lowongan.
 • Atur Status Lamar secara manual: Belum dilamar, Dilamar, Interview, Diterima, atau Ditolak.
-• Periksa ulang Kuota, Pelamar, dan Status Lowongan dari halaman detail publik.
+• Periksa ulang Kuota, Pelamar, dan Status Kuota dari halaman detail publik. Kuota penuh tetap bisa didaftarkan selama jendela pendaftaran Kemnaker terbuka.
 • Cari, urutkan, dan kelompokkan Favorite.
 • Arsipkan Favorite tanpa menghapus data, lalu pulihkan kapan saja.
 • Ekspor dan impor Favorite sebagai cadangan JSON.
@@ -47,7 +47,7 @@ Cara menggunakan
 Privasi
 SakuMagang adalah ekstensi pihak ketiga yang tidak berafiliasi dengan Kemnaker atau MagangHub. SakuMagang tidak membaca, menyimpan, atau mengirim password SiapKerja maupun sesi login MagangHub. Favorite, Catatan, dan Status Lamar hanya tersimpan di perangkatmu dan tidak dikirim ke server SakuMagang.
 
-SakuMagang menyimpan URL Lowongan yang kamu pilih sebagai Favorite dan membaca konten publik halaman MagangHub yang didukung untuk menampilkan Kuota, Pelamar, dan Status Lowongan. Ekstensi ini tidak memerlukan akun dan tidak mengumpulkan data penggunaan untuk analitik atau telemetri.
+SakuMagang menyimpan URL Lowongan yang kamu pilih sebagai Favorite dan membaca konten publik halaman MagangHub yang didukung untuk menampilkan Kuota, Pelamar, dan Status Kuota. Ekstensi ini tidak memerlukan akun dan tidak mengumpulkan data penggunaan untuk analitik atau telemetri.
 
 Kenapa SakuMagang tidak meminta password?
 Situs pihak ketiga yang meminta kamu login ke SiapKerja dapat mencatat password yang kamu masukkan. Gunakan hanya alur resmi MagangHub dan SiapKerja untuk login atau melamar.
@@ -102,7 +102,7 @@ Jangan centang yang lain.
 | Permission | Kegunaan |
 |---|---|
 | `storage` | Menyimpan Favorite di `chrome.storage.local` |
-| `offscreen` | Mem-parse HTML detail publik untuk refresh Status Lowongan |
+| `offscreen` | Mem-parse HTML detail publik untuk refresh Status Kuota |
 | `https://maganghub.kemnaker.go.id/*` | Membaca halaman daftar/detail publik |
 
 **Tidak diminta:** `cookies`, `identity`, `<all_urls>`.

@@ -218,7 +218,7 @@ test("the list stays responsive with many Favorites", async ({
 
 // Issue #21 (B2): stage-then-seats sort. Seeds Favorites directly into storage
 // with Status Lamar + liveStatus numbers covering every bucket, then asserts
-// the popup orders them: with-seats (ascending) → over-subscribed → unrefreshed
+// the popup orders them: with-seats (ascending) → full quota → unrefreshed
 // → terminal. Seeding through storage (not star clicks) keeps the test about the
 // sort, which is what the AC is about.
 test("sorting by Status Lamar + sisa kursi orders by stage then seats", async ({
@@ -274,7 +274,7 @@ test("sorting by Status Lamar + sisa kursi orders by stage then seats", async ({
 				},
 				savedAt: "2026-01-05T00:00:00Z",
 			},
-			// over-subscribed, remaining -5 (futile).
+			// full quota, remaining -5 (still registrable during the window).
 			"fav:33333333-3333-4333-8333-333333333333": {
 				schemaVersion: 4,
 				uuid: "33333333-3333-4333-8333-333333333333",
@@ -332,14 +332,14 @@ test("sorting by Status Lamar + sisa kursi orders by stage then seats", async ({
 				liveStatus: { status: "unknown", lastChecked: null },
 				savedAt: "2026-01-07T00:00:00Z",
 			},
-			// terminal: Status Lowongan Closed (oldest-saved among terminal).
+			// full quota without a Status Lamar stage (oldest-saved in the full bucket).
 			"fav:66666666-6666-4666-8666-666666666666": {
 				schemaVersion: 4,
 				uuid: "66666666-6666-4666-8666-666666666666",
 				detailUrl:
 					"/magang-nasional/lowongan/magang-zeta-66666666-6666-4666-8666-666666666666",
 				savedSnapshot: {
-					title: "Zeta Tutup",
+					title: "Zeta Kuota Penuh",
 					organizer: "PT Contoh",
 					location: "Jakarta",
 					capturedAt: "2026-01-01T00:00:00Z",
@@ -349,6 +349,8 @@ test("sorting by Status Lamar + sisa kursi orders by stage then seats", async ({
 				liveStatus: {
 					status: "closed",
 					lastChecked: "2026-01-01T00:00:00Z",
+					kuota: 50,
+					pelamar: 50,
 				},
 				savedAt: "2026-01-02T00:00:00Z",
 			},
@@ -365,15 +367,15 @@ test("sorting by Status Lamar + sisa kursi orders by stage then seats", async ({
 
 	await popup.getByLabel("Urutkan").selectOption("stageSeats");
 
-	// with-seats ascending (Beta 1, Alpha 38) → over-subscribed (Gamma -5)
-	// → unrefreshed (Delta) → terminal newest-saved (Epsilon, Zeta).
+	// with-seats ascending (Beta 1, Alpha 38) → full quota (Gamma -5, Zeta 0)
+	// → unrefreshed (Delta) → terminal (Epsilon).
 	await expect(renderedTitles(popup)).toHaveText([
 		"Beta Kursi 1",
 		"Alpha Kursi 38",
 		"Gamma Over",
+		"Zeta Kuota Penuh",
 		"Delta Belum Refresh",
 		"Epsilon Diterima",
-		"Zeta Tutup",
 	]);
 });
 

@@ -1,6 +1,6 @@
 import { CARD_BADGE_LABELS } from "./constants";
 import { readCardBadges } from "./extract";
-import { FILLING_THRESHOLD, parseCount } from "./parse";
+import { NEAR_FULL_THRESHOLD, parseCount } from "./parse";
 
 /**
  * Pre-attentive urgency band for a Lowongan card (issue #16).
@@ -21,8 +21,9 @@ import { FILLING_THRESHOLD, parseCount } from "./parse";
  * already shows. Three bands on `remaining = kuota − pelamar`:
  *
  *  - `calm`         — seats left and not near full
- *  - `hampir_penuh` — ≤ 1 seat left, OR Pelamar ≥ {@link FILLING_THRESHOLD} of Kuota
- *  - `lewat_kuota`  — over-subscribed (`remaining ≤ 0`); futile to apply
+ *  - `hampir_penuh` — ≤ 1 seat left, OR Pelamar ≥ {@link NEAR_FULL_THRESHOLD} of Kuota
+ *  - `lewat_kuota`  — over-subscribed (`remaining ≤ 0`); registration can still
+ *    be submitted while the registration window is open
  *
  * Returns `undefined` when either number is missing so the signal simply does
  * not render (a card without numbers is not a "calm" card).
@@ -40,7 +41,7 @@ export function urgencyBand(
 
 	const remaining = kuota - pelamar;
 	if (remaining <= 0) return "lewat_kuota";
-	if (remaining <= 1 || pelamar >= kuota * FILLING_THRESHOLD) {
+	if (remaining <= 1 || pelamar >= kuota * NEAR_FULL_THRESHOLD) {
 		return "hampir_penuh";
 	}
 	return "calm";

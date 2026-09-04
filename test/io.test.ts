@@ -313,7 +313,7 @@ describe("importFavorites", () => {
 			"Local Live",
 		);
 		local.liveStatus = {
-			status: "open",
+			status: "belum_penuh",
 			kuota: 50,
 			pelamar: 12,
 			batch: "Batch 1 · 2026",
@@ -324,7 +324,7 @@ describe("importFavorites", () => {
 		// Imported copy carries a DIFFERENT liveStatus (stale, from another device).
 		const importedCopy = baseFavorite(local.uuid, "Local Live");
 		importedCopy.liveStatus = {
-			status: "closed",
+			status: "penuh",
 			lastChecked: "2025-01-01T00:00:00Z",
 		};
 		const file: ExportFile = {
@@ -338,7 +338,7 @@ describe("importFavorites", () => {
 
 		const after = await getFavorite(local.uuid);
 		// Local liveStatus is authoritative; imported liveStatus is discarded.
-		expect(after?.liveStatus.status).toBe("open");
+		expect(after?.liveStatus.status).toBe("belum_penuh");
 		expect(after?.liveStatus.lastChecked).toBe("2026-06-01T00:00:00Z");
 	});
 

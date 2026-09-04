@@ -1,5 +1,11 @@
-import type { Favorite, LiveStatus, LowonganSnapshot } from "./types";
-import { initialLiveStatus, SCHEMA_VERSION } from "./types";
+import type {
+	Favorite,
+	LiveStatus,
+	LiveStatusSample,
+	LowonganSnapshot,
+	StatusKuota,
+} from "./types";
+import { SCHEMA_VERSION, statusKuotaFromCounts } from "./types";
 
 /**
  * Schema migration registry for stored Favorites (issue #4). Lazily migrates
@@ -41,7 +47,7 @@ export interface FavoriteV3 {
 	savedSnapshot: LowonganSnapshot;
 	catatan: string;
 	statusLamar: "not_applied" | "applied";
-	liveStatus: LiveStatus;
+	liveStatus: LegacyLiveStatus;
 	savedAt: string;
 }
 
@@ -57,8 +63,43 @@ export interface FavoriteV4 {
 	savedSnapshot: LowonganSnapshot;
 	catatan: string;
 	statusLamar: Favorite["statusLamar"];
-	liveStatus: LiveStatus;
+	liveStatus: LegacyLiveStatus;
 	savedAt: string;
+}
+
+/** The v3–v5 live-status shape before schema v6 renamed the domain. */
+export type LegacyStatusLowongan = "open" | "filling" | "closed" | "unknown";
+
+export interface LegacyLiveStatusSample {
+	at: string;
+	pelamar?: number;
+	kuota?: number;
+	status: LegacyStatusLowongan;
+}
+
+export interface LegacyLiveStatus {
+	status: LegacyStatusLowongan;
+	kuota?: number;
+	pelamar?: number;
+	batch?: string;
+	tunjangan?: string;
+	lastChecked: string | null;
+	lastError?: string;
+	previousSample?: LegacyLiveStatusSample;
+	changedAt?: string | null;
+}
+
+/** v5 shape: archive support exists, but liveStatus still uses the old taxonomy. */
+export interface FavoriteV5 {
+	schemaVersion: 5;
+	uuid: string;
+	detailUrl: string;
+	savedSnapshot: LowonganSnapshot;
+	catatan: string;
+	statusLamar: Favorite["statusLamar"];
+	liveStatus: LegacyLiveStatus;
+	savedAt: string;
+	archivedAt: string | null;
 }
 
 /** v1 → v2: adds `catatan` (empty) and `statusLamar` (`not_applied`) defaults. */
@@ -76,7 +117,7 @@ function migrateV2ToV3(record: FavoriteV2): FavoriteV3 {
 	return {
 		...record,
 		schemaVersion: 3,
-		liveStatus: initialLiveStatus(),
+		liveStatus: { status: "unknown", lastChecked: null },
 	};
 }
 
@@ -103,11 +144,50 @@ function migrateV3ToV4(record: FavoriteV3): FavoriteV4 {
  * migration sets `null` rather than guessing. Idempotent and additive like
  * every other step — no existing field is touched, no data is lost.
  */
-function migrateV4ToV5(record: FavoriteV4): Favorite {
+function migrateV4ToV5(record: FavoriteV4): FavoriteV5 {
 	return {
 		...record,
 		schemaVersion: 5,
 		archivedAt: null,
+	};
+}
+
+function migrateLegacyStatus(
+	status: LegacyStatusLowongan,
+	kuota: number | undefined,
+	pelamar: number | undefined,
+): StatusKuota {
+	// An old `unknown` means the refresh failed. Counts may be preserved from a
+	// prior successful sample, but they are not a fresh reading to reinterpret.
+	if (status === "unknown") return "unknown";
+	return statusKuotaFromCounts(kuota, pelamar);
+}
+
+function migrateLegacySample(sample: LegacyLiveStatusSample): LiveStatusSample {
+	return {
+		...sample,
+		status: migrateLegacyStatus(sample.status, sample.kuota, sample.pelamar),
+	};
+}
+
+function migrateLegacyLiveStatus(record: LegacyLiveStatus): LiveStatus {
+	const { previousSample, ...rest } = record;
+	const liveStatus: LiveStatus = {
+		...rest,
+		status: migrateLegacyStatus(record.status, record.kuota, record.pelamar),
+	};
+	if (previousSample) {
+		liveStatus.previousSample = migrateLegacySample(previousSample);
+	}
+	return liveStatus;
+}
+
+/** v5 → v6: replace open/filling/closed with the quota-only taxonomy. */
+function migrateV5ToV6(record: FavoriteV5): Favorite {
+	return {
+		...record,
+		schemaVersion: 6,
+		liveStatus: migrateLegacyLiveStatus(record.liveStatus),
 	};
 }
 
@@ -116,6 +196,7 @@ const MIGRATIONS: Record<number, (record: never) => Favorite> = {
 	2: migrateV2ToV3 as unknown as (record: never) => Favorite,
 	3: migrateV3ToV4 as unknown as (record: never) => Favorite,
 	4: migrateV4ToV5 as unknown as (record: never) => Favorite,
+	5: migrateV5ToV6 as unknown as (record: never) => Favorite,
 };
 
 /**
@@ -123,10 +204,21 @@ const MIGRATIONS: Record<number, (record: never) => Favorite> = {
  * No-op for a record already at `SCHEMA_VERSION`.
  */
 export function migrateFavorite(
-	record: FavoriteV1 | FavoriteV2 | FavoriteV3 | FavoriteV4 | Favorite,
+	record:
+		| FavoriteV1
+		| FavoriteV2
+		| FavoriteV3
+		| FavoriteV4
+		| FavoriteV5
+		| Favorite,
 ): Favorite {
-	let current: Favorite | FavoriteV1 | FavoriteV2 | FavoriteV3 | FavoriteV4 =
-		record;
+	let current:
+		| Favorite
+		| FavoriteV1
+		| FavoriteV2
+		| FavoriteV3
+		| FavoriteV4
+		| FavoriteV5 = record;
 	while (current.schemaVersion < SCHEMA_VERSION) {
 		const step = MIGRATIONS[current.schemaVersion];
 		if (!step) {

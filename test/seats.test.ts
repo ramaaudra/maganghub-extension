@@ -87,7 +87,9 @@ describe("snapshotSeats", () => {
 
 describe("liveSeats", () => {
 	it("reads the parsed numbers straight through", () => {
-		const seats = liveSeats(live({ status: "open", kuota: 50, pelamar: 12 }));
+		const seats = liveSeats(
+			live({ status: "belum_penuh", kuota: 50, pelamar: 12 }),
+		);
 		expect(seats).toMatchObject({
 			source: "live",
 			kuota: 50,
@@ -97,7 +99,7 @@ describe("liveSeats", () => {
 	});
 
 	it("reports a negative remaining when over-subscribed", () => {
-		const seats = liveSeats(live({ status: "closed", kuota: 5, pelamar: 8 }));
+		const seats = liveSeats(live({ status: "penuh", kuota: 5, pelamar: 8 }));
 		expect(seats.remaining).toBe(-3);
 	});
 });
@@ -108,7 +110,7 @@ describe("favoriteSeats", () => {
 			favorite({
 				savedSnapshot: snapshot({ kuota: "Kuota: 5", pelamar: "Pelamar: 0" }),
 				liveStatus: live({
-					status: "open",
+					status: "belum_penuh",
 					kuota: 5,
 					pelamar: 3,
 					lastChecked: "2026-07-28T00:00:00.000Z",
@@ -195,9 +197,8 @@ describe("seatPressure", () => {
 		);
 	});
 
-	it("is tight at the same 80% threshold the refresh parser uses", () => {
-		// A card must never read calm grey while its Status Lowongan chip says
-		// Mengisi — both sides share FILLING_THRESHOLD.
+	it("is tight at the same near-full threshold used for visual emphasis", () => {
+		// This is a seat-line emphasis threshold, not a separate quota status.
 		expect(seatPressure(liveSeats(live({ kuota: 10, pelamar: 8 })))).toBe(
 			"tight",
 		);
@@ -207,14 +208,20 @@ describe("seatPressure", () => {
 	});
 
 	it("is full at zero or negative remaining", () => {
-		expect(seatPressure(liveSeats(live({ kuota: 5, pelamar: 5 })))).toBe("full");
-		expect(seatPressure(liveSeats(live({ kuota: 5, pelamar: 6 })))).toBe("full");
+		expect(seatPressure(liveSeats(live({ kuota: 5, pelamar: 5 })))).toBe(
+			"full",
+		);
+		expect(seatPressure(liveSeats(live({ kuota: 5, pelamar: 6 })))).toBe(
+			"full",
+		);
 	});
 
 	it("is none when the reading cannot support a judgement", () => {
 		expect(seatPressure(liveSeats(live()))).toBe("none");
 		expect(seatPressure(liveSeats(live({ kuota: 5 })))).toBe("none");
 		// Kuota 0 is not a real listing shape — never divide into it.
-		expect(seatPressure(liveSeats(live({ kuota: 0, pelamar: 0 })))).toBe("none");
+		expect(seatPressure(liveSeats(live({ kuota: 0, pelamar: 0 })))).toBe(
+			"none",
+		);
 	});
 });

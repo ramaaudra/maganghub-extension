@@ -289,16 +289,16 @@ describe("summarizeStages", () => {
 		expect(s.aktif + s.interview + s.diterima + s.ditolak).toBe(group.length);
 	});
 
-	it("ignores Status Lowongan — a closed listing the user never applied to is not 'ditolak'", () => {
+	it("ignores Status Kuota — a full listing the user never applied to is not 'ditolak'", () => {
 		const group = [
-			// closed, no stage → aktif, not ditolak.
+			// full, no stage → aktif, not ditolak.
 			fav({ uuid: U.a, organizer: "PT", stage: undefined }),
-			// closed + dilamar → still aktif (dilamar bucket).
+			// full + dilamar → still aktif (dilamar bucket).
 			fav({ uuid: U.b, organizer: "PT", stage: "dilamar" }),
 		];
-		// Force closed liveStatus to prove it does not feed the summary.
-		group[0].liveStatus.status = "closed";
-		group[1].liveStatus.status = "closed";
+		// Force full liveStatus to prove it does not feed the summary.
+		group[0].liveStatus.status = "penuh";
+		group[1].liveStatus.status = "penuh";
 
 		expect(summarizeStages(group)).toEqual({
 			aktif: 2,

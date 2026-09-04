@@ -1,5 +1,7 @@
 # Refresh parser signals & the Pelamar question (resolved)
 
+> Historical note: ADR-0013 supersedes this ADR's open/filling/closed status taxonomy. The DOM anchors and the conclusion that Pelamar is available remain useful; current code derives Status Kuota only from Kuota and Pelamar.
+
 Refreshing a Favorite's Status Lowongan fetches the public detail-page HTML and parses it (ADR-0003) inside an MV3 offscreen document (ADR-0005). This ADR records the concrete DOM signals the parser keys off, confirmed against the live MagangHub detail page via camofox (docs/agents/camofox-browser.md), and resolves the open question from issue #1 / #5: **whether Pelamar is obtainable on the detail page**, which determines whether `Filling` is reliable or merely best-effort.
 
 ## Confirmed detail-page structure (recorded via camofox)

@@ -227,7 +227,7 @@ describe("favorites storage", () => {
 		await setFavorite(fav);
 
 		const live: LiveStatus = {
-			status: "open",
+			status: "belum_penuh",
 			kuota: 50,
 			pelamar: 12,
 			batch: "Batch 1 · 2026",
@@ -338,13 +338,13 @@ describe("archive / unarchive", () => {
 			...fav,
 			archivedAt: "2026-02-03T00:00:00Z",
 			liveStatus: {
-				status: "open",
+				status: "belum_penuh",
 				kuota: 5,
 				pelamar: 4,
 				lastChecked: "2026-01-05T00:00:00Z",
 				previousSample: {
 					at: "2026-01-01T00:00:00Z",
-					status: "open",
+					status: "belum_penuh",
 					kuota: 5,
 					pelamar: 2,
 				},

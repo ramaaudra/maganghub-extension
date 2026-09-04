@@ -1,6 +1,6 @@
-# Refresh fetches the public detail-page HTML and parses it
+# Refresh fetches the public detail-page HTML and parses quota data
 
-Refreshing a Favorite's Status Lowongan is done by fetching the Lowongan's public detail-page URL (no auth, no credentials) and parsing the server-rendered HTML for Kuota, Batch, and open/closed signals — not by calling a JSON API.
+Refreshing a Favorite's Status Kuota is done by fetching the Lowongan's public detail-page URL (no auth, no credentials) and parsing the server-rendered HTML for Kuota, Pelamar, and Batch — not by inferring an open/closed state from the page's apply CTA or HTTP response.
 
 A future engineer will reasonably ask "why not just call the API?" — because there is no public JSON API for vacancy list/detail. The vacancy list is served as Next.js App-Router RSC (server-rendered) markup, not a clean GET endpoint; the only `api.kemnaker.go.id/maganghub/vacancy/v2/vacancies` route is a POST that creates vacancies (organizer-side, requires `batch_id`, `position_name`, `quantity_needed`, etc.). The public filter endpoints (`onboarding/v2/cities`, `vacancy/v2/study-programs`) only populate filter dropdowns.
 

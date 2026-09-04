@@ -35,13 +35,13 @@ function makeFavorite(
 
 describe("countsAsUnseenChange / countUnseenChanges", () => {
 	const changed = makeFavorite("u1", {
-		status: "open",
+		status: "belum_penuh",
 		kuota: 5,
 		pelamar: 4,
 		lastChecked: "2026-01-05T12:00:00Z",
 		previousSample: {
 			at: "2026-01-01T00:00:00Z",
-			status: "open",
+			status: "belum_penuh",
 			kuota: 5,
 			pelamar: 2,
 		},
@@ -49,7 +49,7 @@ describe("countsAsUnseenChange / countUnseenChanges", () => {
 		changedAt: "2026-01-05T12:00:00Z",
 	});
 	const unchanged = makeFavorite("u2", {
-		status: "open",
+		status: "belum_penuh",
 		kuota: 5,
 		pelamar: 2,
 		lastChecked: "2026-01-05T12:00:00Z",
@@ -85,13 +85,13 @@ describe("countsAsUnseenChange / countUnseenChanges", () => {
 		// lastChecked advances to T3 but changedAt stays T1, so the still-present
 		// change notice must NOT re-count as unseen.
 		const reconfirmed = makeFavorite("u9", {
-			status: "open",
+			status: "belum_penuh",
 			kuota: 5,
 			pelamar: 4,
 			lastChecked: "2026-01-08T00:00:00Z",
 			previousSample: {
 				at: "2026-01-01T00:00:00Z",
-				status: "open",
+				status: "belum_penuh",
 				kuota: 5,
 				pelamar: 2,
 			},
@@ -126,13 +126,13 @@ describe("popup last-opened storage + toolbar badge", () => {
 		};
 
 		const changed = makeFavorite("u1", {
-			status: "open",
+			status: "belum_penuh",
 			kuota: 5,
 			pelamar: 4,
 			lastChecked: "2026-01-05T12:00:00Z",
 			previousSample: {
 				at: "2026-01-01T00:00:00Z",
-				status: "open",
+				status: "belum_penuh",
 				kuota: 5,
 				pelamar: 2,
 			},
@@ -149,13 +149,13 @@ describe("popup last-opened storage + toolbar badge", () => {
 
 	it("does not count an archived Favorite even when it has an unseen change", () => {
 		const activeChanged = makeFavorite("u1", {
-			status: "open",
+			status: "belum_penuh",
 			kuota: 5,
 			pelamar: 4,
 			lastChecked: "2026-01-05T12:00:00Z",
 			previousSample: {
 				at: "2026-01-01T00:00:00Z",
-				status: "open",
+				status: "belum_penuh",
 				kuota: 5,
 				pelamar: 2,
 			},

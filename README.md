@@ -38,7 +38,7 @@ Ekstensi ini adalah alternatif aman **by construction**, bukan sekadar janji.
 - **Catatan**: catatan teks bebas per Favorite (alasan menyimpan); juga tampil di tooltip bintang
 - **Status Lamar**: pelacak tahap manual dengan tahap Belum dilamar → Dilamar → Interview → Diterima / Ditolak  
   Selalu diisi pengguna; ekstensi tidak pernah mendeteksi status lamaran secara otomatis. Bisa diedit lewat kartu tahap di halaman detail dan chip di kartu daftar
-- **Status Lowongan**: refresh Kuota/Pelamar live dari halaman detail publik, untuk satu Favorite atau sekaligus semua (dibatasi throttle, lewat offscreen document). Perubahan ditandai badge di popup
+- **Status Kuota**: refresh Kuota/Pelamar live dari halaman detail publik, untuk satu Favorite atau sekaligus semua (dibatasi throttle, lewat offscreen document). Kuota penuh tetap bisa didaftarkan selama jendela pendaftaran Kemnaker terbuka. Perubahan ditandai badge di popup
 - **Warna urgensi** pada kartu daftar berdasarkan sisa kursi / tekanan Kuota
 - **Daftar Favorite di popup**: cari, urutkan (termasuk Status Lamar lalu sisa kursi), kelompokkan per Penyelenggara (bisa dilipat)
 - **Ekspor / impor** Favorite sebagai JSON, dengan migrasi skema
@@ -129,7 +129,7 @@ Ini bisa diverifikasi dari prompt permission saat instalasi:
 | Permission | Kegunaan |
 |---|---|
 | `storage` | Menyimpan Favorite di `chrome.storage.local` |
-| `offscreen` | Mem-parse HTML detail publik untuk refresh Status Lowongan |
+| `offscreen` | Mem-parse HTML detail publik untuk refresh Status Kuota |
 | `https://maganghub.kemnaker.go.id/*` | Membaca halaman daftar/detail publik yang memang kamu buka |
 
 **Yang sengaja tidak diminta:** `cookies`, `identity`, `<all_urls>`, backend, analytics.

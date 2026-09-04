@@ -17,8 +17,8 @@ const readFixture = (name: string) =>
 
 const listHtml = () => readFixture("lowongan-list.html");
 const openHtml = () => readFixture("lowongan-detail-open.html");
-// Same structure as open, but Pelamar 49 / Kuota 50 → remaining 1
-// (open is Pelamar 12 / Kuota 50 → remaining 38).
+// Same structure as the baseline, but Pelamar 49 / Kuota 50 → remaining 1
+// (baseline is Pelamar 12 / Kuota 50 → remaining 38).
 const almostFullHtml = () =>
 	readFixture("lowongan-detail-open-almost-full.html");
 
@@ -91,8 +91,10 @@ test("two refreshes with differing numbers show a change notice", async ({
 	await stageFixtures(popup, {
 		[UUID_OPEN]: { status: 200, body: openHtml() },
 	});
-	await card.getByRole("button", { name: "Segarkan Status Lowongan" }).click();
-	await expect(card.getByText("Buka", { exact: true })).toBeVisible();
+	await card.getByRole("button", { name: "Segarkan Status Kuota" }).click();
+	await expect(
+		card.getByText("Kuota belum penuh", { exact: true }),
+	).toBeVisible();
 	// No previous sample yet → no change notice.
 	await expect(card.locator("[data-change-notice]")).toHaveCount(0);
 
@@ -100,7 +102,7 @@ test("two refreshes with differing numbers show a change notice", async ({
 	await stageFixtures(popup, {
 		[UUID_OPEN]: { status: 200, body: almostFullHtml() },
 	});
-	await card.getByRole("button", { name: "Segarkan Status Lowongan" }).click();
+	await card.getByRole("button", { name: "Segarkan Status Kuota" }).click();
 	await expect(card.locator("[data-change-notice]")).toHaveText(
 		"sisa 1 kursi, tadinya 38",
 	);
@@ -125,8 +127,10 @@ test("toolbar badge appears after a change and clears on popup open", async ({
 	await stageFixtures(popup1, {
 		[UUID_OPEN]: { status: 200, body: openHtml() },
 	});
-	await card1.getByRole("button", { name: "Segarkan Status Lowongan" }).click();
-	await expect(card1.getByText("Buka", { exact: true })).toBeVisible();
+	await card1.getByRole("button", { name: "Segarkan Status Kuota" }).click();
+	await expect(
+		card1.getByText("Kuota belum penuh", { exact: true }),
+	).toBeVisible();
 	// Badge is cleared while the popup is open.
 	await expect.poll(async () => getBadgeText(worker)).toBe("");
 	await popup1.close();

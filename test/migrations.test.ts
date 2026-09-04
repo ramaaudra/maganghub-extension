@@ -4,6 +4,7 @@ import type {
 	FavoriteV2,
 	FavoriteV3,
 	FavoriteV4,
+	FavoriteV5,
 } from "@/lib/migrations";
 import { migrateFavorite } from "@/lib/migrations";
 import type { Favorite } from "@/lib/types";
@@ -82,7 +83,7 @@ describe("migrateFavorite", () => {
 			catatan: "sudah dicatat",
 			statusLamar: "dilamar",
 			liveStatus: {
-				status: "open",
+				status: "belum_penuh",
 				kuota: 5,
 				pelamar: 1,
 				batch: "Batch 1 · 2026",
@@ -110,7 +111,7 @@ describe("migrateFavorite", () => {
 			},
 			catatan: "",
 			statusLamar: "applied",
-			liveStatus: initialLiveStatus(),
+			liveStatus: { status: "unknown", lastChecked: null },
 			savedAt: "2026-01-01T00:00:00Z",
 		};
 		const notApplied: FavoriteV3 = {
@@ -147,7 +148,7 @@ describe("migrateFavorite", () => {
 			},
 			catatan: "",
 			statusLamar: "diterima",
-			liveStatus: initialLiveStatus(),
+			liveStatus: { status: "unknown", lastChecked: null },
 			savedAt: "2026-01-01T00:00:00Z",
 			archivedAt: null,
 		};
@@ -169,7 +170,7 @@ describe("migrateFavorite", () => {
 			},
 			catatan: "",
 			statusLamar: "dilamar",
-			liveStatus: initialLiveStatus(),
+			liveStatus: { status: "unknown", lastChecked: null },
 			savedAt: "2026-01-01T00:00:00Z",
 		};
 
@@ -182,5 +183,43 @@ describe("migrateFavorite", () => {
 		expect(migrated.statusLamar).toBe("dilamar");
 		expect(migrated.savedSnapshot).toEqual(v4.savedSnapshot);
 		expect(migrated.savedAt).toBe(v4.savedAt);
+	});
+
+	it("migrates v5 live status to quota status without treating full as closed", () => {
+		const v5: FavoriteV5 = {
+			schemaVersion: 5,
+			uuid: "b5c6d7e8-f9a0-4b1c-2d3e-4f5a6b7c8d9e",
+			detailUrl:
+				"/magang-nasional/lowongan/x-b5c6d7e8-f9a0-4b1c-2d3e-4f5a6b7c8d9e",
+			savedSnapshot: {
+				title: "Magang Kuota Penuh",
+				organizer: "PT Contoh",
+				location: "Jakarta",
+				capturedAt: "2026-01-01T00:00:00Z",
+			},
+			catatan: "",
+			statusLamar: undefined,
+			liveStatus: {
+				status: "closed",
+				kuota: 50,
+				pelamar: 150,
+				lastChecked: "2026-01-05T00:00:00Z",
+				previousSample: {
+					at: "2026-01-01T00:00:00Z",
+					status: "open",
+					kuota: 50,
+					pelamar: 12,
+				},
+			},
+			savedAt: "2026-01-01T00:00:00Z",
+			archivedAt: null,
+		};
+
+		const migrated = migrateFavorite(v5);
+
+		expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+		expect(migrated.liveStatus.status).toBe("penuh");
+		expect(migrated.liveStatus.previousSample?.status).toBe("belum_penuh");
+		expect(migrated.liveStatus.previousSample?.pelamar).toBe(12);
 	});
 });

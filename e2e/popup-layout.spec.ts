@@ -103,7 +103,7 @@ test("keeps popup text and action links inside the shell during refresh", async 
 	});
 
 	const refresh = card.getByRole("button", {
-		name: "Segarkan Status Lowongan",
+		name: "Segarkan Status Kuota",
 	});
 	// Use a programmatic activation for the CLS assertion. A real pointer click
 	// marks subsequent layout-shift entries as `hadRecentInput`, which correctly
@@ -122,8 +122,8 @@ test("keeps popup text and action links inside the shell during refresh", async 
 	expect(during.x + during.width).toBe(before.link.right);
 
 	await popup.waitForTimeout(300);
-	const cls = await popup.evaluate(
-		() => (window as Window & { __popupCls?: number }).__popupCls ?? 0,
-	);
-	expect(cls).toBe(0);
+	const report = await popup.evaluate(() => {
+		return (window as Window & { __popupCls?: number }).__popupCls ?? 0;
+	});
+	expect(report).toBe(0);
 });

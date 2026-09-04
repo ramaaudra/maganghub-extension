@@ -22,7 +22,7 @@ import { STAGE_LABEL, STAGE_SELECT_OPTIONS } from "@/lib/stage";
 import { setCatatan, setStatusLamar } from "@/lib/storage";
 import { terakhirDicek } from "@/lib/time";
 import { titleCase } from "@/lib/titlecase";
-import type { Favorite, StatusLamar, StatusLowongan } from "@/lib/types";
+import type { Favorite, StatusKuota, StatusLamar } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 let {
@@ -193,8 +193,8 @@ const seats = $derived(favoriteSeats(favorite));
 const seatsText = $derived(seatLine(seats));
 const pressure = $derived(seatPressure(seats));
 
-/** Weight follows pressure: a Lowongan about to close reads darker than one
- *  with room. Colour is not the carrier — the Status Lowongan chip owns that —
+/** Weight follows pressure: a Lowongan near its quota reads darker than one
+ *  with room. Colour is not the carrier — the Status Kuota chip owns that —
  *  so this stays inside the ink palette. */
 const SEAT_CLASS: Record<string, string> = {
 	none: "text-muted-foreground",
@@ -207,20 +207,18 @@ const SEAT_CLASS: Record<string, string> = {
  *  disclosure, but *that there is one* belongs on the collapsed row. */
 const hasCatatan = $derived(favorite.catatan.trim().length > 0);
 
-const STATUS_LABEL: Record<StatusLowongan, string> = {
-	open: "Buka",
-	filling: "Mengisi",
-	closed: "Tutup",
-	unknown: "Tidak diketahui",
+const STATUS_LABEL: Record<StatusKuota, string> = {
+	belum_penuh: "Kuota belum penuh",
+	penuh: "Kuota penuh",
+	unknown: "Kuota belum diketahui",
 };
 
 /** Sera Badge is an uppercase text label with no fill; colour carries the
  *  semantic. A tiny leading dot makes the colour legible at 10px without
  *  reintroducing the pill shape the preset deliberately removes. */
-const STATUS_CLASS: Record<StatusLowongan, string> = {
-	open: "text-emerald-600",
-	filling: "text-amber-600",
-	closed: "text-rose-600",
+const STATUS_CLASS: Record<StatusKuota, string> = {
+	belum_penuh: "text-emerald-600",
+	penuh: "text-amber-600",
 	unknown: "text-muted-foreground",
 };
 
@@ -332,22 +330,22 @@ const actionClass =
     </p>
 
     <!-- Line 3: the decision line — seats, status, disclosure. Provenance is
-         NOT here: the Status Lowongan chip already distinguishes a checked
+         NOT here: the Status Kuota chip already distinguishes a checked
          reading from an unchecked one, and the expanded tray states it in
          words. Repeating "saat disimpan" beside a chip reading "Belum dicek"
          said the same thing twice and wrapped the seat count onto a second
          line, which made cards uneven in height. -->
     <div
       class={cn(
-        'mt-1.5 flex items-center gap-2 text-xs',
+        'mt-1.5 flex min-w-0 items-center gap-2 text-xs',
         signalFlash && 'mh-signal-flash',
       )}
       data-signal-strip
     >
       {#if seatsText}
-        <span class={cn('truncate whitespace-nowrap tabular-nums', SEAT_CLASS[pressure])}>{seatsText}</span>
+        <span class={cn('min-w-0 flex-1 truncate whitespace-nowrap tabular-nums', SEAT_CLASS[pressure])}>{seatsText}</span>
       {:else}
-        <span class="truncate text-muted-foreground">Kuota belum diketahui</span>
+        <span class="min-w-0 flex-1 truncate text-muted-foreground">Kuota belum diketahui</span>
       {/if}
 
       <span class="ml-auto flex shrink-0 items-center gap-1.5">
@@ -363,16 +361,20 @@ const actionClass =
         {#if hasBeenChecked}
           <Badge
             class={cn(
+              'min-w-[8.5rem] justify-center',
               refreshFailed ? 'text-rose-600' : STATUS_CLASS[live.status],
               signalFlash && 'mh-signal-flash',
             )}
-            title="Status Lowongan: {refreshFailed ? 'Refresh gagal' : STATUS_LABEL[live.status]}"
+            title="Status Kuota: {refreshFailed ? 'Refresh gagal' : STATUS_LABEL[live.status]}"
           >
             <span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span>
             {refreshFailed ? 'Refresh gagal' : STATUS_LABEL[live.status]}
           </Badge>
         {:else}
-          <Badge class="text-muted-foreground" title="Status Lowongan: Belum dicek">
+          <Badge
+            class="min-w-[8.5rem] justify-center text-muted-foreground"
+            title="Status Kuota: Belum dicek"
+          >
             <span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span>
             Belum dicek
           </Badge>
@@ -460,10 +462,10 @@ const actionClass =
         {#if view === 'aktif'}
           <button
             type="button"
-            class={actionClass}
+            class={cn(actionClass, 'min-w-[8rem]')}
             onclick={onrefresh}
             disabled={refreshing}
-            aria-label="Segarkan Status Lowongan"
+            aria-label="Segarkan Status Kuota"
             aria-busy={refreshing}
           >
             {#if refreshing}
@@ -558,7 +560,10 @@ const actionClass =
            them, in the quietest voice on the card. On a cold Favorite this is
            where "saat disimpan" is stated in full — the resting row leaves it
            to the "Belum dicek" chip rather than repeating it in two places. -->
-      <p class="text-xs text-muted-foreground" data-provenance>
+      <!-- Reserve the cold reading's two-line height. After a successful
+           refresh the provenance becomes shorter; keeping this box stable
+           prevents the expanded card and the popup footer from jumping. -->
+      <p class="min-h-9 text-xs text-muted-foreground" data-provenance>
         {#if hasBeenChecked && lastCheckedLabel}
           {lastCheckedLabel}{#if live.batch}<span aria-hidden="true">{' · '}</span>{live.batch}{/if}
         {:else if !seats.empty}

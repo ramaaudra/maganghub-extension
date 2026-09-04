@@ -60,7 +60,7 @@ async function ensureOffscreen(): Promise<void> {
 			url: OFFSCREEN_URL,
 			reasons: ["DOM_PARSER"],
 			justification:
-				"Fetch and parse MagangHub Lowongan detail pages to refresh a Favorite's live Status Lowongan (ADR-0005).",
+				"Fetch and parse MagangHub Lowongan detail pages to refresh a Favorite's Status Kuota (ADR-0005).",
 		});
 	})();
 	try {

@@ -47,10 +47,10 @@ For complex JS, write the expression to a file and POST it via `--data-binary` w
 
 - List cards: `.mh-lowongan-card`, each wrapped in `<a class="group block h-full" href="/magang-nasional/lowongan/<slug>-<uuid>">`.
 - Stable id = the UUID in the detail href: `[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`.
-- Detail page fields: title (`h1`), Penyelenggara, Kuota, Batch ("Batch 1 · 2026"), Tunjangan, "Lamar Sekarang" button. **No calendar deadline** (closes by Kuota + Batch).
+- Detail page fields: title (`h1`), Penyelenggara, Kuota, Batch ("Batch 1 · 2026"), Tunjangan, "Lamar Sekarang" button. **No per-listing open/closed deadline**: registration follows the Kemnaker window, and a full Kuota can still be registered.
 - Stack: Next.js App Router (RSC), Tailwind, shadcn-style.
 
-**2. Record / refresh HTML fixtures for e2e.** The automated e2e tests run against served fixture HTML, not the live site (deterministic, no Cloudflare, no data drift). To produce a fixture: navigate to the page, wait for render, then `evaluate` `document.documentElement.outerHTML` and save it into the test fixtures directory (redact any personal data). Record one list fixture and detail fixtures in the states the tests need (open / closed / kuota-full). Re-record when MagangHub markup changes or to capture new states.
+**2. Record / refresh HTML fixtures for e2e.** The automated e2e tests run against served fixture HTML, not the live site (deterministic, no Cloudflare, no data drift). To produce a fixture: navigate to the page, wait for render, then `evaluate` `document.documentElement.outerHTML` and save it into the test fixtures directory (redact any personal data). Record one list fixture and detail fixtures in the states the tests need (quota available / missing quota data / quota full). The presence of "Lamar Sekarang" is not a Status Kuota signal. Re-record when MagangHub markup changes or to capture new states.
 
 ## Boundary — what camofox is NOT for
 

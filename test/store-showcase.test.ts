@@ -28,7 +28,7 @@ describe("Chrome Web Store showcase", () => {
 		expect(html).toContain('class="stage-card');
 		expect(html).toContain("SakuMagang");
 		expect(html).toContain("Status Lamar");
-		expect(html).toContain("Status Lowongan");
+		expect(html).toContain("Status Kuota");
 		expect(html).toContain("Buka di MagangHub");
 		expect(html).toContain("Created by @ramaaudra");
 		expect(html).toContain('href="https://ramaaudra.vercel.app"');

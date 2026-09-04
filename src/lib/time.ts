@@ -1,5 +1,5 @@
 /**
- * Indonesian relative-time helpers for the popup's Status Lowongan display
+ * Indonesian relative-time helpers for the popup's Status Kuota display
  * ("terakhir dicek X lalu"). Pure and unit-testable.
  */
 

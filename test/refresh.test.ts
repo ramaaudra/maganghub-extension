@@ -32,7 +32,7 @@ describe("toLiveStatus", () => {
 			ok: true,
 			uuid: "u1",
 			parsed: {
-				status: "open",
+				status: "belum_penuh",
 				kuota: 50,
 				pelamar: 12,
 				batch: "Batch 1 · 2026",
@@ -40,7 +40,7 @@ describe("toLiveStatus", () => {
 			},
 		};
 		expect(toLiveStatus(response, undefined, now)).toEqual({
-			status: "open",
+			status: "belum_penuh",
 			kuota: 50,
 			pelamar: 12,
 			batch: "Batch 1 · 2026",
@@ -49,7 +49,7 @@ describe("toLiveStatus", () => {
 		});
 	});
 
-	it("maps a 404 to closed with no lastError", () => {
+	it("maps a 404 to an unknown quota status with lastError", () => {
 		const response: OffscreenResponse = {
 			ok: false,
 			uuid: "u2",
@@ -57,8 +57,9 @@ describe("toLiveStatus", () => {
 			httpStatus: 404,
 		};
 		expect(toLiveStatus(response, undefined, now)).toEqual({
-			status: "closed",
+			status: "unknown",
 			lastChecked: now,
+			lastError: "HTTP 404",
 			kuota: undefined,
 			pelamar: undefined,
 			batch: undefined,
@@ -68,7 +69,7 @@ describe("toLiveStatus", () => {
 
 	it("maps a non-gone HTTP failure to unknown and keeps the last-known numbers", () => {
 		const previous: LiveStatus = {
-			status: "open",
+			status: "belum_penuh",
 			kuota: 50,
 			pelamar: 12,
 			batch: "Batch 1 · 2026",
@@ -102,7 +103,7 @@ describe("toLiveStatus", () => {
 
 	it("keeps the previous successful sample when kuota/pelamar/status change (B1)", () => {
 		const previous: LiveStatus = {
-			status: "open",
+			status: "belum_penuh",
 			kuota: 5,
 			pelamar: 2,
 			lastChecked: "2026-01-01T00:00:00Z",
@@ -110,12 +111,12 @@ describe("toLiveStatus", () => {
 		const response: OffscreenResponse = {
 			ok: true,
 			uuid: "u5",
-			parsed: { status: "open", kuota: 5, pelamar: 4 },
+			parsed: { status: "belum_penuh", kuota: 5, pelamar: 4 },
 		};
 		const live = toLiveStatus(response, previous, now);
 		expect(live.previousSample).toEqual({
 			at: "2026-01-01T00:00:00Z",
-			status: "open",
+			status: "belum_penuh",
 			kuota: 5,
 			pelamar: 2,
 		});
@@ -130,7 +131,7 @@ describe("toLiveStatus", () => {
 		const response: OffscreenResponse = {
 			ok: true,
 			uuid: "u6",
-			parsed: { status: "open", kuota: 5, pelamar: 2 },
+			parsed: { status: "belum_penuh", kuota: 5, pelamar: 2 },
 		};
 		expect(
 			toLiveStatus(response, previous, now).previousSample,
@@ -139,13 +140,13 @@ describe("toLiveStatus", () => {
 
 	it("does not treat a failed refresh as a change (keeps prior previousSample)", () => {
 		const previous: LiveStatus = {
-			status: "open",
+			status: "belum_penuh",
 			kuota: 5,
 			pelamar: 2,
 			lastChecked: "2026-01-01T00:00:00Z",
 			previousSample: {
 				at: "2025-12-01T00:00:00Z",
-				status: "open",
+				status: "belum_penuh",
 				kuota: 5,
 				pelamar: 1,
 			},
@@ -164,13 +165,13 @@ describe("toLiveStatus", () => {
 
 	it("preserves previousSample across an unchanged successful refresh", () => {
 		const previous: LiveStatus = {
-			status: "open",
+			status: "belum_penuh",
 			kuota: 5,
 			pelamar: 4,
 			lastChecked: "2026-01-02T00:00:00Z",
 			previousSample: {
 				at: "2026-01-01T00:00:00Z",
-				status: "open",
+				status: "belum_penuh",
 				kuota: 5,
 				pelamar: 2,
 			},
@@ -178,7 +179,7 @@ describe("toLiveStatus", () => {
 		const response: OffscreenResponse = {
 			ok: true,
 			uuid: "u8",
-			parsed: { status: "open", kuota: 5, pelamar: 4 },
+			parsed: { status: "belum_penuh", kuota: 5, pelamar: 4 },
 		};
 		const live = toLiveStatus(response, previous, now);
 		expect(live.previousSample).toEqual(previous.previousSample);
@@ -186,7 +187,7 @@ describe("toLiveStatus", () => {
 
 	it("freezes changedAt on a real change and keeps it frozen across a no-change refresh (#17)", () => {
 		const before: LiveStatus = {
-			status: "open",
+			status: "belum_penuh",
 			kuota: 5,
 			pelamar: 2,
 			lastChecked: "2026-01-01T00:00:00Z",
@@ -194,7 +195,7 @@ describe("toLiveStatus", () => {
 		const changeResponse: OffscreenResponse = {
 			ok: true,
 			uuid: "c1",
-			parsed: { status: "open", kuota: 5, pelamar: 4 },
+			parsed: { status: "belum_penuh", kuota: 5, pelamar: 4 },
 		};
 		const atChange = toLiveStatus(
 			changeResponse,
@@ -211,7 +212,7 @@ describe("toLiveStatus", () => {
 		const noChangeResponse: OffscreenResponse = {
 			ok: true,
 			uuid: "c1",
-			parsed: { status: "open", kuota: 5, pelamar: 4 },
+			parsed: { status: "belum_penuh", kuota: 5, pelamar: 4 },
 		};
 		const afterNoChange = toLiveStatus(
 			noChangeResponse,

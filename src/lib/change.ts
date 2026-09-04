@@ -1,5 +1,5 @@
 /**
- * Change detection for a Favorite's Status Lowongan between refreshes (B1 / D5).
+ * Change detection for a Favorite's Status Kuota between refreshes (B1 / D5).
  *
  * Keep one previous successful sample on `LiveStatus.previousSample` and, when
  * the next successful refresh differs in kuota / pelamar / status, surface a
@@ -8,7 +8,7 @@
  * signal, not a trend (no history array, no velocity).
  */
 
-import type { LiveStatus, LiveStatusSample, StatusLowongan } from "./types";
+import type { LiveStatus, LiveStatusSample, StatusKuota } from "./types";
 
 /** A liveStatus that can become a previousSample: successful refresh only. */
 export function isSuccessfulSample(
@@ -60,11 +60,9 @@ function remaining(
 }
 
 function isFull(
-	status: StatusLowongan,
 	kuota: number | undefined,
 	pelamar: number | undefined,
 ): boolean {
-	if (status === "closed") return true;
 	const left = remaining(kuota, pelamar);
 	return left !== undefined && left <= 0;
 }
@@ -76,7 +74,7 @@ function isFull(
  *
  * Phrasing (D5 / issue #17):
  *   - seat drop still open:  "sisa N kursi, tadinya M"
- *   - newly full / closed:   "penuh sejak terakhir dicek"
+ *   - newly full:             "penuh sejak terakhir dicek"
  *   - other status/number shifts fall back to a status/number "tadinya X, sekarang Y"
  */
 export function formatChangeNotice(live: LiveStatus): string | null {
@@ -85,8 +83,8 @@ export function formatChangeNotice(live: LiveStatus): string | null {
 	if (!isSuccessfulSample(live)) return null;
 	if (!hasMeaningfulChange(live, prev)) return null;
 
-	const nowFull = isFull(live.status, live.kuota, live.pelamar);
-	const wasFull = isFull(prev.status, prev.kuota, prev.pelamar);
+	const nowFull = isFull(live.kuota, live.pelamar);
+	const wasFull = isFull(prev.kuota, prev.pelamar);
 	if (nowFull && !wasFull) {
 		return "penuh sejak terakhir dicek";
 	}
@@ -111,14 +109,13 @@ export function formatChangeNotice(live: LiveStatus): string | null {
 	return `tadinya ${before}, sekarang ${after}`;
 }
 
-const STATUS_WORD: Record<Exclude<StatusLowongan, "unknown">, string> = {
-	open: "buka",
-	filling: "mengisi",
-	closed: "tutup",
+const STATUS_WORD: Record<Exclude<StatusKuota, "unknown">, string> = {
+	belum_penuh: "kuota belum penuh",
+	penuh: "kuota penuh",
 };
 
 function describeSample(
-	status: StatusLowongan,
+	status: StatusKuota,
 	kuota: number | undefined,
 	pelamar: number | undefined,
 ): string {

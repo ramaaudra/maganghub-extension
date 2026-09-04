@@ -1,14 +1,9 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { expect, test } from "./fixtures";
-import {
-	expandCard,
-	favoriteCard,
-	openCard,
-	openPopup,
-} from "./pages/popup";
+import { expandCard, favoriteCard, openCard, openPopup } from "./pages/popup";
 
-// Issue #5 e2e: refresh Status Lowongan from fixture detail HTML.
+// Issue #5 e2e: refresh Status Kuota from fixture detail HTML.
 //
 // Three favorites are starred on the list fixture, then "Segarkan semua" asks
 // the background to refresh each. The background spins up the offscreen
@@ -21,11 +16,11 @@ import {
 // chrome.storage, unlike the offscreen) fronts the seam and passes the staged
 // body in the fetchAndParse message. Production never sets that key. This
 // exercises the full popup → background → offscreen → parse → liveStatus →
-// popup pipeline deterministically against fixture HTML for the three states:
-//   - open UUID       → lowongan-detail-open.html        (200) → Buka
-//   - closed UUID     → lowongan-detail-closed.html      (200, no apply btn) → Tutup
-//   - kuota-full UUID → lowongan-detail-kuota-full.html  (200, no apply btn) → Tutup
-// A dedicated test below also covers the HTTP 404 (listing removed) → Tutup path.
+// popup pipeline deterministically against fixture HTML for the quota states:
+//   - open UUID       → lowongan-detail-open.html        (200) → Kuota belum penuh
+//   - closed UUID     → lowongan-detail-closed.html      (200, no apply btn) → Kuota belum penuh
+//   - kuota-full UUID → lowongan-detail-kuota-full.html  (200, no apply btn) → Kuota penuh
+// A dedicated test below also covers the HTTP 404 as a refresh failure.
 
 const LIST_URL = "https://maganghub.kemnaker.go.id/magang-nasional/lowongan";
 
@@ -40,6 +35,8 @@ const listHtml = () => readFixture("lowongan-list.html");
 const openHtml = () => readFixture("lowongan-detail-open.html");
 const closedHtml = () => readFixture("lowongan-detail-closed.html");
 const kuotaFullHtml = () => readFixture("lowongan-detail-kuota-full.html");
+const missingPelamarHtml =
+	'<!doctype html><html><body><h1>Magang Data Analyst</h1><div class="flex items-center justify-between text-sm"><span class="text-muted-foreground">Kuota</span><span class="font-semibold">50 orang</span></div><span class="mh-badge">Batch 1 · 2026</span></body></html>';
 
 // `chrome` exists in the extension page context where `popup.evaluate` runs;
 // declare a minimal shape so the evaluate bodies typecheck without @types/chrome.
@@ -88,7 +85,46 @@ async function starAllCards(
 	await expect(hosts.nth(2)).toHaveAttribute("data-filled", "true");
 }
 
-test("refresh all computes Status Lowongan from fixture detail HTML (open / closed / kuota-full)", async ({
+async function expectSignalStripToFit(
+	row: import("@playwright/test").Locator,
+): Promise<void> {
+	const geometry = await row
+		.locator("[data-signal-strip]")
+		.evaluate((strip) => {
+			const badge = strip.querySelector<HTMLElement>('[data-slot="badge"]');
+			const seats = strip.querySelector<HTMLElement>(
+				":scope > span:first-child",
+			);
+			if (!badge || !seats) throw new Error("Status Kuota strip is incomplete");
+			const stripRect = strip.getBoundingClientRect();
+			const badgeRect = badge.getBoundingClientRect();
+			return {
+				stripClientWidth: strip.clientWidth,
+				stripScrollWidth: strip.scrollWidth,
+				badgeRight: badgeRect.right,
+				stripRight: stripRect.right,
+				badgeClientWidth: badge.clientWidth,
+				badgeScrollWidth: badge.scrollWidth,
+				seatsClientWidth: seats.clientWidth,
+				seatsScrollWidth: seats.scrollWidth,
+				badgeHeight: badgeRect.height,
+				stripHeight: stripRect.height,
+			};
+		});
+	expect(geometry.stripScrollWidth).toBeLessThanOrEqual(
+		geometry.stripClientWidth,
+	);
+	expect(geometry.badgeScrollWidth).toBeLessThanOrEqual(
+		geometry.badgeClientWidth,
+	);
+	expect(geometry.seatsScrollWidth).toBeLessThanOrEqual(
+		geometry.seatsClientWidth,
+	);
+	expect(geometry.badgeRight).toBeLessThanOrEqual(geometry.stripRight + 0.5);
+	expect(geometry.badgeHeight).toBeLessThanOrEqual(geometry.stripHeight);
+}
+
+test("refresh all computes Status Kuota from fixture detail HTML", async ({
 	page,
 	context,
 	extensionId,
@@ -105,11 +141,11 @@ test("refresh all computes Status Lowongan from fixture detail HTML (open / clos
 		[UUID_KUOTA_FULL]: { status: 200, body: kuotaFullHtml() },
 	});
 
-	// Before refresh: no status badges yet (never refreshed → lastChecked null).
-	// `{ exact: true }` so we don't match the per-Favorite "Buka di MagangHub"
-	// link (issue #7), which legitimately contains the word "Buka".
-	await expect(popup.getByText("Buka", { exact: true })).toHaveCount(0);
-	await expect(popup.getByText("Tutup", { exact: true })).toHaveCount(0);
+	// Before refresh: no quota result yet (never refreshed → lastChecked null).
+	await expect(
+		popup.getByText("Kuota belum penuh", { exact: true }),
+	).toHaveCount(0);
+	await expect(popup.getByText("Kuota penuh", { exact: true })).toHaveCount(0);
 
 	await popup.getByRole("button", { name: "Segarkan semua" }).click();
 
@@ -117,11 +153,22 @@ test("refresh all computes Status Lowongan from fixture detail HTML (open / clos
 	const closedRow = favoriteCard(popup, UUID_CLOSED);
 	const fullRow = favoriteCard(popup, UUID_KUOTA_FULL);
 
-	// The Status Lowongan chip is on the resting card — a refresh-all must be
+	// The Status Kuota chip is on the resting card — a refresh-all must be
 	// readable without opening anything, which is the whole point of the button.
-	await expect(openRow.getByText("Buka", { exact: true })).toBeVisible();
-	await expect(closedRow.getByText("Tutup", { exact: true })).toBeVisible();
-	await expect(fullRow.getByText("Tutup", { exact: true })).toBeVisible();
+	await expect(
+		openRow.getByText("Kuota belum penuh", { exact: true }),
+	).toBeVisible();
+	await expect(
+		closedRow.getByText("Kuota belum penuh", { exact: true }),
+	).toBeVisible();
+	await expect(fullRow.getByText("Kuota penuh", { exact: true })).toBeVisible();
+
+	// Resting-state labels stay inside the signal strip. The flex contract is
+	// min-width: 0 on seats + shrink-0 on the status group, so a full quota
+	// never pushes text outside the card or clips the badge.
+	for (const row of [openRow, closedRow, fullRow]) {
+		await expectSignalStripToFit(row);
+	}
 
 	// Live seats replace the "saat disimpan" snapshot reading on the same line.
 	await expect(openRow.locator("[data-signal-strip]")).toContainText(
@@ -139,6 +186,30 @@ test("refresh all computes Status Lowongan from fixture detail HTML (open / clos
 	}
 });
 
+test("missing Pelamar renders the unknown quota label without clipping", async ({
+	page,
+	context,
+	extensionId,
+}) => {
+	await routeList(context);
+	await page.goto(LIST_URL);
+	const firstHost = page.locator(".mh-lowongan-card .mh-favorite-host").first();
+	await firstHost.click();
+	await expect(firstHost).toHaveAttribute("data-filled", "true");
+
+	const popup = await openPopup(context, extensionId);
+	await stageFixtures(popup, {
+		[UUID_OPEN]: { status: 200, body: missingPelamarHtml },
+	});
+
+	const card = await openCard(popup, UUID_OPEN);
+	await card.getByRole("button", { name: "Segarkan Status Kuota" }).click();
+	await expect(
+		card.getByText("Kuota belum diketahui", { exact: true }),
+	).toBeVisible();
+	await expectSignalStripToFit(card);
+});
+
 test("refresh feedback renders a Hugeicons loading icon", async ({
 	page,
 	context,
@@ -149,9 +220,11 @@ test("refresh feedback renders a Hugeicons loading icon", async ({
 
 	const popup = await openPopup(context, extensionId);
 	await popup.evaluate(() => {
-		const runtime = (globalThis as unknown as {
-			browser: { runtime: { sendMessage: () => Promise<never> } };
-		}).browser.runtime;
+		const runtime = (
+			globalThis as unknown as {
+				browser: { runtime: { sendMessage: () => Promise<never> } };
+			}
+		).browser.runtime;
 		runtime.sendMessage = () => new Promise<never>(() => {});
 	});
 
@@ -168,7 +241,7 @@ test("refresh feedback renders a Hugeicons loading icon", async ({
 	await expect(card.locator("span.mh-spin")).toHaveCount(0);
 });
 
-test("a single-favorite refresh shows the open status badge", async ({
+test("a single-favorite refresh shows the quota status badge", async ({
 	page,
 	context,
 	extensionId,
@@ -185,8 +258,10 @@ test("a single-favorite refresh shows the open status badge", async ({
 	});
 
 	const card = await openCard(popup, UUID_OPEN);
-	await card.getByRole("button", { name: "Segarkan Status Lowongan" }).click();
-	await expect(card.getByText("Buka", { exact: true })).toBeVisible();
+	await card.getByRole("button", { name: "Segarkan Status Kuota" }).click();
+	await expect(
+		card.getByText("Kuota belum penuh", { exact: true }),
+	).toBeVisible();
 	await expect(card.getByText(/terakhir dicek/)).toBeVisible();
 });
 
@@ -205,7 +280,7 @@ test('a failed refresh (non-gone HTTP) shows "refresh gagal" with no data loss',
 	});
 
 	const card = await openCard(popup, UUID_OPEN);
-	await card.getByRole("button", { name: "Segarkan Status Lowongan" }).click();
+	await card.getByRole("button", { name: "Segarkan Status Kuota" }).click();
 
 	// The refresh failed → "Refresh gagal" badge, and the snapshot is still shown.
 	await expect(
@@ -214,7 +289,7 @@ test('a failed refresh (non-gone HTTP) shows "refresh gagal" with no data loss',
 	await expect(card.getByText("Magang Data Analyst")).toBeVisible();
 });
 
-test("a removed Lowongan (HTTP 404) shows Tutup", async ({
+test("a removed Lowongan (HTTP 404) shows refresh failure", async ({
 	page,
 	context,
 	extensionId,
@@ -229,8 +304,8 @@ test("a removed Lowongan (HTTP 404) shows Tutup", async ({
 	});
 
 	const card = await openCard(popup, UUID_CLOSED);
-	await card.getByRole("button", { name: "Segarkan Status Lowongan" }).click();
+	await card.getByRole("button", { name: "Segarkan Status Kuota" }).click();
 
-	// A 404 means the listing is gone → closed (Tutup), not a failed refresh.
-	await expect(card.getByText("Tutup", { exact: true })).toBeVisible();
+	// A 404 cannot tell us the Kemnaker registration-window state.
+	await expect(card.getByText("Refresh gagal", { exact: true })).toBeVisible();
 });

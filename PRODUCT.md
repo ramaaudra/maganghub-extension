@@ -10,13 +10,13 @@ web
 
 Anyone browsing MagangHub for a Lowongan — fresh graduates hunting a first placement, students doing a required internship, career-switchers, and repeat applicants across Batches. Confirmed with the user as the intended audience; the MVP issue's "fresh graduates" framing is the origin story, not the boundary.
 
-The situation is competitive and time-pressured: a Lowongan has no calendar deadline, it closes when its Kuota fills within its Batch, so a listing worth applying to can disappear between two browsing sessions. The job is to shortlist candidate Lowongan while browsing, remember why each one mattered, track which ones were applied to, and notice when one is filling or gone.
+The situation is competitive and time-pressured: registration follows a Kemnaker-controlled window, and applicants are selected only after that window. A full Kuota does not stop registration, but it changes the competition signal. The job is to shortlist candidate Lowongan while browsing, remember why each one mattered, track which ones were applied to, and notice quota changes or refresh failures.
 
 The user is browsing the official site in a normal desktop browser tab, not a dedicated app. They may or may not be logged in to MagangHub — the extension works either way.
 
 ## Product Purpose
 
-A browser extension that augments the official MagangHub site (maganghub.kemnaker.go.id) with the shortlisting and monitoring features it lacks: local Favorites, Catatan, a manual Status Lamar stage, refreshable Status Lowongan, search/sort, and export/import.
+A browser extension that augments the official MagangHub site (maganghub.kemnaker.go.id) with the shortlisting and monitoring features it lacks: local Favorites, Catatan, a manual Status Lamar stage, refreshable Status Kuota, search/sort, and export/import.
 
 It exists because third-party MagangHub "helper" sites appeared that ask users for their real SiapKerja password. Those sites hand government credentials to unofficial, unauditable servers, and users may not recognize the risk. This extension is the safe alternative *by construction* — not by promise.
 
@@ -46,14 +46,14 @@ MagangHub's markup is not under our control. When a selector stops matching, the
 
 ## Capabilities and Constraints
 
-**Confirmed shipped:** star toggle on list cards; toggle on detail pages; cross-surface and cross-tab state sync via `chrome.storage.local`; popup Favorites list with empty state; Catatan editor; manual Status Lamar; per-Favorite and "refresh all" Status Lowongan refresh (throttled, offscreen document, public HTML only); search and sort; JSON export/import with schema migration and local-authoritative merge; injection health indicator; trust explainer; **Archive** — soft-hide Favorites from the active list (restorable, data intact), with Aktif/Arsip tabs, excluded from refresh and the toolbar badge (ADR-0010).
+**Confirmed shipped:** star toggle on list cards; toggle on detail pages; cross-surface and cross-tab state sync via `chrome.storage.local`; popup Favorites list with empty state; Catatan editor; manual Status Lamar; per-Favorite and "refresh all" Status Kuota refresh (throttled, offscreen document, public HTML only); search and sort; JSON export/import with schema migration and local-authoritative merge; injection health indicator; trust explainer; **Archive** — soft-hide Favorites from the active list (restorable, data intact), with Aktif/Arsip tabs, excluded from refresh and the toolbar badge (ADR-0010).
 
 **Technical constraints:**
 - MV3 extension built with WXT; Svelte + Tailwind + shadcn-svelte in the popup only; plain DOM in the content script (ADR-0004).
 - Popup viewport is a fixed 360px-wide panel, not a responsive page.
 - Copy is Indonesian throughout the user-facing surface.
 - Refresh fetches public detail HTML from an offscreen document (ADR-0005) with credentials omitted, and must stay throttled — it hits a government site we do not own.
-- Favorites are schema-versioned (`SCHEMA_VERSION = 4`) with a lazy migration registry; an upgrade must never lose stored Favorites.
+- Favorites are schema-versioned (`SCHEMA_VERSION = 6`) with a lazy migration registry; an upgrade must never lose stored Favorites.
 - Chrome is the primary target; a Firefox build target exists (`wxt -b firefox`) but is not a confirmed shipping commitment.
 
 **Undecided — do not assume settled:**
@@ -69,7 +69,7 @@ The popup carries its own identity — a "Field-Notebook" look (one calm blue ac
 
 Voice: plain Indonesian, direct, no alarm. The health warning and the trust explainer both state facts a user can act on without dramatizing them.
 
-Vocabulary is fixed and non-negotiable across code, docs, and UI: **SakuMagang**, **Lowongan**, **Penyelenggara**, **Batch**, **Kuota**, **Pelamar**, **Favorite**, **Catatan**, **Status Lamar**, **Status Lowongan**, **SiapKerja**, **MagangHub**. See `CONTEXT.md` for each term and its banned alternatives.
+Vocabulary is fixed and non-negotiable across code, docs, and UI: **SakuMagang**, **Lowongan**, **Penyelenggara**, **Batch**, **Kuota**, **Pelamar**, **Favorite**, **Catatan**, **Status Lamar**, **Status Kuota**, **SiapKerja**, **MagangHub**. See `CONTEXT.md` for each term and its banned alternatives.
 
 ## Evidence on Hand
 

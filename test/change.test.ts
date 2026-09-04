@@ -21,10 +21,10 @@ describe("isSuccessfulSample", () => {
 		).toBe(false);
 	});
 
-	it("accepts open / filling / closed samples with a lastChecked", () => {
+	it("accepts belum_penuh / penuh samples with a lastChecked", () => {
 		expect(
 			isSuccessfulSample({
-				status: "open",
+				status: "belum_penuh",
 				kuota: 5,
 				pelamar: 2,
 				lastChecked: "2026-01-05T00:00:00Z",
@@ -32,7 +32,9 @@ describe("isSuccessfulSample", () => {
 		).toBe(true);
 		expect(
 			isSuccessfulSample({
-				status: "closed",
+				status: "penuh",
+				kuota: 5,
+				pelamar: 5,
 				lastChecked: "2026-01-05T00:00:00Z",
 			}),
 		).toBe(true);
@@ -42,7 +44,7 @@ describe("isSuccessfulSample", () => {
 describe("hasMeaningfulChange", () => {
 	const prev: LiveStatusSample = {
 		at: "2026-01-01T00:00:00Z",
-		status: "open",
+		status: "belum_penuh",
 		kuota: 5,
 		pelamar: 2,
 	};
@@ -50,19 +52,19 @@ describe("hasMeaningfulChange", () => {
 	it("is true when kuota, pelamar, or status differs", () => {
 		expect(
 			hasMeaningfulChange(
-				{ status: "open", kuota: 5, pelamar: 4, lastChecked: "t" },
+				{ status: "belum_penuh", kuota: 5, pelamar: 4, lastChecked: "t" },
 				prev,
 			),
 		).toBe(true);
 		expect(
 			hasMeaningfulChange(
-				{ status: "open", kuota: 3, pelamar: 2, lastChecked: "t" },
+				{ status: "belum_penuh", kuota: 3, pelamar: 2, lastChecked: "t" },
 				prev,
 			),
 		).toBe(true);
 		expect(
 			hasMeaningfulChange(
-				{ status: "closed", kuota: 5, pelamar: 2, lastChecked: "t" },
+				{ status: "penuh", kuota: 5, pelamar: 5, lastChecked: "t" },
 				prev,
 			),
 		).toBe(true);
@@ -71,7 +73,7 @@ describe("hasMeaningfulChange", () => {
 	it("is false when kuota/pelamar/status are unchanged", () => {
 		expect(
 			hasMeaningfulChange(
-				{ status: "open", kuota: 5, pelamar: 2, lastChecked: "t" },
+				{ status: "belum_penuh", kuota: 5, pelamar: 2, lastChecked: "t" },
 				prev,
 			),
 		).toBe(false);
@@ -98,12 +100,12 @@ describe("formatChangeNotice", () => {
 	it("returns null when there is no meaningful change", () => {
 		const prev: LiveStatusSample = {
 			at: "2026-01-01T00:00:00Z",
-			status: "open",
+			status: "belum_penuh",
 			kuota: 5,
 			pelamar: 2,
 		};
 		const current: LiveStatus = {
-			status: "open",
+			status: "belum_penuh",
 			kuota: 5,
 			pelamar: 2,
 			lastChecked: "2026-01-05T00:00:00Z",
@@ -118,7 +120,7 @@ describe("formatChangeNotice", () => {
 		).toBeNull();
 		expect(
 			formatChangeNotice({
-				status: "open",
+				status: "belum_penuh",
 				kuota: 5,
 				pelamar: 2,
 				lastChecked: "2026-01-05T00:00:00Z",
@@ -135,7 +137,7 @@ describe("formatChangeNotice", () => {
 			lastError: "HTTP 503",
 			previousSample: {
 				at: "2026-01-01T00:00:00Z",
-				status: "open",
+				status: "belum_penuh",
 				kuota: 5,
 				pelamar: 1,
 			},
@@ -146,13 +148,13 @@ describe("formatChangeNotice", () => {
 	it('phrases a seat drop as "sisa N kursi, tadinya M"', () => {
 		// remaining 3 → 1
 		const current: LiveStatus = {
-			status: "open",
+			status: "belum_penuh",
 			kuota: 5,
 			pelamar: 4,
 			lastChecked: "2026-01-05T00:00:00Z",
 			previousSample: {
 				at: "2026-01-01T00:00:00Z",
-				status: "open",
+				status: "belum_penuh",
 				kuota: 5,
 				pelamar: 2,
 			},
@@ -162,28 +164,28 @@ describe("formatChangeNotice", () => {
 
 	it('phrases a newly-full Lowongan as "penuh sejak terakhir dicek"', () => {
 		const fromSeats: LiveStatus = {
-			status: "closed",
+			status: "penuh",
 			kuota: 5,
 			pelamar: 5,
 			lastChecked: "2026-01-05T00:00:00Z",
 			previousSample: {
 				at: "2026-01-01T00:00:00Z",
-				status: "open",
+				status: "belum_penuh",
 				kuota: 5,
 				pelamar: 2,
 			},
 		};
 		expect(formatChangeNotice(fromSeats)).toBe("penuh sejak terakhir dicek");
 
-		// Over-subscribed still reads as full when status flips to closed.
+		// Over-subscribed still reads as full.
 		const over: LiveStatus = {
-			status: "closed",
+			status: "penuh",
 			kuota: 50,
 			pelamar: 150,
 			lastChecked: "2026-01-05T00:00:00Z",
 			previousSample: {
 				at: "2026-01-01T00:00:00Z",
-				status: "open",
+				status: "belum_penuh",
 				kuota: 50,
 				pelamar: 12,
 			},
@@ -191,16 +193,16 @@ describe("formatChangeNotice", () => {
 		expect(formatChangeNotice(over)).toBe("penuh sejak terakhir dicek");
 	});
 
-	it("phrases a remaining drop to zero (still open/filling) as full", () => {
-		// remaining ≤ 0 while status is still open/filling — futile, same signal.
+	it("phrases a remaining drop to zero as full", () => {
+		// remaining ≤ 0 is full, even though registration can still be submitted.
 		const current: LiveStatus = {
-			status: "filling",
+			status: "penuh",
 			kuota: 5,
 			pelamar: 5,
 			lastChecked: "2026-01-05T00:00:00Z",
 			previousSample: {
 				at: "2026-01-01T00:00:00Z",
-				status: "open",
+				status: "belum_penuh",
 				kuota: 5,
 				pelamar: 2,
 			},
@@ -213,7 +215,7 @@ describe("toLiveStatusSample", () => {
 	it("copies the comparable fields off a successful liveStatus", () => {
 		expect(
 			toLiveStatusSample({
-				status: "open",
+				status: "belum_penuh",
 				kuota: 5,
 				pelamar: 2,
 				batch: "Batch 1 · 2026",
@@ -221,7 +223,7 @@ describe("toLiveStatusSample", () => {
 			}),
 		).toEqual({
 			at: "2026-01-01T00:00:00Z",
-			status: "open",
+			status: "belum_penuh",
 			kuota: 5,
 			pelamar: 2,
 		});

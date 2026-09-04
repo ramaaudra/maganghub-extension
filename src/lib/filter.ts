@@ -68,7 +68,8 @@ const TERMINAL_STAGES: ReadonlySet<StatusLamar> = new Set([
  * - `withSeats` (0): active stage, kuota + pelamar known, remaining > 0 — the
  *   Lowongan still has open seats. Sorted ascending by remaining so the
  *   closest-to-full rises to the top (the urgency the user can still act on).
- * - `overSubscribed` (1): active stage, remaining ≤ 0 — futile, no seats left.
+ * - `full` (1): active stage, remaining ≤ 0 — the quota is full, but
+ *   registration can still be submitted during the registration window.
  *   Kept below `withSeats`; ordered ascending by remaining too, so the
  *   most-over-subscribed (smallest remaining, e.g. −10 before −1) sorts first
  *   — one rule (ascending by remaining) covers both numeric buckets.
@@ -77,19 +78,17 @@ const TERMINAL_STAGES: ReadonlySet<StatusLamar> = new Set([
  *   failed). No remaining to order by, so newest-saved first — the
  *   recently-saved Lowongan the user might still want to refresh lands above
  *   older stale ones.
- * - `terminal` (3): Status Lamar is Diterima/Ditolak, or Status Lowongan is
- *   Closed — the user is done with this one. Newest-saved first.
+ * - `terminal` (3): Status Lamar is Diterima/Ditolak — the user is done with
+ *   this one. A full quota is never treated as terminal. Newest-saved first.
  *
  * "Active" = no stage, Dilamar, or Interview. A terminal Status Lamar always
- * wins (a Diterima Favorite is done even if seats remain); a Closed Status
- * Lowongan wins over the active buckets even with an active stage. See D9 and
+ * wins (a Diterima Favorite is done even if the quota has room). See D9 and
  * issue #21's acceptance criteria.
  */
 type StageSeatsRank = 0 | 1 | 2 | 3;
 
 function stageSeatsRank(fav: Favorite): StageSeatsRank {
 	if (fav.statusLamar && TERMINAL_STAGES.has(fav.statusLamar)) return 3;
-	if (fav.liveStatus.status === "closed") return 3;
 	const remaining = remainingSeats(fav);
 	if (remaining === undefined) return 2;
 	return remaining > 0 ? 0 : 1;
