@@ -177,6 +177,26 @@ body {
 #app > main::-webkit-scrollbar-corner {
 	background: transparent;
 }
+
+/*
+ * The expanded Favorite tray is its own layout context. The popup is fixed at
+ * 360px, but cards can become narrower when copy wraps or the shell is embedded
+ * in a constrained browser surface. Keep the label/control columns together
+ * until they no longer fit, then let the select use a full row.
+ */
+.mh-favorite-tray {
+	container: favorite-tray / inline-size;
+}
+
+@container favorite-tray (max-width: 280px) {
+	.mh-status-field {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.mh-status-field > span {
+		padding-block-end: 0.25rem;
+	}
+}
 /*
  ---break---
  */

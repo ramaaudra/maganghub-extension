@@ -266,7 +266,10 @@ onDestroy(() => {
 /** Shared action-button classes — one vocabulary for every control in the
  *  expanded tray (DESIGN.md: outline only, sharp, 12px label). */
 const actionClass =
-	"inline-flex h-7 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-none border border-border bg-transparent px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-muted outline-none disabled:pointer-events-none disabled:opacity-50 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring";
+	"inline-flex min-h-7 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-none border border-border bg-transparent px-2.5 py-1 text-center text-xs font-medium leading-tight text-foreground transition-colors hover:bg-muted outline-none disabled:pointer-events-none disabled:opacity-50 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring";
+
+const dangerActionClass =
+	"inline-flex min-h-7 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-none border border-destructive/40 bg-destructive/10 px-2.5 py-1 text-center text-xs font-medium leading-tight text-destructive transition-colors hover:bg-destructive/20 outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring";
 </script>
 
 <Card
@@ -294,7 +297,7 @@ const actionClass =
   -->
   <button
     type="button"
-    class="w-full cursor-default rounded-none px-4 py-3 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+    class="w-full cursor-default rounded-none px-4 py-3 text-start outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
     aria-expanded={expanded}
     aria-label={toggleLabel}
     data-favorite-toggle
@@ -348,7 +351,7 @@ const actionClass =
         <span class="min-w-0 flex-1 truncate text-muted-foreground">Kuota belum diketahui</span>
       {/if}
 
-      <span class="ml-auto flex shrink-0 items-center gap-1.5">
+      <span class="ms-auto flex shrink-0 items-center gap-1.5">
         {#if hasCatatan}
           <HugeiconsIcon
             icon={Note01Icon}
@@ -407,9 +410,17 @@ const actionClass =
   {/if}
 
   {#if expanded}
-    <CardContent class="mh-rise-in space-y-2 border-t border-border/70 px-4 pt-3 pb-3">
-      <!-- Status Lamar full-width — never squeezed between actions -->
-      <label class="flex min-w-0 items-baseline gap-2 text-xs">
+    <CardContent
+      class="mh-favorite-tray mh-rise-in space-y-3 border-t border-border/70 px-4 pt-3 pb-2"
+      data-favorite-tray
+    >
+      <!-- Keep the label and control on shared columns. The select gets all
+           remaining inline space and can wrap to its own row at the tray's
+           narrowest supported width. -->
+      <label
+        class="mh-status-field grid min-w-0 grid-cols-[max-content_minmax(0,1fr)] items-baseline gap-x-4 gap-y-1 text-xs"
+        data-status-field
+      >
         <span class="shrink-0 text-muted-foreground">Status Lamar</span>
         <select
           class="min-w-0 flex-1 rounded-none border-b border-border bg-transparent px-0 py-0.5 text-xs text-foreground outline-none transition-[border-color] hover:border-b-foreground/40 focus-visible:border-b-ring"
@@ -423,14 +434,14 @@ const actionClass =
         </select>
       </label>
 
-      <div>
-        <label class="sr-only" for="catatan-{favorite.uuid}">Catatan</label>
-        <!-- 12px, matching the Status Lamar row above it. At 14px the note set
-             heavier than the card's own title, so an aside outshouted the
-             thing it annotates. -->
+      <div class="min-w-0" data-catatan-field>
+        <label
+          class="mb-1 block text-xs font-medium text-muted-foreground"
+          for="catatan-{favorite.uuid}"
+        >Catatan</label>
         <textarea
           id="catatan-{favorite.uuid}"
-          class="min-h-12 w-full resize-none rounded-none border-b border-border bg-transparent px-0 py-1 text-xs leading-relaxed text-foreground outline-none transition-[border-color] placeholder:text-muted-foreground focus-visible:border-b-ring"
+          class="min-h-10 w-full resize-none rounded-none border-b border-border bg-transparent px-0 py-1 text-xs leading-snug text-foreground outline-none transition-[border-color] placeholder:text-muted-foreground focus-visible:border-b-ring"
           placeholder="Kenapa lowongan ini?"
           rows={2}
           bind:value={catatanDraft}
@@ -454,98 +465,94 @@ const actionClass =
            Arsip cards have no Segarkan (archived records are skipped by refresh).
            "Hapus permanen" is irreversible, so it is guarded by an inline
            confirm that replaces the row with "Yakin? [Ya, hapus] [Batal]". -->
-      <!-- The official link gets its own full-width line. The two action buttons
-           nearly fill the tray already, and the loading label is wider than the
-           idle label; keeping the link on a stable second line prevents both
-           horizontal clipping and a state-change shift. -->
-      <div class="flex min-w-0 flex-wrap items-center gap-2">
-        {#if view === 'aktif'}
-          <button
-            type="button"
-            class={cn(actionClass, 'min-w-[8rem]')}
-            onclick={onrefresh}
-            disabled={refreshing}
-            aria-label="Segarkan Status Kuota"
-            aria-busy={refreshing}
-          >
-            {#if refreshing}
-              <HugeiconsIcon
-                icon={Loading03Icon}
-                strokeWidth={2}
-                class="mh-spin size-3.5 shrink-0"
-                aria-hidden="true"
-                data-refresh-icon
-              />
-            {/if}
-            {refreshing ? 'Memperbarui…' : 'Segarkan'}
-          </button>
-          <button
-            type="button"
-            class={actionClass}
-            onclick={onArchive}
-            aria-label="Arsipkan"
-            title="Arsipkan — sembunyikan tanpa menghapus"
-            data-archive-button
-          >
-            <HugeiconsIcon icon={Archive02Icon} strokeWidth={2} class="size-3.5" />
-            Arsipkan
-          </button>
-        {:else if confirmDelete}
-          <!-- Inline confirm: the destructive action swaps the row for a
-               two-button prompt in the card's own context. -->
-          <!-- Inline confirm: the destructive action swaps the row for a
-               two-button prompt in the card's own context. The affirmative
-               uses the system's `--destructive` token (DESIGN.md Destructive
-               Reservation: irreversible delete is the one action it permits),
-               not an ad-hoc rose scale — which keeps the danger treatment on
-               the same token as *Refresh gagal* and the import-error alert. -->
-          <span class="text-xs text-muted-foreground" data-delete-confirm>Yakin?</span>
-          <button
-            type="button"
-            class="inline-flex h-7 shrink-0 items-center justify-center rounded-none border border-destructive/40 bg-destructive/10 px-2.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/20 outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring"
-            onclick={onDeletePermanent}
-            aria-label="Ya, hapus permanen"
-            data-confirm-delete
-          >
-            Ya, hapus
-          </button>
-          <button
-            type="button"
-            class={actionClass}
-            onclick={() => (confirmDelete = false)}
-            aria-label="Batal hapus"
-            data-cancel-delete
-          >
-            Batal
-          </button>
-        {:else}
-          <button
-            type="button"
-            class={actionClass}
-            onclick={onRestore}
-            aria-label="Pulihkan ke daftar aktif"
-            data-restore-button
-          >
-            Pulihkan
-          </button>
-          <button
-            type="button"
-            class="inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-none border border-transparent bg-transparent px-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring"
-            onclick={() => (confirmDelete = true)}
-            aria-label="Hapus permanen"
-            title="Hapus permanen — tidak bisa dikembalikan"
-            data-delete-button
-          >
-            <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} class="size-3.5" />
-            Hapus permanen
-          </button>
-        {/if}
+      <!-- Keep secondary controls together and give the official link its own
+           stable placement zone. The link remains a text link per DESIGN.md;
+           the full-width zone makes it read as the primary exit without
+           introducing a filled button style. -->
+      <div class="grid min-w-0 gap-2" data-action-zone>
+        <div class="flex min-w-0 flex-wrap items-center gap-2">
+          {#if view === 'aktif'}
+            <button
+              type="button"
+              class={cn(actionClass, 'w-32 flex-none whitespace-nowrap')}
+              onclick={onrefresh}
+              disabled={refreshing}
+              aria-label="Segarkan Status Kuota"
+              aria-busy={refreshing}
+            >
+              {#if refreshing}
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  strokeWidth={2}
+                  class="mh-spin size-3.5 shrink-0"
+                  aria-hidden="true"
+                  data-refresh-icon
+                />
+              {/if}
+              {refreshing ? 'Memperbarui…' : 'Segarkan'}
+            </button>
+            <button
+              type="button"
+              class={actionClass}
+              onclick={onArchive}
+              aria-label="Arsipkan"
+              title="Arsipkan — sembunyikan tanpa menghapus"
+              data-archive-button
+            >
+              <HugeiconsIcon icon={Archive02Icon} strokeWidth={2} class="size-3.5" />
+              Arsipkan
+            </button>
+          {:else if confirmDelete}
+            <!-- Inline confirm: the destructive action swaps the row for a
+                 two-button prompt in the card's own context. -->
+            <span class="text-xs text-muted-foreground" data-delete-confirm>Yakin?</span>
+            <button
+              type="button"
+              class={dangerActionClass}
+              onclick={onDeletePermanent}
+              aria-label="Ya, hapus permanen"
+              data-confirm-delete
+            >
+              Ya, hapus
+            </button>
+            <button
+              type="button"
+              class={actionClass}
+              onclick={() => (confirmDelete = false)}
+              aria-label="Batal hapus"
+              data-cancel-delete
+            >
+              Batal
+            </button>
+          {:else}
+            <button
+              type="button"
+              class={actionClass}
+              onclick={onRestore}
+              aria-label="Pulihkan ke daftar aktif"
+              data-restore-button
+            >
+              Pulihkan
+            </button>
+            <button
+              type="button"
+              class={cn(
+                actionClass,
+                'border-transparent bg-transparent px-2 text-destructive hover:bg-destructive/10',
+              )}
+              onclick={() => (confirmDelete = true)}
+              aria-label="Hapus permanen"
+              title="Hapus permanen — tidak bisa dikembalikan"
+              data-delete-button
+            >
+              <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} class="size-3.5" />
+              Hapus permanen
+            </button>
+          {/if}
+        </div>
         {#if favorite.detailUrl}
-          <!-- Full-width flex item: right-align the link without making its text
-               box wider than the tray. It stays in this slot while Segarkan
-               changes to Memperbarui… so the list does not reflow sideways. -->
           <a
-            class="inline-flex h-7 min-w-0 max-w-full basis-full items-center justify-end whitespace-nowrap text-xs font-medium text-primary underline-offset-2 hover:underline"
+            class="inline-flex min-h-7 w-full min-w-0 max-w-full items-center justify-start px-2.5 py-1 text-start text-xs font-medium leading-tight text-primary underline-offset-2 hover:underline"
             href={resolveDetailUrl(favorite.detailUrl)}
             target="_blank"
             rel="noopener noreferrer"
@@ -563,7 +570,7 @@ const actionClass =
       <!-- Reserve the cold reading's two-line height. After a successful
            refresh the provenance becomes shorter; keeping this box stable
            prevents the expanded card and the popup footer from jumping. -->
-      <p class="min-h-9 text-xs text-muted-foreground" data-provenance>
+      <p class="min-h-8 text-xs text-muted-foreground" data-provenance>
         {#if hasBeenChecked && lastCheckedLabel}
           {lastCheckedLabel}{#if live.batch}<span aria-hidden="true">{' · '}</span>{live.batch}{/if}
         {:else if !seats.empty}
