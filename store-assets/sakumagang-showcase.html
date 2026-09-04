@@ -878,6 +878,16 @@
       line-height: 1.35;
     }
 
+    .creator-link {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .creator-link:hover {
+      color: #0f1729;
+    }
+
     .stage-card {
       padding: 16px 18px;
       border: 1px solid #cbd5e1;
@@ -986,11 +996,9 @@
     .scene-one-popup {
       position: absolute;
       right: 40px;
-      bottom: 56px;
+      bottom: 38px;
       z-index: 6;
-      border: 1px solid rgba(0, 105, 168, 0.14);
-      box-shadow: 0 30px 90px rgba(15, 23, 41, 0.28);
-      transform: scale(1);
+      transform: scale(0.86);
       transform-origin: right bottom;
     }
 
@@ -1392,10 +1400,22 @@
       right: 650px;
       bottom: 56px;
       z-index: 5;
-      border: 1px solid rgba(0, 105, 168, 0.14);
-      box-shadow: 0 30px 90px rgba(15, 23, 41, 0.28);
-      transform: scale(1);
+      transform: scale(0.91);
       transform-origin: left bottom;
+    }
+
+    .scene-four-popup .popup-header,
+    .scene-four-popup .popup-footer {
+      display: none;
+    }
+
+    .scene-four-popup .popup-main {
+      padding: 0;
+    }
+
+    .scene-four-popup .favorite-card {
+      border: 0;
+      box-shadow: none;
     }
 
     .scene-five {
@@ -1661,7 +1681,7 @@
       </div>
       <p class="eyebrow">Shortlist untuk MagangHub</p>
       <h1 class="display-title">Simpan Lowongan yang <span class="blue">layak diperjuangkan.</span></h1>
-      <p class="lede">Favorite, Catatan, Status Lamar, Kuota dan Pelamar. Semuanya rapi di satu popup dan tersimpan lokal.</p>
+      <p class="lede">Favorite, Catatan, Status Lamar, Kuota &amp; Pelamar—semuanya rapi di satu popup dan tersimpan lokal.</p>
       <div class="micro-proof">
         <span><svg aria-hidden="true" class="icon"><use href="#icon-star" /></svg> Bintangi saat browsing</span>
         <span><svg aria-hidden="true" class="icon"><use href="#icon-note" /></svg> Catatan pribadi</span>
@@ -1886,8 +1906,8 @@
         </article>
       </main>
       <footer class="popup-footer">
-        <div class="popup-footer-row"><button class="outline-button" type="button">Ekspor cadangan</button><button class="outline-button" type="button">Impor</button><a class="safe-link" href="#scene-5">Mengapa aman?</a></div>
-        <p class="popup-trust">SakuMagang menyimpan favorit hanya di browser kamu. Extension ini tidak pernah minta password SiapKerja.</p>
+        <div class="popup-footer-row"><button class="outline-button" type="button">Ekspor cadangan</button><button class="outline-button" type="button">Impor</button><a class="safe-link" href="#scene-5">Kenapa SakuMagang tidak minta password?</a></div>
+        <p class="popup-trust"><a class="creator-link" href="https://ramaaudra.vercel.app" target="_blank" rel="noopener noreferrer">Created by @ramaaudra</a></p>
       </footer>
     </div>
     <div class="scene-three-callout"><strong>Sama seperti UI produksi</strong>Sudut tajam, Geist, satu aksen biru, dan kartu ringkas tiga baris.</div>
@@ -1897,7 +1917,7 @@
     <div class="scene-four-copy">
       <p class="eyebrow">Sinyal yang bisa ditindaklanjuti</p>
       <h1 class="display-title">Tahu kapan <span class="blue">harus bergerak.</span></h1>
-      <p class="lede">Segarkan Status Lowongan dari halaman publik dan catat tahap lamaranmu sendiri tanpa membaca sesi login.</p>
+      <p class="lede">Segarkan Status Lowongan dari halaman publik dan catat tahap lamaranmu sendiri—tanpa membaca sesi login.</p>
       <div class="signal-list">
         <div class="signal-list-item"><span class="dot"></span> Kuota dan Pelamar terkini</div>
         <div class="signal-list-item"><span class="dot"></span> Badge toolbar saat angka berubah</div>
@@ -1938,7 +1958,7 @@
             <div class="detail-sidebar-card"><h4>Alur Lamaran</h4><p>Lengkapi profil dan kirim lamaran melalui situs resmi.</p></div>
             <div class="stage-card">
               <h4>Lamaranku · catatan pribadi</h4>
-              <p>Bukan fitur MagangHub. Disimpan di browser kamu.</p>
+              <p>Bukan fitur MagangHub — disimpan di browser kamu.</p>
               <label>Status Lamar<select aria-label="Status Lamar"><option>Interview</option></select></label>
             </div>
           </aside>

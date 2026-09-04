@@ -254,7 +254,7 @@ One form: the sharp rectangle (radius `0rem`, the preset's `--radius: 0rem`). Ca
 - Every empty state uses a relevant muted line icon in a fixed 20px slot with a 12px gap. Star marks a first-run active list, Archive marks the archive view, and Search marks a filtered result with no match. The shared region has a 175px minimum so changing tabs changes the message, not the popup shell height. This slot is a layout contract, not decoration.
 
 ### Trust explainer (signature)
-- A disclosure with an underlined `text-primary` summary (*Mengapa aman?*) and muted body copy. The trigger sits on its own full-width row below the backup buttons, so the credential-free promise remains available without clipping the fixed 360px panel or forcing it into the first viewport — matches PRODUCT.md principle 1 (trust is a construction, surfaced on demand).
+- A disclosure with an underlined `text-primary` summary (*Kenapa SakuMagang tidak minta password?*) and muted body copy. The trigger sits on its own full-width row below the backup buttons, so the credential-free details stay available on demand without taking permanent footer space. The final footer line is the quiet creator attribution, linked to the portfolio. This matches PRODUCT.md principle 1 (trust is a construction, surfaced on demand).
 
 ## Do's and Don'ts
 

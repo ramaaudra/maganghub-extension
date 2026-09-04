@@ -49,7 +49,7 @@ SakuMagang adalah ekstensi pihak ketiga yang tidak berafiliasi dengan Kemnaker a
 
 SakuMagang menyimpan URL Lowongan yang kamu pilih sebagai Favorite dan membaca konten publik halaman MagangHub yang didukung untuk menampilkan Kuota, Pelamar, dan Status Lowongan. Ekstensi ini tidak memerlukan akun dan tidak mengumpulkan data penggunaan untuk analitik atau telemetri.
 
-Kenapa tidak meminta password?
+Kenapa SakuMagang tidak meminta password?
 Situs pihak ketiga yang meminta kamu login ke SiapKerja dapat mencatat password yang kamu masukkan. Gunakan hanya alur resmi MagangHub dan SiapKerja untuk login atau melamar.
 
 Status Lamar kamu isi sendiri. Mendeteksi Status Lamar secara otomatis memerlukan akses ke sesi login, sedangkan SakuMagang tidak mengambil akses tersebut.

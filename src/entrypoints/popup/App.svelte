@@ -690,13 +690,12 @@ function tabClass(selected: boolean): string {
 
 <!--
   Backup + trust live below the list so first paint is shortlist + controls.
-  Issue #7 / #9: the credential-free promise stays visible; export/import remain
-  real buttons for e2e and power users without owning the header.
+  Issue #7 / #9: export/import remain real buttons for e2e and power users
+  without owning the header. The credential-free details stay behind the
+  disclosure so the creator attribution can remain the quietest footer line.
 
-  Restructured to two compact rows plus one line. It previously put the two
-  backup buttons and the explainer trigger in one no-wrap row, so the trigger
-  could extend past the fixed 360px panel. The trigger now owns its own row;
-  the two backup controls stay together above it, and the promise remains below.
+  The two backup controls stay together above the full-width disclosure row.
+  This keeps the Indonesian label inside the fixed 360px panel.
 -->
 <footer class="min-w-0 border-t px-4 py-2.5">
   <!-- The controls share a compact row; the trigger gets a full-width row below
@@ -729,28 +728,31 @@ function tabClass(selected: boolean): string {
         onchange={onImportFile}
       />
     </div>
-    <!-- DESIGN.md trust explainer: an underlined `text-primary` summary —
+    <!-- DESIGN.md trust explainer: an underlined `text-primary` summary
          underlined at rest, not just on hover, so the disclosure reads as a
          link the moment the row paints (the *Buka di MagangHub* exit link is
          the hover-underline one; this one signals "open for more"). -->
     <CollapsibleTrigger class="mt-1 flex min-h-7 w-full min-w-0 items-center justify-start text-start text-xs font-medium text-primary underline underline-offset-2 hover:decoration-primary/40">
-      Kenapa tidak minta password?
+      Kenapa SakuMagang tidak minta password?
     </CollapsibleTrigger>
     <CollapsibleContent>
       <p class="mt-2 text-xs leading-relaxed text-muted-foreground">
-        Situs pihak ketiga yang meminta kamu login ke SiapKerja dapat mencatat
-        password yang kamu masukkan. Masukkan password hanya melalui alur resmi
-        MagangHub dan SiapKerja. MagangHub hanya menyimpan Lowongan yang kamu
-        bintangi di browser ini. Extension ini tidak memerlukan akun, tidak
-        menyimpan daftar favorit di server, tidak mengumpulkan telemetri, dan tidak
-        meminta password SiapKerja. Untuk melamar, klik "Buka di MagangHub"
-        pada lowongan favorit. Setelah itu, lanjutkan lamaran sendiri di situs
-        resmi MagangHub.
+        SakuMagang tidak pernah meminta atau mengakses password SiapKerja.
+        Favorite, Catatan, dan Status Lamar tersimpan lokal di browser ini.
+      </p>
+      <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+        SakuMagang adalah ekstensi pihak ketiga, bukan produk resmi MagangHub.
       </p>
     </CollapsibleContent>
   </Collapsible>
 
-  <p class="mt-1.5 text-xs leading-snug text-muted-foreground">
-    Favorit hanya tersimpan di browser ini. Extension ini tidak pernah meminta password SiapKerja.
-  </p>
+  <a
+    class="mt-1.5 block w-fit text-xs leading-snug text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+    href="https://ramaaudra.vercel.app"
+    target="_blank"
+    rel="noopener noreferrer"
+    data-creator-link
+  >
+    Created by @ramaaudra
+  </a>
 </footer>

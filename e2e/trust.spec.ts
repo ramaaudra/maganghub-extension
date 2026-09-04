@@ -7,31 +7,44 @@ import { openCard, openPopup } from "./pages/popup";
 // the extension, never via a third-party helper that would ask for the
 // SiapKerja password).
 
-test("the popup shows the one-line trust statement", async ({
+test("the popup shows the creator attribution in the footer", async ({
 	context,
 	extensionId,
 }) => {
 	const popup = await openPopup(context, extensionId);
-	// The credential-free promise, in plain Indonesian.
-	await expect(
-		popup.getByText(/tidak pernah meminta password SiapKerja/i),
-	).toBeVisible();
+	const creator = popup.getByRole("link", { name: "Created by @ramaaudra" });
+	await expect(creator).toBeVisible();
+	await expect(creator).toHaveAttribute(
+		"href",
+		"https://ramaaudra.vercel.app",
+	);
+	await expect(creator).toHaveAttribute("target", "_blank");
+	await expect(creator).toHaveAttribute("rel", /noopener/);
 });
 
-test("the popup includes a short explainer on why third-party login sites are risky", async ({
+test("the popup keeps trust details behind the disclosure", async ({
 	context,
 	extensionId,
 }) => {
 	const popup = await openPopup(context, extensionId);
-	const summary = popup.getByText(/Kenapa tidak minta password/i);
+	const summary = popup.getByText(
+		"Kenapa SakuMagang tidak minta password?",
+		{ exact: true },
+	);
 	await expect(summary).toBeVisible();
-	// Expanding reveals the educational body. Scope to the details' body text so
-	// we don't also match the one-line trust statement above (which also says
-	// "password SiapKerja").
+	const content = popup.locator("footer [data-slot=collapsible-content]");
+	await expect(content).toBeHidden();
+
 	await summary.click();
-	await expect(
-		popup.getByText(/Situs pihak ketiga yang meminta kamu login ke SiapKerja/i),
-	).toBeVisible();
+	await expect(content).toContainText(
+		"SakuMagang tidak pernah meminta atau mengakses password SiapKerja.",
+	);
+	await expect(content).toContainText(
+		"Favorite, Catatan, dan Status Lamar tersimpan lokal di browser ini.",
+	);
+	await expect(content).toContainText(
+		"SakuMagang adalah ekstensi pihak ketiga, bukan produk resmi MagangHub.",
+	);
 });
 
 test('each Favorite has an "open official detail" link to its MagangHub detail page', async ({
@@ -81,13 +94,13 @@ test('each Favorite has an "open official detail" link to its MagangHub detail p
 	}
 });
 
-test("the trust statement is present even with no favorites (empty state)", async ({
+test("the creator attribution is present even with no favorites (empty state)", async ({
 	context,
 	extensionId,
 }) => {
 	const popup = await openPopup(context, extensionId);
 	await expect(popup.getByText("Belum ada favorit")).toBeVisible();
 	await expect(
-		popup.getByText(/tidak pernah meminta password SiapKerja/i),
+		popup.getByRole("link", { name: "Created by @ramaaudra" }),
 	).toBeVisible();
 });
