@@ -580,16 +580,11 @@ function tabClass(selected: boolean): string {
        *Segarkan semua* button that acts on it stays pinned in the header.
        DESIGN.md still holds: it is one line, `role="status"`, and only shows
        when there is something stale to name. -->
-  <!-- Keep the advisory's line slot in the flow after the first refresh. The
-       text disappears when the count reaches zero, but the reserved 20px slot
-       keeps every card and the pinned footer at the same y-position. -->
-  <div class="min-h-5">
-    {#if uncheckedVisible > 0 && !loading && !noMatches}
-      <p class="text-xs text-muted-foreground" role="status" data-unchecked-coach>
-        <span class="tabular-nums">{uncheckedVisible}</span> favorit belum dicek Status Kuota.
-      </p>
-    {/if}
-  </div>
+  {#if uncheckedVisible > 0 && !loading && !noMatches}
+    <p class="text-xs text-muted-foreground" role="status" data-unchecked-coach>
+      <span class="tabular-nums">{uncheckedVisible}</span> favorit belum dicek Status Kuota.
+    </p>
+  {/if}
 
   {#if loading}
     <div class="space-y-2.5" aria-hidden="true">

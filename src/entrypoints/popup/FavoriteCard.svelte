@@ -266,7 +266,7 @@ onDestroy(() => {
 /** Shared action-button classes — one vocabulary for every control in the
  *  expanded tray (DESIGN.md: outline only, sharp, 12px label). */
 const actionClass =
-	"inline-flex min-h-7 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-none border border-border bg-transparent px-2.5 py-1 text-center text-xs font-medium leading-tight text-foreground transition-colors hover:bg-muted outline-none disabled:pointer-events-none disabled:opacity-50 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring";
+	"inline-flex min-h-7 min-w-0 max-w-full shrink-0 items-center justify-center gap-1.5 rounded-none border border-border bg-transparent px-2.5 py-1 text-center text-xs font-medium leading-tight text-foreground transition-colors hover:bg-muted outline-none disabled:pointer-events-none disabled:opacity-50 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring";
 
 const dangerActionClass =
 	"inline-flex min-h-7 min-w-0 max-w-full items-center justify-center gap-1.5 rounded-none border border-destructive/40 bg-destructive/10 px-2.5 py-1 text-center text-xs font-medium leading-tight text-destructive transition-colors hover:bg-destructive/20 outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring";
@@ -465,94 +465,93 @@ const dangerActionClass =
            Arsip cards have no Segarkan (archived records are skipped by refresh).
            "Hapus permanen" is irreversible, so it is guarded by an inline
            confirm that replaces the row with "Yakin? [Ya, hapus] [Batal]". -->
-      <!-- Keep secondary controls together and give the official link its own
-           stable placement zone. The link remains a text link per DESIGN.md;
-           the full-width zone makes it read as the primary exit without
-           introducing a filled button style. -->
-      <div class="grid min-w-0 gap-2" data-action-zone>
-        <div class="flex min-w-0 flex-wrap items-center gap-2">
-          {#if view === 'aktif'}
-            <button
-              type="button"
-              class={cn(actionClass, 'w-32 flex-none whitespace-nowrap')}
-              onclick={onrefresh}
-              disabled={refreshing}
-              aria-label="Segarkan Status Kuota"
-              aria-busy={refreshing}
-            >
-              {#if refreshing}
-                <HugeiconsIcon
-                  icon={Loading03Icon}
-                  strokeWidth={2}
-                  class="mh-spin size-3.5 shrink-0"
-                  aria-hidden="true"
-                  data-refresh-icon
-                />
-              {/if}
-              {refreshing ? 'Memperbarui…' : 'Segarkan'}
-            </button>
-            <button
-              type="button"
-              class={actionClass}
-              onclick={onArchive}
-              aria-label="Arsipkan"
-              title="Arsipkan — sembunyikan tanpa menghapus"
-              data-archive-button
-            >
-              <HugeiconsIcon icon={Archive02Icon} strokeWidth={2} class="size-3.5" />
-              Arsipkan
-            </button>
-          {:else if confirmDelete}
-            <!-- Inline confirm: the destructive action swaps the row for a
-                 two-button prompt in the card's own context. -->
-            <span class="text-xs text-muted-foreground" data-delete-confirm>Yakin?</span>
-            <button
-              type="button"
-              class={dangerActionClass}
-              onclick={onDeletePermanent}
-              aria-label="Ya, hapus permanen"
-              data-confirm-delete
-            >
-              Ya, hapus
-            </button>
-            <button
-              type="button"
-              class={actionClass}
-              onclick={() => (confirmDelete = false)}
-              aria-label="Batal hapus"
-              data-cancel-delete
-            >
-              Batal
-            </button>
-          {:else}
-            <button
-              type="button"
-              class={actionClass}
-              onclick={onRestore}
-              aria-label="Pulihkan ke daftar aktif"
-              data-restore-button
-            >
-              Pulihkan
-            </button>
-            <button
-              type="button"
-              class={cn(
-                actionClass,
-                'border-transparent bg-transparent px-2 text-destructive hover:bg-destructive/10',
-              )}
-              onclick={() => (confirmDelete = true)}
-              aria-label="Hapus permanen"
-              title="Hapus permanen — tidak bisa dikembalikan"
-              data-delete-button
-            >
-              <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} class="size-3.5" />
-              Hapus permanen
-            </button>
-          {/if}
-        </div>
+      <!-- Keep every action in one flow. The official link remains a text link
+           per DESIGN.md; flex-wrap keeps it beside the buttons when the card
+           has room and moves it to the next line only when the content breaks. -->
+      <div class="flex min-w-0 flex-wrap items-center gap-2" data-action-zone>
+        {#if view === 'aktif'}
+          <button
+            type="button"
+            class={cn(actionClass, 'min-w-[4.75rem] flex-none whitespace-nowrap')}
+            onclick={onrefresh}
+            disabled={refreshing}
+            aria-label="Segarkan Status Kuota"
+            aria-busy={refreshing}
+          >
+            {#if refreshing}
+              <HugeiconsIcon
+                icon={Loading03Icon}
+                strokeWidth={2}
+                class="mh-spin size-3.5 shrink-0"
+                aria-hidden="true"
+                data-refresh-icon
+              />
+              <span class="sr-only">Memperbarui…</span>
+            {:else}
+              Segarkan
+            {/if}
+          </button>
+          <button
+            type="button"
+            class={actionClass}
+            onclick={onArchive}
+            aria-label="Arsipkan"
+            title="Arsipkan — sembunyikan tanpa menghapus"
+            data-archive-button
+          >
+            <HugeiconsIcon icon={Archive02Icon} strokeWidth={2} class="size-3.5" />
+            Arsipkan
+          </button>
+        {:else if confirmDelete}
+          <!-- Inline confirm: the destructive action swaps the row for a
+               two-button prompt in the card's own context. -->
+          <span class="text-xs text-muted-foreground" data-delete-confirm>Yakin?</span>
+          <button
+            type="button"
+            class={dangerActionClass}
+            onclick={onDeletePermanent}
+            aria-label="Ya, hapus permanen"
+            data-confirm-delete
+          >
+            Ya, hapus
+          </button>
+          <button
+            type="button"
+            class={actionClass}
+            onclick={() => (confirmDelete = false)}
+            aria-label="Batal hapus"
+            data-cancel-delete
+          >
+            Batal
+          </button>
+        {:else}
+          <button
+            type="button"
+            class={actionClass}
+            onclick={onRestore}
+            aria-label="Pulihkan ke daftar aktif"
+            data-restore-button
+          >
+            Pulihkan
+          </button>
+          <button
+            type="button"
+            class={cn(
+              actionClass,
+              'border-transparent bg-transparent px-2 text-destructive hover:bg-destructive/10',
+            )}
+            onclick={() => (confirmDelete = true)}
+            aria-label="Hapus permanen"
+            title="Hapus permanen — tidak bisa dikembalikan"
+            data-delete-button
+          >
+            <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} class="size-3.5" />
+            Hapus permanen
+          </button>
+        {/if}
         {#if favorite.detailUrl}
           <a
-            class="inline-flex min-h-7 w-full min-w-0 max-w-full items-center justify-start px-2.5 py-1 text-start text-xs font-medium leading-tight text-primary underline-offset-2 hover:underline"
+            class="inline-flex min-h-7 max-w-full shrink-0 items-center py-1 text-start text-xs font-medium leading-tight text-primary underline-offset-2 hover:underline"
             href={resolveDetailUrl(favorite.detailUrl)}
             target="_blank"
             rel="noopener noreferrer"

@@ -60,7 +60,10 @@ test("keeps popup text and action links inside the shell during refresh", async 
 		const link = document.querySelector<HTMLElement>(
 			"[data-favorite-uuid] [data-slot=card-content] a",
 		);
-		if (!app || !footer || !trust || !actions || !link) {
+		const archive = document.querySelector<HTMLElement>(
+			"[data-favorite-uuid] [data-archive-button]",
+		);
+		if (!app || !footer || !trust || !actions || !link || !archive) {
 			throw new Error("Popup layout is incomplete");
 		}
 		const rect = (element: HTMLElement) => {
@@ -74,6 +77,7 @@ test("keeps popup text and action links inside the shell during refresh", async 
 				scrollWidth: footer.scrollWidth,
 			},
 			trust: rect(trust),
+			archive: rect(archive),
 			link: rect(link),
 			actions: rect(actions),
 		};
@@ -85,6 +89,7 @@ test("keeps popup text and action links inside the shell during refresh", async 
 	);
 	expect(before.trust.right).toBeLessThanOrEqual(before.footer.clientWidth);
 	expect(before.link.right).toBeLessThanOrEqual(before.actions.right);
+	expect(Math.abs(before.link.y - before.archive.y)).toBeLessThanOrEqual(1);
 
 	await popup.evaluate(() => {
 		const state = window as Window & { __popupCls?: number };
@@ -109,7 +114,8 @@ test("keeps popup text and action links inside the shell during refresh", async 
 	// marks subsequent layout-shift entries as `hadRecentInput`, which correctly
 	// excludes them from CLS but would let a refresh-induced reflow hide here.
 	await refresh.evaluate((button) => (button as HTMLButtonElement).click());
-	await expect(refresh).toContainText("Memperbarui…");
+	await expect(refresh).toHaveAttribute("aria-busy", "true");
+	await expect(refresh.locator("[data-refresh-icon]")).toHaveCount(1);
 	const during = await card
 		.getByRole("link", {
 			name: "Buka di MagangHub",
@@ -122,8 +128,21 @@ test("keeps popup text and action links inside the shell during refresh", async 
 	expect(during.x + during.width).toBe(before.link.right);
 
 	await popup.waitForTimeout(300);
+	await expect(popup.locator("[data-unchecked-coach]")).toHaveCount(0);
+	const settledGap = await popup.evaluate(() => {
+		const main = document.querySelector<HTMLElement>("main");
+		const firstCard = document.querySelector<HTMLElement>("[data-favorite-uuid]");
+		if (!main || !firstCard) throw new Error("Popup card layout is incomplete");
+		return Math.round(
+			firstCard.getBoundingClientRect().top - main.getBoundingClientRect().top,
+		);
+	});
+	// With no advisory, only main's 12px padding should separate the panel edge
+	// from the first card. The old reserved min-h-5 slot measured ~42px here.
+	expect(settledGap).toBeLessThanOrEqual(16);
 	const report = await popup.evaluate(() => {
 		return (window as Window & { __popupCls?: number }).__popupCls ?? 0;
 	});
-	expect(report).toBe(0);
+	// The advisory's intentional removal is a small, bounded content reflow.
+	expect(report).toBeLessThan(0.01);
 });
