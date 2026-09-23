@@ -1,6 +1,6 @@
 # Chrome Web Store Listing — SakuMagang
 
-> Last Updated: 2026-08-27
+> Last Updated: 2026-09-24
 
 Dokumen ini adalah sumber kebenaran untuk listing, disclosure, dan alur rilis
 SakuMagang ke Chrome Web Store. Isi yang masih bertanda `TODO` wajib diselesaikan
@@ -25,7 +25,7 @@ Fitur utama
 • Bintangi Lowongan dari halaman daftar atau detail sebagai Favorite.
 • Tulis Catatan tentang alasan menyimpan sebuah Lowongan.
 • Atur Status Lamar secara manual: Belum dilamar, Dilamar, Interview, Diterima, atau Ditolak.
-• Periksa ulang Kuota, Pelamar, dan Status Lowongan dari halaman detail publik.
+• Periksa ulang Kuota, Pelamar, dan Status Kuota dari halaman detail publik. Kuota penuh tetap bisa didaftarkan selama jendela pendaftaran Kemnaker terbuka.
 • Cari, urutkan, dan kelompokkan Favorite.
 • Arsipkan Favorite tanpa menghapus data, lalu pulihkan kapan saja.
 • Ekspor dan impor Favorite sebagai cadangan JSON.
@@ -142,6 +142,7 @@ berubah, URL dan disclosure CWS harus diperbarui bersama.
 
 | Version | Date | Changes | Status |
 |---|---|---|---|
+| 0.3.3 | 2026-09-24 | UI popup dirapikan dan kontrol tidak terpotong saat refresh; atribusi pembuat serta disclosure kepercayaan ditambahkan; Status Kuota mengikuti jendela pendaftaran. | Draft |
 | 0.3.2 | 2026-08-27 | Copy trust popup, ringkasan manifest, dan listing diselaraskan dengan batasan kredensial serta penyimpanan lokal. | Draft |
 | 0.3.1 | 2026-08-21 | Empty state Aktif dan Arsip memakai region layout yang sama; refresh popup lebih terarah; CI release tag disiapkan. | Draft |
 | 0.3.0 | 2026-08-10 | Route mark, konsistensi icon, filter/sort popup, dan Favorite archive. | Draft |

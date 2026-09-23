@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.3.3] (2026-09-24)
+
+### Popup
+
+- Menjaga kontrol tetap terlihat saat refresh serta merapikan kartu Favorite
+  yang diperluas dan jarak daftar.
+- Menambahkan atribusi pembuat dan disclosure kepercayaan pada popup.
+
+### Status Lowongan
+
+- Menyelaraskan Status Kuota dengan jendela pendaftaran: Kuota penuh tetap
+  dapat didaftarkan selama periode pendaftaran Kemnaker masih terbuka.
+
+### Packaging
+
+- Menaikkan versi extension ke `0.3.3`.
+
 ## [0.3.2] (2026-08-27)
 
 ### Popup dan listing
