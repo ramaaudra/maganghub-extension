@@ -1,6 +1,6 @@
 # Chrome Web Store Listing — SakuMagang
 
-> Last Updated: 2026-09-24
+> Last Updated: 2026-11-01
 
 Dokumen ini adalah sumber kebenaran untuk listing, disclosure, dan alur rilis
 SakuMagang ke Chrome Web Store. Isi yang masih bertanda `TODO` wajib diselesaikan
@@ -142,6 +142,7 @@ berubah, URL dan disclosure CWS harus diperbarui bersama.
 
 | Version | Date | Changes | Status |
 |---|---|---|---|
+| 0.3.4 | 2026-11-01 | Bintang Favorite berada di kanan bawah tanpa menambah ukuran kartu atau tertutup badge; chip Status Lamar pada kartu dihapus. | Draft |
 | 0.3.3 | 2026-09-24 | UI popup dirapikan dan kontrol tidak terpotong saat refresh; atribusi pembuat serta disclosure kepercayaan ditambahkan; Status Kuota mengikuti jendela pendaftaran. | Draft |
 | 0.3.2 | 2026-08-27 | Copy trust popup, ringkasan manifest, dan listing diselaraskan dengan batasan kredensial serta penyimpanan lokal. | Draft |
 | 0.3.1 | 2026-08-21 | Empty state Aktif dan Arsip memakai region layout yang sama; refresh popup lebih terarah; CI release tag disiapkan. | Draft |

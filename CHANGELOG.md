@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.4] (2026-11-01)
+
+### Kartu Lowongan
+
+- Memindahkan bintang Favorite ke kanan bawah agar tidak tertutup badge
+  Ramah Disabilitas, tanpa menambah ukuran kartu.
+- Menghapus chip Status Lamar pada kartu Lowongan. Status Lamar tetap tersedia
+  di popup dan halaman detail.
+- Menambahkan pengujian ukuran kartu, posisi bintang, dan akses keyboard pada
+  tampilan desktop dan mobile.
+
 ## [0.3.3] (2026-09-24)
 
 ### Popup
