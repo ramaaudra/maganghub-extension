@@ -39,11 +39,7 @@ import {
 	setFavorite,
 	setStatusLamar,
 } from "@/lib/storage";
-import {
-	STAGE_SELECT_OPTIONS,
-	stageChipAriaLabel,
-	stageLabel,
-} from "@/lib/stage";
+import { STAGE_SELECT_OPTIONS } from "@/lib/stage";
 import { composeStarTitle } from "@/lib/star-title";
 import type { Favorite, StatusLamar } from "@/lib/types";
 import { renderHugeiconDataUri, renderHugeiconSvg } from "@/lib/icon-svg";
@@ -320,43 +316,32 @@ function injectStarIntoCard(card: HTMLElement): void {
 	if (!uuid || !anchor) return; // no stable id → no star (AC #15 lands in a later issue)
 
 	card.setAttribute(STAR_INJECTED_ATTR, uuid);
+	if (window.getComputedStyle(card).position === "static") {
+		card.style.position = "relative";
+	}
 
 	const host = document.createElement("div");
 	host.className = STAR_HOST_CLASS;
+	host.style.position = "absolute";
+	host.style.right = "12px";
+	host.style.bottom = "12px";
+	host.style.zIndex = "5";
 	host.setAttribute("data-filled", "false");
-	host.style.setProperty("position", "absolute");
-	// 12px insets, not 8px: MagangHub's card uses a 12px (`rounded-xl`) corner
-	// radius, and a control tucked inside that arc needs to clear it or it reads
-	// as crowding the corner rather than sitting in it.
-	host.style.setProperty("top", "12px");
-	host.style.setProperty("right", "12px");
-	host.style.setProperty("z-index", "5");
-	// The star is absolutely positioned, so the card has to be a containing
-	// block. Check the COMPUTED position, not the inline one: reading
-	// `card.style.position` only sees inline styles, so a card positioned by
-	// MagangHub's stylesheet would be silently overwritten and their layout
-	// broken. Promoting `static` → `relative` changes nothing visually.
-	if (getComputedStyle(card).position === "static") {
-		card.style.setProperty("position", "relative");
-	}
 	const shadow = host.attachShadow({ mode: "closed" });
-	const { button, chip } = buildStarChrome(shadow);
+	const button = buildStarChrome(shadow);
 	card.append(host);
 
 	const state: StarState = { interacted: false };
-	// Filled bit, stage chip, and Catatan tooltip all ride the Favorite shape
-	// from the updater protocol (issues #14 / #19 / #18).
 	const apply = (favorite: Favorite | undefined) => {
 		setFilled(host, button, Boolean(favorite), STAR_LABELS, favorite?.catatan);
-		applyStageChip(host, chip, favorite?.statusLamar);
 	};
 	void reflectState(uuid, apply, state);
 	registerUpdater(uuid, apply, host);
-	attachStarToggle(card, uuid, anchor, host, button, chip, state);
+	attachStarToggle(card, uuid, anchor, host, button, state);
 }
 
 /**
- * Star button + stage chip inside one closed shadow (issue #19).
+ * Star button inside a closed shadow.
  *
  * The star carries exactly one ring, and that ring means one thing: saved or
  * not saved. It used to carry two — its own 1px border plus a second, 2px
@@ -364,15 +349,8 @@ function injectStarIntoCard(card: HTMLElement): void {
  * every card and spent amber on two unrelated meanings at once. MagangHub now
  * ships its own "Peluang" pill with a real percentage on the card, so the band
  * was also duplicating a signal the page states better (see `STAR_CSS`).
- *
- * The stage chip is a real light-DOM element (slotted) so AT and e2e can
- * reach it without piercing Shadow DOM — same pattern as the detail stage
- * card's select. The chip is text-only (D7).
  */
-function buildStarChrome(shadow: ShadowRoot): {
-	button: HTMLButtonElement;
-	chip: HTMLElement;
-} {
+function buildStarChrome(shadow: ShadowRoot): HTMLButtonElement {
 	const style = document.createElement("style");
 	style.textContent = STAR_CSS;
 	const button = document.createElement("button");
@@ -384,69 +362,8 @@ function buildStarChrome(shadow: ShadowRoot): {
 	// stays on the same icon system as the Svelte popup without shipping the
 	// Svelte runtime into every MagangHub page.
 	button.innerHTML = STAR_ICON_SVG;
-	// Chip lives in light DOM via <slot>, so Playwright/AT see it on the host.
-	const chip = document.createElement("span");
-	chip.className = "mh-stage-chip";
-	chip.hidden = true;
-	chip.setAttribute("data-stage-chip", "true");
-	const slot = document.createElement("slot");
-	shadow.append(style, button, slot);
-	return { button, chip };
-}
-
-/**
- * Show or hide the on-card stage chip (issue #19 / A2).
- *
- * The chip is a light-DOM child of the star host (slotted into the closed
- * shadow), so e2e can assert `data-stage` / text without piercing Shadow DOM
- * and AT can announce it via its own aria-label. No stage → no chip, so the
- * majority of saved cards stay clean (D7). Colour is deliberately neutral —
- * A1 owns the colour channel on this card.
- */
-function applyStageChip(
-	host: HTMLElement,
-	chip: HTMLElement,
-	stage: StatusLamar | undefined,
-): void {
-	const label = stageLabel(stage);
-	if (!stage || !label) {
-		host.removeAttribute("data-stage");
-		chip.hidden = true;
-		chip.textContent = "";
-		chip.removeAttribute("aria-label");
-		// Detach so an empty chip never occupies layout or AT tree.
-		chip.remove();
-		return;
-	}
-	const prev = host.getAttribute("data-stage");
-	host.setAttribute("data-stage", stage);
-	chip.hidden = false;
-	chip.textContent = label;
-	chip.setAttribute("aria-label", stageChipAriaLabel(stage));
-	// Ensure the chip is a light-DOM child of the host (slotted).
-	const mounted = chip.parentElement === host;
-	if (!mounted) host.append(chip);
-	// Enter / stage-change acknowledgment. WAAPI on the light-DOM chip —
-	// `::slotted` cannot reliably own keyframe animations across browsers.
-	if (!mounted || prev !== stage) {
-		for (const anim of chip.getAnimations()) anim.cancel();
-		const reduce = window.matchMedia(
-			"(prefers-reduced-motion: reduce)",
-		).matches;
-		// PRM: opacity only. Full motion: short rise.
-		chip.animate(
-			reduce
-				? [{ opacity: 0 }, { opacity: 1 }]
-				: [
-						{ opacity: 0, transform: "translateY(-2px)" },
-						{ opacity: 1, transform: "translateY(0)" },
-				  ],
-			{
-				duration: reduce ? 120 : 180,
-				easing: "cubic-bezier(0.23, 1, 0.32, 1)",
-			},
-		);
-	}
+	shadow.append(style, button);
+	return button;
 }
 
 // ─────────────────────── Detail page: toggle near title ─────────────────────
@@ -877,7 +794,6 @@ function attachStarToggle(
 	anchor: HTMLAnchorElement,
 	host: HTMLElement,
 	button: HTMLButtonElement,
-	chip: HTMLElement,
 	state: StarState,
 ): void {
 	button.addEventListener("click", async (event) => {
@@ -890,9 +806,6 @@ function attachStarToggle(
 			await removeFavorite(uuid);
 			setFilled(host, button, false);
 			playFavoriteToggleMotion(button, false);
-			// Optimistic: drop the stage chip with the star. Storage sync will
-			// confirm; without this the chip lingers until the event arrives.
-			applyStageChip(host, chip, undefined);
 		} else {
 			const favorite = createFavorite({
 				uuid,
@@ -904,8 +817,6 @@ function attachStarToggle(
 				await setFavorite(favorite);
 				setFilled(host, button, true);
 				playFavoriteToggleMotion(button, true);
-				// Fresh Favorite has no stage — keep the chip off (D7).
-				applyStageChip(host, chip, undefined);
 			}
 		}
 	});
@@ -918,17 +829,11 @@ function attachStarToggle(
  * control, and it says exactly one thing: saved or not saved. Anything that
  * needs a second concentric ring here is a second meaning competing for the
  * same 32px, which is what the removed urgency band was.
- *
- * Geometry is borrowed from the detail toggle (`DETAIL_CSS`) so the two read as
- * one control at two sizes: same `#e1e7ef` border, same Hugeicons star at the same
- * stroke weight, same amber. Only the size and radius differ — 32px and fully
- * round on the card, because it floats over MagangHub's content instead of
- * sitting in a button row.
  */
 const STAR_CSS = `
   :host {
     all: initial;
-    position: relative;
+    box-sizing: border-box;
     display: inline-block;
     width: 32px;
     height: 32px;
@@ -991,32 +896,6 @@ const STAR_CSS = `
     .mh-star { transition: color 120ms ease, border-color 120ms ease; }
     .mh-star:hover, .mh-star:active { transform: none; }
   }
-  /* Stage chip (issue #19 / A2): text only. Neutral slate so Dilamar and
-     Ditolak never look the same via colour. Positioned under the star so it
-     doesn't cover MagangHub's title. */
-  ::slotted(.mh-stage-chip) {
-    position: absolute;
-    top: 38px;
-    right: 0;
-    display: inline-block;
-    max-width: 88px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    padding: 1px 6px;
-    border-radius: 9999px;
-    border: 1px solid rgb(203, 213, 225);
-    background: rgb(248, 250, 252);
-    color: rgb(51, 65, 85);
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-    font-size: 10px;
-    font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: 0.01em;
-    pointer-events: none;
-    box-sizing: border-box;
-  }
-  ::slotted(.mh-stage-chip[hidden]) { display: none; }
 `;
 
 /**

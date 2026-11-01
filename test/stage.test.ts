@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	STAGE_LABEL,
-	stageChipAriaLabel,
-	stageLabel,
-} from "../src/lib/stage";
+import { STAGE_LABEL, stageLabel } from "../src/lib/stage";
 import type { StatusLamar } from "../src/lib/types";
 
 describe("stageLabel", () => {
@@ -21,12 +17,5 @@ describe("stageLabel", () => {
 
 	it("returns undefined when no stage is set", () => {
 		expect(stageLabel(undefined)).toBeUndefined();
-	});
-});
-
-describe("stageChipAriaLabel", () => {
-	it("prefixes the stage word so AT announces ownership", () => {
-		expect(stageChipAriaLabel("dilamar")).toBe("Status Lamar: Dilamar");
-		expect(stageChipAriaLabel("ditolak")).toBe("Status Lamar: Ditolak");
 	});
 });
